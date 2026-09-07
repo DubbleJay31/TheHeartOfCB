@@ -2,12 +2,7 @@
    THE HEART OF CB — app.js
 ═══════════════════════════════════════ */
 
-/* ─── EMAIL CONFIG ─────────────────────
-   All emails send via Resend through /.netlify/functions/send-email.
-   See _sendEmail() below.
-   5. Set EMAILJS_ENABLED = true
-─────────────────────────────────────────── */
-// All emails now sent via Resend through /.netlify/functions/send-email
+// All emails send via Resend through /.netlify/functions/send-email — see _sendEmail() below.
 async function _sendEmail(to, subject, html) {
   try {
     await fetch('/.netlify/functions/send-email', {
