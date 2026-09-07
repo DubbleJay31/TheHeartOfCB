@@ -853,7 +853,7 @@ a { color: inherit; text-decoration: none; }
       <!-- Payment sent confirmation — moved dynamically under selected payment method by JS -->
       <div id="pm-sent-section" style="display:none;border:1.5px solid #16a34a;border-radius:10px;padding:1rem 1rem .85rem;background:#f0fdf4;margin-top:.65rem;">
         <p style="font-size:.85rem;color:#166534;margin:0 0 .7rem;line-height:1.5;">Once your payment goes through, tap below. Jesse will be notified to verify and confirm your booking.</p>
-        <button id="pm-sent-btn" onclick="_confirmPaymentSent()" style="width:100%;padding:.8rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;line-height:1.4;">✅ CLICK HERE — I've sent my payment</button>
+        <button id="pm-sent-btn" onclick="_confirmPaymentSent()" onmouseover="this.style.background='#15803d';this.style.transform='scale(1.015)';" onmouseout="this.style.background='#16a34a';this.style.transform='scale(1)';" style="width:100%;padding:.9rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;line-height:1.4;box-shadow:0 3px 10px rgba(22,163,74,.4);transition:all .15s;">✅ CLICK HERE — I've sent my payment</button>
       </div>
 
       <div class="pay-badges">
@@ -1526,7 +1526,7 @@ function _showPaymentSentSection(method) {
   const amt = fmtL(noFeeTotal > 0 ? noFeeTotal : (total > 0 ? total : 0));
   const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash' };
   const methodLabel = names[method] || method;
-  btn.textContent = `✅ I've sent ${amt} via ${methodLabel} — I agree to the rules & cancellation policy — notify Jesse`;
+  btn.textContent = `👉 CLICK HERE — I've sent ${amt} via ${methodLabel} — I agree to the rules & cancellation policy`;
   btn.dataset.method = method;
   section.style.display = '';
   // Move green box to directly after the selected payment method card
