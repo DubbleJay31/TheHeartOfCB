@@ -9,8 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>emailjs.init({ publicKey: 'RAxeMe9Dhnu_KQhdP' });</script>
 <style>
 :root {
   --navy:       #0f1e3d;
@@ -1555,12 +1553,13 @@ async function _notifyGuest(method) {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
     const methodLabel = names[method] || method;
-    await emailjs.send('service_y5uftso', 'template_md3p13c', {
-      to_email: email,
-      name: firstName || guest,
-      email: email,
-      subject: `📋 Booking Request Received — ${prop} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
-      html_body: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
+    const r = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: [email],
+        subject: `📋 Booking Request Received — ${prop} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+        html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
         <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
           <strong style="font-size:16px;">📋 Booking Request Received</strong>
         </div>
@@ -1578,7 +1577,9 @@ async function _notifyGuest(method) {
           <p style="margin:0;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
         </div>
       </div>`
+      })
     });
+    if (!r.ok) throw new Error(await r.text());
   } catch(err) { console.error('Guest notification failed:', err); }
 }
 
@@ -1589,12 +1590,13 @@ async function _notifyJesse(method) {
     const methodLabel = names[method] || method;
     // Build confirm link — use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
-    await emailjs.send('service_y5uftso', 'template_md3p13c', {
-      to_email: 'jessejonesrealestate@gmail.com',
-      name: 'Jesse',
-      email: 'jessejonesrealestate@gmail.com',
-      subject: `💰 Payment Sent — ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
-      html_body: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
+    const r = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: ['jessejonesrealestate@gmail.com'],
+        subject: `💰 Payment Sent — ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+        html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
         <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
           <strong style="font-size:16px;">💰 Payment Sent — Verify &amp; Confirm</strong>
         </div>
@@ -1623,7 +1625,9 @@ async function _notifyJesse(method) {
           <p style="margin:14px 0 0;font-size:13px;color:#666;">View booking: <a href="${window.location.href}" style="color:#b8882a;">Open booking page →</a></p>
         </div>
       </div>`
+      })
     });
+    if (!r.ok) throw new Error(await r.text());
   } catch(err) { console.error('Jesse notification failed:', err); }
 }
 

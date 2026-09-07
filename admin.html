@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root {
   --navy:       #0f1e3d;
@@ -1294,7 +1293,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 </div>
 
 <script>
-emailjs.init({ publicKey: 'RAxeMe9Dhnu_KQhdP' });
 
 // ── PIN LOGIN ──
 const PIN = '1412';
@@ -1917,7 +1915,7 @@ function sendEmail() {
     _emailGmailAppUrl = _emailGmailUrl;
   }
 
-  // Always show preview modal — "Send Direct" inside the modal uses EmailJS
+  // Always show preview modal — "Send Direct" inside the modal uses Resend
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';

@@ -2,16 +2,9 @@
    THE HEART OF CB — app.js
 ═══════════════════════════════════════ */
 
-/* ─── EMAILJS CONFIG ─────────────────────
-   To enable automatic guest confirmation emails:
-   1. Go to https://emailjs.com → Sign up free
-   2. Add Service → Gmail → copy the Service ID below
-   3. Email Templates → Create Template → use the
-      variables: {{guest_first}}, {{guest_name}},
-      {{prop}}, {{ci}}, {{co}}, {{guests}}, {{reply_to}}
-      Subject: "Your booking request is received — The Heart of CB"
-      Set template's "To Email" field to: {{to_email}}
-   4. Account → Public Key → copy below
+/* ─── EMAIL CONFIG ─────────────────────
+   All emails send via Resend through /.netlify/functions/send-email.
+   See _sendEmail() below.
    5. Set EMAILJS_ENABLED = true
 ─────────────────────────────────────────── */
 // All emails now sent via Resend through /.netlify/functions/send-email
@@ -79,7 +72,6 @@ async function _sendGuestConfirmation(inquiry) {
 }
 
 async function _notifyHost(inquiry) {
-  if (!EMAILJS_ENABLED || typeof emailjs === 'undefined') return;
   try {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
     const inqCode = btoa(unescape(encodeURIComponent(JSON.stringify(inquiry))));
