@@ -1,0 +1,777 @@
+{
+  "front": {
+    "folder": "Photos/Front Photos",
+    "photos": [
+      {
+        "file": "3e29e33d-5fda-49f5-91b8-809f4032eaaa.avif",
+        "caption": "Living Room",
+        "tag": "Cover"
+      },
+      {
+        "file": "01dd74b3-040a-4ad0-bc15-142f45344215.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "4050b5aa-abde-453c-8714-bbae9b9f7fcb.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "073576cb-7497-4af8-88fd-2ea4a0405788.avif",
+        "caption": "Piano",
+        "tag": "Living Room"
+      },
+      {
+        "file": "47ed3bd2-d476-4023-9961-5aea26333e91.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "7bdcf3da-0952-40a4-98d3-f1ca8f90ced2.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "6cabb966-3250-4703-8da1-dc2f7a75b87f.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "f7617cd6-8a95-41b5-be41-1398b0e978e9.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "d3c87c05-9da0-4bc6-aeb0-134412fc8503.avif",
+        "caption": "",
+        "tag": "Living Room"
+      },
+      {
+        "file": "53599398-1acf-4738-94f0-6f2bce0398f5.avif",
+        "caption": "",
+        "tag": "Kitchen",
+        "hero": false
+      },
+      {
+        "file": "3689d40e-626a-4d07-b829-e4a08bc7d5d5.avif",
+        "caption": "",
+        "tag": "Kitchen",
+        "hero": false
+      },
+      {
+        "file": "6e3f2cbd-7a15-4363-9035-6cf1660037ec.avif",
+        "caption": "",
+        "tag": "Kitchen"
+      },
+      {
+        "file": "57fa5647-793a-4e13-ba3b-d90565ea6b1e.avif",
+        "caption": "",
+        "tag": "Kitchen",
+        "hero": false
+      },
+      {
+        "file": "a835bd3c-40dd-4729-9ea9-38e6de3a813f.avif",
+        "caption": "",
+        "tag": "Kitchen"
+      },
+      {
+        "file": "b10f94e5-88ac-414e-9926-4f438dd62645.avif",
+        "caption": "",
+        "tag": "Kitchen"
+      },
+      {
+        "file": "33205acf-03b4-413c-ae58-a88f61e3666f.avif",
+        "caption": "",
+        "tag": "Dining"
+      },
+      {
+        "file": "454252d9-1e66-4b1f-850d-4388bbe75bbf.avif",
+        "caption": "",
+        "tag": "Dining"
+      },
+      {
+        "file": "8d3b02ba-fa30-4eba-b7e7-b29e38fe35f1.avif",
+        "caption": "",
+        "tag": "Dining"
+      },
+      {
+        "file": "d04103e9-f1e1-47cf-9e20-18d7f5fcef72.avif",
+        "caption": "",
+        "tag": "Dining"
+      },
+      {
+        "file": "31e09725-4577-4a14-bdf6-3b27b01e18d2.avif",
+        "caption": "",
+        "tag": "Master Bedroom",
+        "hero": true
+      },
+      {
+        "file": "42779988-bf3e-4bc5-9078-f424fe97952e.avif",
+        "caption": "",
+        "tag": "Master Bedroom"
+      },
+      {
+        "file": "4d5ac903-50f8-44d2-9c28-c5d603625a6c.avif",
+        "caption": "",
+        "tag": "Master Bedroom"
+      },
+      {
+        "file": "a278e8fc-be2a-4cfc-8ebb-a58dc41604d5.avif",
+        "caption": "",
+        "tag": "Master Bedroom"
+      },
+      {
+        "file": "c21bed3c-698b-49ca-95f1-ce1153b4c769.avif",
+        "caption": "",
+        "tag": "Master Bedroom"
+      },
+      {
+        "file": "803d300e-4290-4c05-a785-539ad755e918.avif",
+        "caption": "",
+        "tag": "Bed #2",
+        "hero": true
+      },
+      {
+        "file": "5781c7e2-e59d-4049-9193-4d83ca9d005b.avif",
+        "caption": "",
+        "tag": "Bed #2",
+        "hero": false
+      },
+      {
+        "file": "e000a715-aeac-4c85-a8b4-0e90155e2238.avif",
+        "caption": "",
+        "tag": "Bed #2",
+        "hero": false
+      },
+      {
+        "file": "6f2c74a0-dc13-4872-9963-70c965f6df71.avif",
+        "caption": "",
+        "tag": "Bed #3",
+        "hero": true
+      },
+      {
+        "file": "29346b84-fee6-45f0-90cc-f6f2dc4c5f5f.avif",
+        "caption": "",
+        "tag": "Bed #3",
+        "hero": false
+      },
+      {
+        "file": "efe1b9bb-66b7-4553-9051-34115058df9e.avif",
+        "caption": "",
+        "tag": "Bed #3",
+        "hero": false
+      },
+      {
+        "file": "26ecad20-8155-437a-8e25-5dc9f90a640c.avif",
+        "caption": "",
+        "tag": "Master Bath",
+        "hero": false
+      },
+      {
+        "file": "37b11d35-1122-4e57-9b8e-250da152076e.avif",
+        "caption": "",
+        "tag": "Master Bath",
+        "hero": false
+      },
+      {
+        "file": "818b92b5-32fb-41ba-b885-6d9d97b879ae.avif",
+        "caption": "",
+        "tag": "Master Bath",
+        "hero": false
+      },
+      {
+        "file": "e2ad7cb5-c866-41b6-8bf2-6cb69c1f48f4.avif",
+        "caption": "",
+        "tag": "Master Bath",
+        "hero": false
+      },
+      {
+        "file": "5b3d337d-9d6e-4986-8ed8-0b216d812ec5.avif",
+        "caption": "",
+        "tag": "Hall Bath",
+        "hero": false
+      },
+      {
+        "file": "814a6dc1-5c22-4c1a-804d-833beceb9dee.avif",
+        "caption": "",
+        "tag": "Hall Bath"
+      },
+      {
+        "file": "a3759e24-ce16-4e0c-8375-8a81c4bad20f.avif",
+        "caption": "",
+        "tag": "Hall Bath"
+      },
+      {
+        "file": "c41c4e75-199f-425d-9cc4-fd2e0449b70d.avif",
+        "caption": "",
+        "tag": "Hall Bath"
+      },
+      {
+        "file": "006b2826-ef34-4e75-97e8-1ed9a20d7167.avif",
+        "caption": "",
+        "tag": "Exterior"
+      },
+      {
+        "file": "6fd84df9-37ed-4d3e-82a9-3cd4eb9c1c50.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "79bf85d5-1483-4e25-8086-9a045ff635cb.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "7c3a6980-8601-49cb-ab8d-2fdb5ac072db.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "82c44cbf-42f9-4e5d-942e-c8119cf33418.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "8373f1e7-6fa8-42d4-a1ce-6c911270f279.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "8d00c654-d0df-4c14-ac16-e5fc5b844401.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "9a0aa67a-6b14-40f6-9062-1fd2edd1943f.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "a7413905-8077-4f75-b4fe-f631212afe2b.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "b3556a3d-2d81-47cb-b46a-2428e4e1803c.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "d31b17e2-3fc1-456d-ae65-6080d999faa7.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "dceea594-76b9-48c7-b002-43d9a03709fe.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "f00f52c0-e5c0-4ea5-9742-72be34488d1d.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      }
+    ]
+  },
+  "left": {
+    "folder": "Photos/Left Photos",
+    "photos": [
+      {
+        "file": "3d84ae38-db99-44a8-899d-85db3029883a.avif",
+        "caption": "",
+        "tag": "Cover",
+        "hero": false
+      },
+      {
+        "file": "425b5baf-8737-47bd-ad4b-11b735a9a7e5.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "4a0ff502-cdb5-41c1-8f53-e05082c9c9d2.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "6bb86a5e-8952-4636-aa18-95c262ef7866.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": true
+      },
+      {
+        "file": "74257c3b-c128-47cb-b298-db2f4ddc8986.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "8daf7bd2-bb41-4cd0-81f7-cb66b0a2361c.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "eae799a6-91a1-4eb1-a299-1d4ff06546e9.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "33fc202a-a7f6-463c-8308-73229a773a3c.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "4e5d2d7c-3b86-4c72-81bf-2a422356ce6f.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "939a73a4-ba1a-48e6-a619-3a75f1ab5cd8.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "fce60c25-8a98-46f4-8fab-65740cb8ab0b.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "1e34ca87-dc9e-4030-b1b2-363d3c4a83e3.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "381aa474-ee1b-438e-ae96-2f77978c0d56.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "77c2dc52-f635-4d93-b240-d8f6afbb64e9.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "88ee041d-c821-4550-9e5f-7df84820c12b.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "93a6a02e-e814-4909-bec3-dcc9f8758810.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "9a2d066e-b18d-4dfc-a79e-2a8ff6c35a6d.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "b93810bd-0f74-4032-9ac0-0cfe8bc8a4cf.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "f0352ff9-d2a5-4213-8cab-b1b9109aae2a.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "b28cd68f-00e5-4443-9adb-7e4a26f88142.avif",
+        "caption": "",
+        "tag": "Hall/Closet",
+        "hero": false
+      },
+      {
+        "file": "fe6d7007-1440-4d65-a9aa-d99fbefc17ff.avif",
+        "caption": "",
+        "tag": "Hall/Closet",
+        "hero": false
+      },
+      {
+        "file": "47121e75-8399-4c17-acce-1b1ff8af13d1.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "6a9f4461-a029-4920-a8c4-b2b512c21cad.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "884e8bf5-91c0-4b00-b13d-621e5a5d2a3b.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "9c0e97e5-4422-4709-921e-37ca1654897a.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "f3a78ca9-44cc-4ad3-825b-a12055f57822.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      }
+    ]
+  },
+  "right": {
+    "folder": "Photos/Right Photos",
+    "photos": [
+      {
+        "file": "0d2e2556-3018-4e3b-aac7-44bdd43579e6.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "0df029ad-c8b6-42cd-9cfa-0997ed14f8d1.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "119b5ab3-73c9-4d19-afbf-9de7d2bbacda.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": true
+      },
+      {
+        "file": "356f0e91-9170-408d-8e97-48cb47d1ecef.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "602f446c-d853-49c7-b9f4-94699e6b4b18.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "82c3d478-bb96-4ed5-adc7-ef2cb6bd6359.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "8d351b70-b7b4-490c-af47-db76fb35286a.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "a7ee3505-a41c-45b3-87d6-42b74c0a3032.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "b05a56a0-b993-4468-9108-e37adb5468f6.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "ded49073-424f-4b2d-a4f8-c5a347f8a2a8.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "fb992d1e-f89d-46a3-a259-1f70d20cdb8b.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "ffaa6dc1-c910-4446-a1b5-6c6a72010667.avif",
+        "caption": "",
+        "tag": "Bedroom",
+        "hero": false
+      },
+      {
+        "file": "04cae384-5fe8-4f57-b74f-b083aa6154c6.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "344eacaf-9729-42d7-a0d5-efe867bdd83a.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "389bd53c-fba2-419e-8cd1-443f68c3a55c.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "4e928b5f-f0e1-455b-a1f9-a7e6a1702a35.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "5ebbb482-9c5a-4eb0-af9e-a8e1f77a6cbc.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "a1e57f9f-1e35-47e5-a4dd-e33de22c6218.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "a8fe32a2-027a-4066-8c4d-c7099d716b59.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "d8bebcac-b1b4-40ec-b470-6bd607d6d62f.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "de6a36be-ec26-4bb0-9526-0728a74637e0.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "fb470fe4-d1dd-4c01-8cf7-9c05feb04a1d.avif",
+        "caption": "",
+        "tag": "Bathroom",
+        "hero": false
+      },
+      {
+        "file": "0ddc46ec-d03b-4b23-982a-6fff8d5b79c7.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "18dc062c-a365-4e4f-8b5c-203a67ee9f6e.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "2109a9ef-4ed0-4827-a08a-e45f52d43dd0.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "330ae713-094b-4950-998e-520bcf7d88ee.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "5698692a-e14d-47ef-a260-0dbdd64c79f0.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "72e7f9df-6af5-4717-a318-e7854811c147.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "8db4798a-c940-43b0-9765-c2a1d93dbbf5.avif",
+        "caption": "",
+        "tag": "Kitchenette",
+        "hero": false
+      },
+      {
+        "file": "0769c9f5-ab74-4d5c-b118-25a5a87bbff8.avif",
+        "caption": "",
+        "tag": "Hall/Closet",
+        "hero": false
+      },
+      {
+        "file": "22900ab2-7f69-442d-9e29-3f84780417ea.avif",
+        "caption": "",
+        "tag": "Hall/Closet",
+        "hero": false
+      },
+      {
+        "file": "3905d253-0eed-441b-aa38-dfd31274a62f.avif",
+        "caption": "",
+        "tag": "Hall/Closet",
+        "hero": false
+      },
+      {
+        "file": "2b99805b-eaed-4ae1-a917-481240690c8d.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "33cf2fef-9ce5-41dd-9da8-009098857c09.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "369ce163-2d1f-4fc1-9008-5cd6cc7d78e4.jpeg",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "3fadce88-7c5b-4965-872e-a6ddfc660944.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "4b2e376c-4329-475f-8caa-4a007f5eb2c7.jpeg",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "51a49313-07ca-4fa5-a4d2-aafc5edfb26e.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "5c41588f-69cb-42c8-90dc-5ffd9b6d637b.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "5c48f772-d87c-41f5-a326-8d37dbe584dd.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "7f00ce1b-4e70-45c4-be3b-62ef742631fb.jpeg",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "ad4308e4-a58d-4d15-8aad-b8d51da7ed55.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "add7d1a5-1884-485e-9665-24882d844958.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "afd5c607-edb5-4d52-b75b-04d1a5a1df9c.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "b36bebe6-ac4f-4330-bfb7-76fcab29b1b2.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "c4e8f2eb-6a9e-4e31-903d-67aa52ee2f10.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "dbbb396b-efa0-4965-aa5a-ec2fbd40c8d9.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "dc0a112a-004c-4493-b051-e2c256037b00.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "dfb89a6a-0b00-4d6a-bd0b-8c5e65008ea9.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "e2fcb73a-12a0-4f55-9684-f63c29bbc605.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "eee5ecab-48e8-4316-9965-3e1330d2fb48.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "f845eb3c-2048-4efd-9c34-d4c9d4375c2d.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "f90bb230-a4dc-43d4-9ded-bd90172acb95.avif",
+        "caption": "",
+        "tag": "Exterior",
+        "hero": false
+      },
+      {
+        "file": "3a8905aa-adce-43ee-b81a-4c5702b59c52.avif",
+        "caption": "Right Suite"
+      }
+    ]
+  }
+}

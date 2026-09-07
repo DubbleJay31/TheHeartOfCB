@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "thocb",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "serve.ps1"],
+      "port": 3003
+    },
+    {
+      "name": "PIV",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\jesse\\OneDrive\\Desktop\\PIV\\serve.ps1"],
+      "port": 3001
+    },
+    {
+      "name": "cleaning",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\jesse\\OneDrive\\Desktop\\thocb-cleaning\\serve.ps1"],
+      "port": 3002
+    }
+  ]
+}

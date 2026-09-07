@@ -1,0 +1,10 @@
+[build]
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+  directory    = "netlify/functions"
+
+[[scheduled-functions]]
+  name     = "reminder"
+  schedule = "0 12 * * *"

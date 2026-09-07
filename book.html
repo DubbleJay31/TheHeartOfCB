@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="THOCB Pin NO BACKGROUND.png" />
+<title>The Heart Of CB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init({ publicKey: 'RAxeMe9Dhnu_KQhdP' });</script>
+<style>
+:root {
+  --navy:       #0f1e3d;
+  --navy2:      #162649;
+  --gold:       #b8882a;
+  --gold2:      #d4a44c;
+  --gold-light: #f0d9a8;
+  --sand:       #faf7f2;
+  --sand2:      #f2ede3;
+  --white:      #ffffff;
+  --text:       #1a1f2e;
+  --muted:      #6b7280;
+  --border:     #e8e3d8;
+  --radius:     14px;
+  --shadow:     0 8px 32px rgba(15,30,61,.12);
+  --shadow-lg:  0 20px 60px rgba(15,30,61,.18);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--sand);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; line-height: 1.2; }
+a { color: inherit; text-decoration: none; }
+
+/* ── HEADER ── */
+.bk-header {
+  background: var(--navy);
+  padding: 1.2rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 3px solid var(--gold);
+}
+.bk-logo { display: flex; align-items: center; gap: .8rem; }
+.bk-logo img { height: 52px; width: auto; }
+.bk-logo-text { color: var(--white); }
+.bk-logo-text .site-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--gold2); }
+.bk-logo-text .site-sub { font-size: .72rem; font-weight: 500; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: .1em; }
+.bk-header-badge {
+  background: rgba(184,136,42,.15);
+  border: 1px solid rgba(184,136,42,.4);
+  color: var(--gold2);
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .35rem .8rem;
+  border-radius: 50px;
+}
+
+/* ── HERO ── */
+.bk-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  padding: 3rem 2rem 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.bk-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(184,136,42,.18) 0%, transparent 70%);
+}
+.bk-hero-content { position: relative; z-index: 1; }
+.bk-hero-eyebrow {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: rgba(184,136,42,.15); border: 1px solid rgba(184,136,42,.3);
+  color: var(--gold2); font-size: .75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  padding: .4rem 1rem; border-radius: 50px; margin-bottom: 1rem;
+}
+.bk-hero h1 { color: var(--white); font-size: clamp(1.8rem, 4vw, 2.8rem); margin-bottom: .5rem; }
+.bk-hero-sub { color: rgba(255,255,255,.65); font-size: .95rem; }
+.bk-hero-prop {
+  display: inline-block;
+  margin-top: 1rem;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  color: var(--white);
+  font-size: .9rem; font-weight: 600;
+  padding: .5rem 1.2rem; border-radius: 50px;
+}
+
+/* ── MAIN LAYOUT ── */
+.bk-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── CARDS ── */
+.bk-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.bk-card-header {
+  background: var(--navy);
+  padding: .9rem 1.4rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+.bk-card-header h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: .8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--gold2);
+}
+.bk-card-body { padding: 1.4rem; }
+
+/* ── QUOTE SUMMARY ── */
+.quote-dates {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; margin-bottom: 1.2rem;
+}
+.quote-date-item { text-align: center; }
+.quote-date-label {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: .25rem;
+}
+.quote-date-val {
+  font-size: 1.05rem; font-weight: 700; color: var(--navy);
+}
+.quote-date-day { font-size: .8rem; color: var(--muted); font-weight: 500; }
+.quote-divider { width: 1px; background: var(--border); align-self: stretch; margin: 0 .5rem; }
+.quote-nights-badge {
+  grid-column: 1 / -1;
+  text-align: center;
+  background: var(--sand);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .5rem;
+  font-size: .82rem; font-weight: 700; color: var(--navy);
+}
+.price-table { width: 100%; border-collapse: collapse; }
+.price-table tr td { padding: .5rem 0; font-size: .9rem; }
+.price-table tr td:last-child { text-align: right; font-weight: 600; }
+.price-table .pt-label { color: var(--muted); }
+.price-table .pt-divider td { border-top: 1px solid var(--border); padding-top: .75rem; }
+.price-table .pt-total td { font-size: 1.1rem; font-weight: 700; color: var(--navy); padding-top: .5rem; }
+.price-table .pt-deposit td { color: var(--gold); font-size: .88rem; }
+.pt-badge {
+  display: inline-block;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  background: rgba(22,163,74,.1); color: #15803d;
+  border: 1px solid rgba(22,163,74,.2);
+  padding: .1rem .4rem; border-radius: 4px; margin-left: .4rem;
+}
+.quote-note {
+  margin-top: 1rem;
+  background: var(--sand);
+  border-left: 3px solid var(--gold);
+  padding: .75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: .85rem;
+  color: var(--muted);
+}
+.quote-note strong { color: var(--navy); }
+
+/* ── GUEST INFO DISPLAY ── */
+.guest-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.gi-item {}
+.gi-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .2rem; }
+.gi-val { font-size: .92rem; font-weight: 600; color: var(--navy); }
+
+/* ── AGREEMENT ── */
+.agreement-toggle {
+  width: 100%;
+  background: var(--sand);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .85rem 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .88rem; font-weight: 600; color: var(--navy);
+  cursor: pointer;
+  margin-bottom: .75rem;
+}
+.agreement-toggle:hover { background: var(--sand2); }
+.agreement-toggle .chevron { transition: transform .25s; font-size: .8rem; }
+.agreement-toggle.open .chevron { transform: rotate(180deg); }
+.agreement-body {
+  display: none;
+  background: var(--sand);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem;
+  font-size: .82rem;
+  line-height: 1.75;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.agreement-body.open { display: block; }
+.agreement-body h4 {
+  font-family: 'Inter', sans-serif;
+  font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--navy); margin: 1rem 0 .4rem;
+}
+.agreement-body h4:first-child { margin-top: 0; }
+.agreement-body p { color: var(--muted); margin-bottom: .4rem; font-size: .82rem; }
+.sig-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  margin-bottom: 1rem;
+}
+.sig-field label {
+  display: block;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: .4rem;
+}
+.sig-field input {
+  width: 100%;
+  padding: .7rem .9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: .9rem; font-weight: 600;
+  color: var(--navy);
+  background: var(--white);
+  transition: border-color .2s;
+}
+.sig-field input:focus { outline: none; border-color: var(--gold); }
+.sig-field input[readonly] {
+  background: var(--sand);
+  color: var(--muted);
+}
+.agree-check {
+  display: flex; align-items: flex-start; gap: .75rem;
+  background: var(--sand);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: border-color .2s;
+}
+.agree-check.checked { border-color: var(--gold); background: rgba(184,136,42,.05); }
+.agree-check input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--gold); margin-top: 2px; cursor: pointer; }
+.agree-check-text { font-size: .85rem; color: var(--text); line-height: 1.5; }
+.agree-check-text strong { color: var(--navy); }
+
+/* ── PIN CIRCLE ── */
+.pin-circle { display:inline-flex;align-items:center;justify-content:center;background:#ffffff;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px rgba(201,146,42,.7),0 0 0 5px rgba(201,146,42,.2); }
+
+/* ── AGREEMENT ITEM CHECKBOXES ── */
+.ag-item { display:flex;align-items:flex-start;gap:.55rem;cursor:pointer;width:100%; }
+.ag-item input[type="checkbox"] { width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--gold);cursor:pointer; }
+.ag-items-note { font-size:.78rem;color:var(--muted);margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(184,136,42,.07);border-radius:8px;border-left:3px solid var(--gold); }
+.agree-check.locked { opacity:.5;pointer-events:none; }
+
+/* ── PAYMENT METHODS ── */
+.pay-section { }
+.pay-lock-banner { background: var(--sand2); border: 1.5px dashed var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; text-align: center; font-size: .88rem; color: var(--muted); margin-bottom: 1rem; }
+.pay-methods { display: flex; flex-direction: column; gap: .65rem; margin-bottom: 1.25rem; }
+.pay-methods.locked .pay-method-card { opacity: .4; pointer-events: none; user-select: none; }
+.pay-method-card { display: flex; align-items: center; gap: .9rem; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: .85rem 1rem; transition: border-color .15s; }
+.pay-method-card:hover { border-color: var(--gold); }
+.pm-icon { font-size: 1.4rem; flex-shrink: 0; width: 1.8rem; text-align: center; }
+.pm-info { flex: 1; min-width: 0; }
+.pm-name { font-size: .88rem; font-weight: 700; color: var(--navy); }
+.pm-amount { font-size: .82rem; color: var(--text); margin: .1rem 0; }
+.pm-note { font-size: .72rem; color: var(--muted); }
+.pm-btn { background: var(--navy); color: #fff; border: none; padding: .45rem .9rem; border-radius: 8px; font-size: .78rem; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: 'Inter', sans-serif; display: inline-flex; align-items: center; flex-shrink: 0; }
+.pm-btn:hover { background: var(--gold); }
+.pm-btn-outline { background: transparent; border: 1.5px solid var(--navy); color: var(--navy); }
+.pm-btn-outline:hover { background: var(--navy); color: #fff; }
+.pm-cash-callout { background: #7c1d1d; color: #fff; border-radius: 10px; padding: 1rem 1.2rem; margin-top: .5rem; font-size: .82rem; line-height: 1.6; }
+.pm-cash-callout strong { display: block; margin-bottom: .35rem; font-size: .85rem; color: #ffcdd2; }
+.pay-badges { display: flex; align-items: center; justify-content: center; gap: 1.25rem; flex-wrap: wrap; padding-top: 1rem; border-top: 1px solid var(--border); }
+.pay-badges span { font-size: .72rem; color: var(--muted); display: flex; align-items: center; gap: .3rem; }
+
+/* ── PAY BUTTON (legacy, keep for expiry check ref) ── */
+.pay-btn {
+  display: none;
+  width: 100%; max-width: 420px;
+  padding: 1.1rem 2rem;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+  color: var(--white);
+  font-size: 1rem; font-weight: 700;
+  border: none; border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(184,136,42,.35);
+  transition: all .25s;
+  text-decoration: none;
+  letter-spacing: .01em;
+}
+.pay-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184,136,42,.45); }
+.pay-btn:disabled, .pay-btn.locked {
+  background: #d1d5db; color: #9ca3af;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+.pay-btn-sub {
+  font-size: .78rem; color: var(--muted); margin-top: .6rem;
+}
+.pay-lock-msg {
+  display: none;
+  font-size: .82rem; color: #dc2626;
+  margin-top: .5rem; font-weight: 600;
+}
+.pay-lock-msg.show { display: block; }
+
+/* ── EXPIRY WARNING ── */
+.expiry-banner {
+  background: rgba(239,68,68,.08);
+  border: 1.5px solid rgba(239,68,68,.25);
+  border-radius: 10px;
+  padding: .85rem 1.1rem;
+  font-size: .88rem; color: #b91c1c;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.expiry-banner.warn { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.3); color: #92400e; }
+
+/* ── CONTACT CARD ── */
+.contact-strip {
+  background: var(--navy);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+  display: flex; align-items: center; gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.contact-strip .cs-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(184,136,42,.2);
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+.contact-strip .cs-info { flex: 1; }
+.contact-strip .cs-name { font-family: 'Playfair Display', serif; color: var(--white); font-size: 1rem; font-weight: 600; }
+.contact-strip .cs-title { font-size: .75rem; color: rgba(255,255,255,.55); }
+.contact-strip .cs-links { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .5rem; }
+.contact-strip .cs-link {
+  font-size: .78rem; font-weight: 600; color: var(--gold2);
+  background: rgba(184,136,42,.12); border: 1px solid rgba(184,136,42,.25);
+  padding: .3rem .75rem; border-radius: 50px;
+}
+
+/* ── FOOTER ── */
+.bk-footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: .75rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: var(--white);
+}
+.bk-footer strong { color: var(--navy); }
+
+/* ── SUBMIT AGREEMENT BUTTON ── */
+.submit-agree-btn {
+  display: block; width: 100%; padding: 1rem 1.5rem;
+  background: #d1d5db; color: #6b7280;
+  border: none; border-radius: 10px;
+  font-size: 1rem; font-weight: 700; letter-spacing: .01em;
+  cursor: not-allowed; margin-top: 1.1rem;
+  transition: background .2s, color .2s, transform .1s;
+}
+.submit-agree-btn.ready {
+  background: var(--navy); color: #fff; cursor: pointer;
+}
+.submit-agree-btn.ready:hover { background: #0d2448; transform: translateY(-1px); }
+.submit-agree-btn.done {
+  background: #16a34a; color: #fff; cursor: default; pointer-events: none;
+}
+.sig-confirmed {
+  display: none; align-items: center; gap: .75rem;
+  background: #f0fdf4; border: 1.5px solid #16a34a;
+  border-radius: 10px; padding: .85rem 1rem; margin-top: .75rem;
+}
+.sig-confirmed.show { display: flex; }
+.pay-unlock-banner {
+  display: none;
+  background: var(--navy); color: #fff;
+  border-radius: 10px; padding: 1rem 1.25rem;
+  text-align: center; font-size: .9rem; font-weight: 700;
+  margin-bottom: 1rem;
+}
+.pay-unlock-banner.show { display: block; }
+
+/* ── SUCCESS STATE ── */
+.success-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15,30,61,.92);
+  z-index: 9999;
+  align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+.success-overlay.show { display: flex; }
+.success-box {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-width: 420px; width: 100%;
+  box-shadow: 0 32px 80px rgba(0,0,0,.4);
+}
+.success-icon { font-size: 3rem; margin-bottom: 1rem; }
+.success-box h2 { font-size: 1.6rem; color: var(--navy); margin-bottom: .5rem; }
+.success-box p { font-size: .9rem; color: var(--muted); }
+
+/* ── BOOKING COMPLETE OVERLAY ── */
+.bco-overlay { display:none; position:fixed; inset:0; background:rgba(10,20,50,.96); z-index:10001; align-items:center; justify-content:center; padding:1.5rem; }
+.bco-overlay.show { display:flex; animation:bcoFade .35s ease; }
+@keyframes bcoFade { from { opacity:0; } to { opacity:1; } }
+.bco-box { background:var(--white); border-radius:20px; padding:2rem 2rem 1.75rem; max-width:500px; width:100%; box-shadow:0 32px 80px rgba(0,0,0,.5); max-height:90vh; overflow-y:auto; }
+.bco-check { font-size:4rem; text-align:center; margin-bottom:.4rem; animation:bcoCheck .5s cubic-bezier(.34,1.56,.64,1) .2s both; }
+@keyframes bcoCheck { from { transform:scale(0) rotate(-20deg); } to { transform:scale(1) rotate(0); } }
+.bco-title { font-family:'Playfair Display',serif; font-size:1.65rem; font-weight:700; color:var(--navy); text-align:center; margin-bottom:.2rem; }
+.bco-sub { font-size:.86rem; color:var(--muted); text-align:center; margin-bottom:1.1rem; }
+.bco-bar { background:var(--sand2); border-radius:10px; padding:.7rem 1rem; display:grid; grid-template-columns:1fr 1fr; gap:.4rem 1rem; font-size:.82rem; margin-bottom:1.1rem; }
+.bco-bar-item { display:flex; flex-direction:column; }
+.bco-bar-item span { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.bco-bar-item strong { color:var(--navy); }
+.bco-next-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--gold); margin-bottom:.55rem; }
+.bco-step { display:flex; align-items:flex-start; gap:.55rem; font-size:.83rem; color:#374151; line-height:1.55; margin-bottom:.5rem; }
+.bco-step-icon { flex-shrink:0; font-size:1rem; margin-top:.1rem; }
+.bco-btn-gold { display:block; width:100%; padding:.85rem; background:var(--gold); color:var(--navy); border:none; border-radius:10px; font-size:.9rem; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; margin:.9rem 0 .5rem; }
+.bco-btn-close { display:block; width:100%; padding:.65rem; background:transparent; border:1.5px solid var(--border); border-radius:10px; font-size:.85rem; color:var(--muted); cursor:pointer; }
+.bco-btn-close:hover { border-color:var(--navy); color:var(--navy); }
+
+/* ── AGREEMENT PRINT VIEW ── */
+#agreement-print-view { display:none; max-width:750px; margin:2rem auto; padding:2rem; }
+.apr-hd { background:var(--navy); border-radius:12px 12px 0 0; padding:1.1rem 1.5rem; display:flex; align-items:center; gap:.9rem; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+.apr-hd img { height:44px; }
+.apr-hd-text .apr-site { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--gold2); }
+.apr-hd-text .apr-doc { font-size:.7rem; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.1em; }
+.apr-body { background:var(--white); border:1px solid var(--border); border-top:none; border-radius:0 0 12px 12px; padding:1.6rem 1.75rem 2rem; }
+.apr-body h1 { font-family:'Playfair Display',serif; font-size:1.35rem; color:var(--navy); border-bottom:2px solid var(--gold); padding-bottom:.5rem; margin-bottom:1rem; }
+.apr-summary { display:grid; grid-template-columns:1fr 1fr; gap:.45rem 1.5rem; background:var(--sand2); border-radius:8px; padding:.85rem 1rem; margin-bottom:1.4rem; font-size:.85rem; }
+.apr-si { display:flex; flex-direction:column; }
+.apr-si span { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.apr-si strong { color:var(--navy); }
+.apr-sec { margin-bottom:.9rem; }
+.apr-sec h4 { font-size:.8rem; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.04em; border-left:3px solid var(--gold); padding-left:.55rem; margin-bottom:.25rem; }
+.apr-sec p { font-size:.81rem; color:#374151; line-height:1.6; padding-left:.85rem; }
+.apr-sig { margin-top:1.4rem; background:var(--sand2); border-radius:8px; padding:1rem 1.2rem; border-top:2px solid var(--navy); }
+.apr-sig .sig-lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:.2rem; }
+.apr-sig .sig-name { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--navy); }
+.apr-sig .sig-ts { font-size:.77rem; color:var(--muted); margin-top:.1rem; }
+.apr-print-btn { display:inline-flex; align-items:center; gap:.45rem; margin-top:1.2rem; padding:.65rem 1.3rem; background:var(--navy); color:var(--white); border:none; border-radius:8px; font-size:.87rem; font-weight:700; cursor:pointer; }
+.apr-note { font-size:.76rem; color:var(--muted); margin-top:.4rem; }
+@media print {
+  .apr-print-btn, .apr-note { display:none !important; }
+  #agreement-print-view { margin:0; padding:0; max-width:100%; }
+  .apr-body { border:none; border-radius:0; }
+  body > *:not(#agreement-print-view) { display:none !important; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .bk-header { padding: 1rem; }
+  .bk-header-badge { display: none; }
+  .bk-hero { padding: 2rem 1rem 1.5rem; }
+  .bk-main { padding: 1.25rem 1rem 3rem; }
+  .quote-dates { grid-template-columns: 1fr; gap: .5rem; }
+  .guest-info-grid { grid-template-columns: 1fr; }
+  .sig-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="bk-header">
+  <div class="bk-logo">
+    <a href="index.html" class="pin-circle" style="width:70px;height:70px;text-decoration:none;" title="Back to website">
+      <img src="THOCB Pin NO BACKGROUND.png" alt="The Heart Of CB" style="height:52px;width:auto;" />
+    </a>
+    <div class="bk-logo-text">
+      <div class="site-name">The Heart Of CB</div>
+      <div class="site-sub">Carolina Beach, NC</div>
+    </div>
+  </div>
+  <div class="bk-header-badge">Direct Booking — No Fees</div>
+</header>
+
+<!-- HERO -->
+<section class="bk-hero">
+  <div class="bk-hero-content">
+    <div class="bk-hero-eyebrow">📋 Your Personal Quote</div>
+    <h1 id="hero-greeting">Hey there!</h1>
+    <p class="bk-hero-sub">Your reservation is ready to confirm. Review the details below, sign, and pay to lock in your dates.</p>
+    <div class="bk-hero-prop" id="hero-prop">—</div>
+  </div>
+</section>
+
+<!-- EXPIRY BANNER (shown if link is expiring) -->
+<div id="expiry-banner" style="max-width:720px;margin:1.25rem auto 0;padding:0 1.5rem;display:none;">
+  <div class="expiry-banner" id="expiry-inner"></div>
+</div>
+
+<!-- MAIN -->
+<!-- AGREEMENT PRINT VIEW — shown when ?signed=1 in URL -->
+<div id="agreement-print-view">
+  <div class="apr-hd">
+    <img src="THOCB Pin NO BACKGROUND.png" alt="The Heart Of CB" />
+    <div class="apr-hd-text">
+      <div class="apr-site">The Heart Of CB</div>
+      <div class="apr-doc">Signed Guest Rental Agreement</div>
+    </div>
+  </div>
+  <div class="apr-body">
+    <h1>Guest Rental Agreement — Signed Copy</h1>
+    <div class="apr-summary" id="apr-summary"></div>
+
+    <div class="apr-sec"><h4>1. Parties</h4><p>This Short-Term Rental Agreement is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the <strong>Front Unit at 213 Harper Avenue, Carolina Beach, NC 28428.</strong></p></div>
+    <div class="apr-sec"><h4>2. Term, Check-In & Check-Out</h4><p>The rental period begins at <strong>3:00 PM</strong> on the Check-In date and ends at <strong>11:00 AM</strong> on the Check-Out date. Guest agrees to vacate by 11:00 AM. Early check-in or late check-out may be available upon request but cannot be guaranteed and may incur an additional fee.</p></div>
+    <div class="apr-sec"><h4>3. Payment</h4><p>The total amount due is as stated in the Booking Summary above. Full payment is due at signing. <strong>This Agreement is NOT binding and dates are NOT held until full payment is received and confirmed by Host.</strong></p></div>
+    <div class="apr-sec"><h4>4. Cancellation Policy</h4><p id="apr-cancel"></p></div>
+    <div class="apr-sec"><h4>5. Maximum Occupancy</h4><p>Maximum occupancy is <strong>6 guests and 2 dogs — no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors allowed without prior Host approval. Unauthorized guests: <strong>$150 per person per night.</strong></p></div>
+    <div class="apr-sec"><h4>6. Pets</h4><p>Dogs allowed, maximum 2. No cats, ferrets, or other animals permitted under any circumstances, including service animals (severe family allergy). Dogs must be housebroken, friendly, and leashed outside. Do not allow dogs on furniture without your own covering. Guest is solely responsible for any damage or injury caused by pets. Unauthorized pets: <strong>$100 per pet per night.</strong></p></div>
+    <div class="apr-sec"><h4>7. No Smoking</h4><p>Smoking of any substance is strictly prohibited inside the property. Smoking permitted on the front porch only, door closed. Cigarette butts in the designated container. <strong>$500 fee for smoking inside.</strong></p></div>
+    <div class="apr-sec"><h4>8. Quiet Hours & Low-Key Stay</h4><p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> Not allowed at any time: parties, loud music, roughhousing, heavy drinking, drinking games, rowdy behavior. Home shares walls — be mindful of noise. Violations may result in <strong>immediate termination without refund.</strong></p></div>
+    <div class="apr-sec"><h4>9. No Parties or Events</h4><p>Property may not be used for parties, events, or gatherings beyond stated occupancy. No outside guests without prior Host approval. Unauthorized parties: <strong>$500 fee and immediate termination without refund.</strong></p></div>
+    <div class="apr-sec"><h4>10. Property Care & Damage</h4><p>Guest agrees to leave the property in the same condition as found. Report all damage to Host immediately — do not wait until checkout. Host reserves the right to charge for damage, missing items, or excessive cleaning ($150 fee). Guest is responsible for all members of their group and any pets.</p></div>
+    <div class="apr-sec"><h4>11. Violation Fees</h4><p>Unauthorized guests: <strong>$150/person/night</strong> · Unauthorized pets: <strong>$100/pet/night</strong> · Smoking inside: <strong>$500</strong> · Unauthorized parties/events: <strong>$500 + immediate termination without refund</strong> · Host response for rule violation: <strong>$150/incident</strong> · Excessive cleaning: <strong>$150.</strong> These are standard baseline amounts. <strong>Guest remains responsible for the full cost of any actual damage, repair, or remediation, including amounts that exceed the fees listed above.</strong> Host reserves the right to terminate immediately and without refund for serious violations.</p></div>
+    <div class="apr-sec"><h4>12. Security Cameras</h4><p>Exterior cameras monitor the parking area and staircase entrance. <strong>There are NO cameras of any kind inside the home.</strong></p></div>
+    <div class="apr-sec"><h4>13. Liability, Host Access & Early Termination</h4><p>Guest assumes all risk for use of the property. Host is not liable for accidents, injuries, theft, or damage to Guest's personal property. Guest agrees to indemnify and hold Host harmless from any claims arising from Guest's use of the property. Host may access the property in an emergency or to address a rule violation. Host may terminate this rental immediately and without refund for any serious violation of these terms.</p></div>
+    <div class="apr-sec"><h4>14. House Rules Acknowledgment</h4><p>Guest confirms having read and agreed to the complete House Rules at <strong>theheartofcb.com/house-rules.html</strong>, incorporated into this Agreement by reference.</p></div>
+    <div class="apr-sec"><h4>15. Governing Law & Entire Agreement</h4><p>This Agreement is governed by the laws of North Carolina. Disputes shall be resolved in New Hanover County, NC. This Agreement constitutes the entire agreement between the parties.</p></div>
+
+    <div class="apr-sig" id="apr-sig"></div>
+
+    <button class="apr-print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <p class="apr-note">In your browser: File → Print → "Save as PDF" · Or use Ctrl+P / ⌘+P</p>
+  </div>
+</div>
+
+<main class="bk-main">
+
+  <!-- QUOTE SUMMARY -->
+  <div class="bk-card">
+    <div class="bk-card-header">
+      <span>🗓</span>
+      <h3>Booking Summary</h3>
+    </div>
+    <div class="bk-card-body">
+      <div class="quote-dates">
+        <div class="quote-date-item">
+          <div class="quote-date-label">Check-In</div>
+          <div class="quote-date-val" id="disp-ci">—</div>
+          <div class="quote-date-day" id="disp-ci-day"></div>
+        </div>
+        <div class="quote-date-item">
+          <div class="quote-date-label">Check-Out</div>
+          <div class="quote-date-val" id="disp-co">—</div>
+          <div class="quote-date-day" id="disp-co-day"></div>
+        </div>
+        <div class="quote-nights-badge" id="disp-nights">— nights</div>
+      </div>
+
+      <table class="price-table">
+        <tbody id="price-rows"></tbody>
+      </table>
+
+      <div id="quote-note-wrap" style="display:none">
+        <div class="quote-note"><strong>Note from Jesse:</strong> <span id="quote-note-text"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUEST INFO -->
+  <div class="bk-card" id="guest-card">
+    <div class="bk-card-header">
+      <span>👤</span>
+      <h3>Guest Information</h3>
+    </div>
+    <div class="bk-card-body">
+      <div class="guest-info-grid">
+        <div class="gi-item">
+          <div class="gi-label">Name</div>
+          <div class="gi-val" id="disp-guest">—</div>
+        </div>
+        <div class="gi-item">
+          <div class="gi-label">Email</div>
+          <div class="gi-val" id="disp-email">—</div>
+        </div>
+        <div class="gi-item" id="disp-phone-wrap" style="display:none">
+          <div class="gi-label">Phone</div>
+          <div class="gi-val" id="disp-phone">—</div>
+        </div>
+        <div class="gi-item">
+          <div class="gi-label">Property</div>
+          <div class="gi-val" id="disp-prop">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENTAL AGREEMENT + SIGNATURE -->
+  <div class="bk-card">
+    <div class="bk-card-header">
+      <span>📄</span>
+      <h3>Rental Agreement & Signature</h3>
+    </div>
+    <div class="bk-card-body">
+
+      <button class="agreement-toggle" id="agreement-toggle" onclick="toggleAgreement()">
+        <span>Read the Rental Agreement</span>
+        <span class="chevron">▼</span>
+      </button>
+      <div class="agreement-body" id="agreement-body">
+        <div class="ag-items-note">Check each section to confirm you have read and understood it. All 15 sections must be checked before you can sign.</div>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag1" onchange="checkAgreementItems()"> 1. Parties</label></h4>
+        <p>This Short-Term Rental Agreement ("Agreement") is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the Front Unit at 213 Harper Avenue, Carolina Beach, NC 28428.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag2" onchange="checkAgreementItems()"> 2. Term, Check-In & Check-Out</label></h4>
+        <p>The rental period begins at <strong>3:00 PM</strong> on the Check-In date and ends at <strong>11:00 AM</strong> on the Check-Out date. Guest agrees to vacate the property by 11:00 AM on Check-Out. Early check-in or late check-out may be available upon request but cannot be guaranteed and may incur an additional fee.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag3" onchange="checkAgreementItems()"> 3. Payment</label></h4>
+        <p>The total amount due is as stated in the Booking Summary. Full payment is due at signing. <strong>This Agreement is NOT binding and your dates are NOT held until full payment is received and confirmed by Host.</strong></p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag4" onchange="checkAgreementItems()"> 4. Cancellation Policy</label></h4>
+        <p id="ag-cancel-text"></p>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const cd = _cancelDates(ciRaw);
+          const el = document.getElementById('ag-cancel-text');
+          if (!el) return;
+          if (cd) {
+            el.innerHTML =
+              `<strong>Cancel by ${cd.fullBy}:</strong> Full refund.<br/>` +
+              `<strong>Cancel ${cd.halfStart} &ndash; ${cd.halfEnd}:</strong> 50% refund.<br/>` +
+              `<strong>${cd.ciFormatted} (your check-in day): Cancellation not accepted &mdash; no refund.</strong>` +
+              (cashMode && cashDep > 0 ? ` For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.` : '') + `<br/><br/>` +
+              `<strong>Only two exceptions apply:</strong> (1) Written approval from Jesse issued in advance, or ` +
+              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> ` +
+              `is officially activated for your specific dates and location. ` +
+              `Personal reasons and weather in your area of origin are not covered &mdash; ` +
+              `if it is safe to travel and the property is available, the policy applies in full.`;
+          } else {
+            el.innerHTML =
+              `<strong>5+ days before check-in:</strong> Full refund.<br/>` +
+              `<strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/>` +
+              `<strong>Same-day cancellation: Not accepted &mdash; no refund.</strong>` +
+              (cashMode && cashDep > 0 ? ` For cash guests: deposit is non-refundable and you owe the remaining unpaid balance.` : '') + `<br/><br/>` +
+              `<strong>Only two exceptions:</strong> (1) Written approval from Jesse, or ` +
+              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> applies. ` +
+              `Personal reasons and weather at your origin are not covered.`;
+          }
+        });
+        </script>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag5" onchange="checkAgreementItems()"> 5. Maximum Occupancy</label></h4>
+        <p>Maximum occupancy is <strong>6 guests and 2 dogs — no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors are allowed without prior approval from Host. Unauthorized guests are subject to a fee of <strong>$150 per person per night.</strong> Guest, as reservation holder, is responsible for all members of their group.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag6" onchange="checkAgreementItems()"> 6. Pets</label></h4>
+        <p>Dogs are allowed, maximum 2. No cats, ferrets, or other animals are permitted under any circumstances, including service animals (due to a severe family allergy). All pets must be disclosed at time of booking. Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Do not allow dogs on furniture or bedding without your own clean covering. Do not bathe dogs inside the home. Guest is solely responsible for any damage, disturbance, or injury caused by their pet(s). Unauthorized pets are subject to a <strong>$100 per pet per night fee.</strong></p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag7" onchange="checkAgreementItems()"> 7. No Smoking</label></h4>
+        <p>Smoking of any substance is strictly prohibited inside the property. Smoking is permitted on the front porch only, with the door closed. Cigarette butts must be placed in the designated disposal container — not on the porch, yard, or driveway. A <strong>$500 fee</strong> will be charged for smoking inside the property.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag8" onchange="checkAgreementItems()"> 8. Quiet Hours & Low-Key Stay</label></h4>
+        <p>Quiet hours are <strong>10:00 PM – 9:00 AM.</strong> This property is in a residential neighborhood — neighbors' peace is a priority. This is a low-key, respectful property. Not allowed at any time: parties, loud music, roughhousing or horseplay, heavy drinking, beer pong or drinking games, rowdy or disruptive behavior. The home shares walls — be mindful of noise, especially after dark. Any behavior that disturbs neighbors or violates the low-key nature of the property may result in <strong>immediate termination without refund.</strong></p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag9" onchange="checkAgreementItems()"> 9. No Parties or Events</label></h4>
+        <p>The property may not be used for parties, events, or gatherings beyond the stated maximum occupancy. No outside guests or visitors are permitted without prior Host approval. Unauthorized parties or events will result in a <strong>$500 fee and immediate termination of the reservation without refund.</strong></p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag10" onchange="checkAgreementItems()"> 10. Property Care & Damage</label></h4>
+        <p>Guest agrees to leave the property in the same condition as found. Guest is responsible for any damage beyond normal wear and tear. <strong>Damage must be reported to Host immediately — do not wait until checkout.</strong> Host reserves the right to charge Guest's payment method for damage, missing items, or excessive cleaning beyond normal turnover ($150 fee). Guest is responsible for all members of their group and any pets brought to the property.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag11" onchange="checkAgreementItems()"> 11. Violation Fees</label></h4>
+        <p>Guest acknowledges and agrees to the following fees for violations:<br/>
+        • Unauthorized guests: <strong>$150 per person per night</strong><br/>
+        • Unauthorized pets: <strong>$100 per pet per night</strong><br/>
+        • Smoking inside: <strong>$500</strong><br/>
+        • Unauthorized parties or events: <strong>$500 + immediate cancellation without refund</strong><br/>
+        • Host response required for rule violation: <strong>$150 per incident</strong><br/>
+        • Excessive cleaning beyond normal turnover: <strong>$150</strong><br/>
+        These are standard baseline amounts. <strong>Guest remains responsible for the full cost of any actual damage, repair, or remediation — including any amounts that exceed the fees listed above.</strong> Host reserves the right to terminate the rental immediately and without refund for serious violations.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag12" onchange="checkAgreementItems()"> 12. Security Cameras</label></h4>
+        <p>Guest acknowledges that exterior security cameras monitor the parking area and staircase entrance for the safety and security of the property and its occupants. There are <strong>NO cameras of any kind inside the home.</strong></p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag13" onchange="checkAgreementItems()"> 13. Liability, Host Access & Early Termination</label></h4>
+        <p>Guest assumes all risk and responsibility for their use of the property and its surroundings. Host is not liable for accidents, injuries, theft, or damage to Guest's personal property during the stay. Guest agrees to indemnify and hold harmless Host from any claims arising from Guest's or their group's use of the property. Host reserves the right to access the property in case of emergency or to address a rule violation. Host may terminate this rental immediately and without refund for any serious violation of these terms.</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag14" onchange="checkAgreementItems()"> 14. House Rules Acknowledgment</label></h4>
+        <p>Guest confirms they have read and agree to the complete House Rules for the Front Unit posted at <a href="https://theheartofcb.com/house-rules.html" target="_blank" style="color:var(--gold);">theheartofcb.com/house-rules</a>, which are incorporated into this Agreement by reference. Key rules include:<br/>
+        • Max 6 guests, 2 dogs — no exceptions &nbsp;•&nbsp; Quiet hours 10 PM – 9 AM<br/>
+        • No parties, events, or outside visitors without approval<br/>
+        • No smoking inside — $500 fee &nbsp;•&nbsp; No pets on furniture without your own covering<br/>
+        • Dogs leashed outside at all times &nbsp;•&nbsp; Report all damage immediately<br/>
+        • Checkout 11:00 AM sharp &nbsp;•&nbsp; Exterior cameras on parking area and entrance</p>
+
+        <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag15" onchange="checkAgreementItems()"> 15. Governing Law & Entire Agreement</label></h4>
+        <p>This Agreement shall be governed by the laws of the State of North Carolina. Any disputes shall be resolved in New Hanover County, NC. This Agreement constitutes the entire agreement between the parties. By typing your name and checking the box below, Guest acknowledges having read, understood, and agreed to all terms set forth in this Agreement.</p>
+      </div>
+
+      <div class="sig-row">
+        <div class="sig-field">
+          <label>First Name *</label>
+          <input type="text" id="sig-first" placeholder="First name" oninput="checkReady()" required />
+        </div>
+        <div class="sig-field">
+          <label>Last Name *</label>
+          <input type="text" id="sig-last" placeholder="Last name" oninput="checkReady()" required />
+        </div>
+        <div class="sig-field">
+          <label>Date Signed</label>
+          <input type="text" id="sig-date" readonly />
+        </div>
+      </div>
+
+      <div class="agree-check locked" id="agree-check-wrap" onclick="toggleCheck(event)">
+        <input type="checkbox" id="agree-checkbox" />
+        <div class="agree-check-text">
+          <strong>I agree to the Rental Agreement above.</strong><br/>
+          <span id="agree-lock-hint" style="color:var(--gold);font-size:.8rem;">Check all 15 sections above to unlock.</span>
+          <span id="agree-unlock-hint" style="display:none;font-size:.85rem;">I understand that typing my name below constitutes a legally binding electronic signature and that all terms of this Agreement apply to this reservation. This Agreement becomes binding upon receipt of full payment.</span>
+        </div>
+      </div>
+
+      <button id="submit-agree-btn" class="submit-agree-btn" onclick="submitAgreement()" disabled>✍️ Submit Signed Agreement</button>
+      <div id="sig-confirmed" class="sig-confirmed">
+        <span style="font-size:1.5rem;">✅</span>
+        <div id="sig-confirmed-text"></div>
+      </div>
+      <button id="print-agreement-btn" onclick="window.print()" style="display:none;margin-top:.85rem;width:100%;padding:.75rem 1rem;background:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;">🖨️ Print / Save Agreement</button>
+
+    </div>
+  </div>
+
+  <!-- PAY SECTION -->
+  <div class="bk-card">
+    <div class="bk-card-header">
+      <span>💳</span>
+      <h3>Secure Payment</h3>
+    </div>
+    <div class="bk-card-body pay-section">
+
+      <div id="pay-lock-banner" class="pay-lock-banner">
+        🔒 Submit your signed agreement above to unlock payment options.
+      </div>
+      <div id="pay-unlock-banner" class="pay-unlock-banner">
+        ✅ Agreement captured — now complete your payment below to lock in your dates.
+      </div>
+
+      <div id="pay-methods" class="pay-methods locked">
+
+        <!-- Credit Card (Square) — only shown if payUrl provided -->
+        <div class="pay-method-card" id="pm-cc-card" style="display:none;">
+          <div class="pm-icon">💳</div>
+          <div class="pm-info">
+            <div class="pm-name">Credit Card</div>
+            <div class="pm-amount" id="pm-cc-amount"></div>
+            <div class="pm-note">Includes 3% processing fee — covers secure card handling</div>
+          </div>
+          <a id="pm-cc-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('square',event)">Pay Now →</a>
+        </div>
+
+        <!-- Venmo -->
+        <div class="pay-method-card" id="pm-venmo-card">
+          <div class="pm-icon">💙</div>
+          <div class="pm-info">
+            <div class="pm-name">Venmo</div>
+            <div class="pm-amount" id="pm-v-amount"></div>
+            <div class="pm-note">@Jesse-Jones-85 · No fee</div>
+          </div>
+          <a id="pm-v-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('venmo',event)">Open Venmo →</a>
+        </div>
+
+        <!-- Cash App -->
+        <div class="pay-method-card" id="pm-cashapp-card">
+          <div class="pm-icon">💚</div>
+          <div class="pm-info">
+            <div class="pm-name">Cash App</div>
+            <div class="pm-amount" id="pm-ca-amount"></div>
+            <div class="pm-note">$dubblejay31 · No fee</div>
+          </div>
+          <a id="pm-ca-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('cashapp',event)">Open Cash App →</a>
+        </div>
+
+        <!-- Zelle -->
+        <div class="pay-method-card" id="pm-zelle-card">
+          <div class="pm-icon">🏦</div>
+          <div class="pm-info">
+            <div class="pm-name">Zelle</div>
+            <div class="pm-amount" id="pm-z-amount"></div>
+            <div class="pm-note">Send to <strong>910-599-8118</strong> in your bank app · No fee</div>
+          </div>
+          <button class="pm-btn pm-btn-outline" onclick="copyZelleNum(this)">📋 Copy Number</button>
+        </div>
+
+        <!-- Cash (only if cashMode) -->
+        <div id="pm-cash-section" style="display:none;">
+
+          <!-- Step 1: Cash card with discount info -->
+          <div class="pay-method-card" id="pm-cash-card">
+            <div class="pm-icon">💵</div>
+            <div class="pm-info">
+              <div class="pm-name">Cash <span id="pm-cash-disc-badge" style="display:none;background:#16a34a;color:#fff;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:.3rem;vertical-align:middle;"></span></div>
+              <div class="pm-amount" id="pm-cash-amount"></div>
+              <div class="pm-note" id="pm-cash-note">Click "Choose Cash" below for details on the process</div>
+            </div>
+            <button class="pm-btn" id="pm-cash-choose-btn" onclick="chooseCash()">Choose Cash →</button>
+          </div>
+
+          <!-- Step 2: Deposit + reimbursement flow (hidden until Choose Cash clicked) -->
+          <div id="pm-cash-dep-section" style="display:none;margin-top:.5rem;border:1.5px solid #16a34a;border-radius:10px;padding:1rem;background:#f0fdf4;">
+            <div id="pm-cash-dep-inner"><!-- filled by JS --></div>
+            <div class="pm-cash-callout" style="margin-top:.75rem;">
+              <strong>⚠️ CANCELLATION POLICY — STRICTLY ENFORCED</strong>
+              <span id="cash-cancel-text"></span>
+              <script>
+              (function() {
+                const cd = _cancelDates(ciRaw);
+                const el = document.getElementById('cash-cancel-text');
+                if (!el) return;
+                if (cd) {
+                  el.innerHTML = `Cancel by <strong>${cd.fullBy}</strong>: full refund. ` +
+                    `Cancel <strong>${cd.halfStart}&ndash;${cd.halfEnd}</strong>: 50% refund. ` +
+                    `<strong>${cd.ciFormatted} (check-in day): no cancellations &mdash; no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}</strong> ` +
+                    `Only exceptions: Jesse&rsquo;s written approval or Airbnb&rsquo;s Major Disruptive Events Policy. Personal reasons and weather at your origin are not covered.`;
+                } else {
+                  el.textContent = `5+ days: full refund. 1–4 days: 50% refund. Same day: not accepted — no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}`;
+                }
+              })();
+              </script>
+            </div>
+            <button id="pm-cash-confirm-btn" onclick="handleCashConfirm()" style="margin-top:.75rem;width:100%;padding:.7rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;">✅ Confirm — I'll follow these steps</button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Payment sent confirmation — moved dynamically under selected payment method by JS -->
+      <div id="pm-sent-section" style="display:none;border:1.5px solid #16a34a;border-radius:10px;padding:1rem 1rem .85rem;background:#f0fdf4;margin-top:.65rem;">
+        <p style="font-size:.85rem;color:#166534;margin:0 0 .7rem;line-height:1.5;">Once your payment goes through, tap below. Jesse will be notified to verify and confirm your booking.</p>
+        <button id="pm-sent-btn" onclick="_confirmPaymentSent()" style="width:100%;padding:.8rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;line-height:1.4;">✅ I've sent my payment — notify Jesse</button>
+      </div>
+
+      <div class="pay-badges">
+        <span>🔐 SSL Encrypted</span>
+        <span>📋 Agreement on file</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT JESSE -->
+  <div class="contact-strip">
+    <div class="cs-avatar">🏠</div>
+    <div class="cs-info">
+      <div class="cs-name">Jesse Jones — Your Host</div>
+      <div class="cs-title">Superhost · 7 Years · Carolina Beach, NC</div>
+      <div class="cs-links">
+        <a class="cs-link" href="mailto:stay@theheartofcb.com">✉️ stay@theheartofcb.com</a>
+        <a class="cs-link" href="tel:9105998118">📱 (910) 599-8118</a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="bk-footer">
+  <strong>The Heart Of CB</strong> · 213 Harper Ave, Carolina Beach, NC 28428 · Direct booking — no platform fees<br/>
+  <span style="font-size:.68rem;">This quote is personal and confidential. Do not share this link.</span>
+</footer>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-box">
+    <div class="success-icon">📋</div>
+    <h2>Agreement Received!</h2>
+    <p style="font-size:.95rem;font-weight:600;color:var(--navy);">You're not done yet — payment is the next required step.</p>
+    <p style="margin-top:.75rem;font-weight:700;color:#dc2626;">⚠️ Your booking is NOT confirmed and your dates are NOT blocked until payment is received. Anyone can still book them.</p>
+    <button onclick="unlockAndPay()" style="margin-top:1.5rem;width:100%;padding:1rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Submit Payment Now →</button>
+  </div>
+</div>
+
+<!-- BOOKING COMPLETE OVERLAY — shown after cash payment confirmed -->
+<div class="bco-overlay" id="bco-overlay">
+  <div class="bco-box">
+    <div class="bco-check">🎉</div>
+    <div class="bco-title" id="bco-title">You're all set!</div>
+    <div class="bco-sub">Your signed agreement is on file. Jesse will reach out to confirm everything.</div>
+    <div class="bco-bar" id="bco-bar"></div>
+    <div class="bco-next-title">What happens next</div>
+    <div class="bco-step" id="bco-dep-step"></div>
+    <div class="bco-step"><span class="bco-step-icon">📱</span><span>Jesse will reach out to confirm your booking. Questions in the meantime? Text or call <strong>(910) 599-8118</strong> or email <strong>stay@theheartofcb.com</strong>.</span></div>
+    <div class="bco-step"><span class="bco-step-icon">📄</span><span>Use the button below to save or print your signed agreement for your records.</span></div>
+    <a class="bco-btn-gold" id="bco-agreement-link" href="#" target="_blank">📄 View &amp; Print Your Signed Agreement</a>
+    <button class="bco-btn-close" onclick="document.getElementById('bco-overlay').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<script>
+const p = new URLSearchParams(window.location.search);
+const get = k => p.get(k) || '';
+
+// ── PARSE PARAMS ──
+const prop    = get('prop')    || 'Property';
+const guest   = get('guest')   || 'Guest';
+const email   = get('email')   || '';
+const phone   = get('phone')   || '';
+const ciRaw   = get('ci')      || '';
+const coRaw   = get('co')      || '';
+const nights  = parseInt(get('nights')) || 0;
+const rate    = parseFloat(get('rate'))  || 0;
+const taxOcc   = parseFloat(get('tax_occ'))   || 0;
+const taxSales = parseFloat(get('tax_sales')) || 0;
+const ccFee    = parseFloat(get('cc_fee'))    || 0;
+const total   = parseFloat(get('total')) || 0;
+const dueRaw  = get('due')     || '';
+const payUrl  = get('pay')     || '';
+const cashMode = get('cash') === '1';
+const cashDisc = parseFloat(get('cdsc') || '0') || 0;
+const cashDep  = parseFloat(get('cdep') || '0') || 0;
+const noFeeTotal = Math.max(0, total - ccFee);
+const cashTotal  = Math.max(0, (noFeeTotal > 0 ? noFeeTotal : total) - cashDisc);
+const note    = get('note')    || '';
+const expRaw  = get('exp')     || '';
+
+// ── POPULATE HERO ──
+const firstName = guest.split(' ')[0];
+document.getElementById('hero-greeting').textContent = 'Hey ' + firstName + '!';
+document.getElementById('hero-prop').innerHTML = `<span style="display:inline-flex;align-items:center;gap:.5rem;"><span style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:50%;width:28px;height:28px;flex-shrink:0;"><img src="THOCB Pin NO BACKGROUND.png" alt="" style="width:20px;height:20px;object-fit:contain;"></span>${prop} · Carolina Beach, NC</span>`;
+
+// ── FORMAT DATES ──
+function fmtDate(str) {
+  if (!str) return '—';
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtDay(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+// ── CANCELLATION DATE HELPERS ──
+function _cancelDates(ci) {
+  if (!ci) return null;
+  const checkIn = new Date(ci + 'T12:00:00');
+  const fullCutoff = new Date(checkIn); fullCutoff.setDate(fullCutoff.getDate() - 5);
+  const halfStart  = new Date(checkIn); halfStart.setDate(halfStart.getDate() - 4);
+  const halfEnd    = new Date(checkIn); halfEnd.setDate(halfEnd.getDate() - 1);
+  const fmt = d => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return { fullBy: fmt(fullCutoff), halfStart: fmt(halfStart), halfEnd: fmt(halfEnd), ciFormatted: fmt(checkIn) };
+}
+
+document.getElementById('disp-ci').textContent     = fmtDate(ciRaw);
+document.getElementById('disp-ci-day').textContent = fmtDay(ciRaw);
+document.getElementById('disp-co').textContent     = fmtDate(coRaw);
+document.getElementById('disp-co-day').textContent = fmtDay(coRaw);
+document.getElementById('disp-nights').textContent = `${nights} night${nights !== 1 ? 's' : ''}`;
+
+// ── PRICE TABLE ──
+const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const rows = document.getElementById('price-rows');
+const addRow = (label, val, cls = '') => {
+  const tr = document.createElement('tr');
+  if (cls) tr.className = cls;
+  tr.innerHTML = `<td class="pt-label">${label}</td><td>${val}</td>`;
+  rows.appendChild(tr);
+};
+addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(Math.round(rate/nights)|| 0)}/night)`, fmt(rate));
+if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
+if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
+const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
+const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
+addRow('<strong>Total</strong>', `<strong>${fmt(baseTotal)}</strong>`, 'pt-total');
+addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
+if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card — free with Venmo, Cash App, or Zelle</span>`, '', '');
+if (dueRaw) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
+
+// ── GUEST INFO ──
+document.getElementById('disp-guest').textContent = guest || '—';
+document.getElementById('disp-email').textContent = email || '—';
+document.getElementById('disp-prop').textContent  = prop  || '—';
+if (phone) {
+  document.getElementById('disp-phone').textContent = phone;
+  document.getElementById('disp-phone-wrap').style.display = '';
+}
+
+// ── NOTE ──
+if (note) {
+  document.getElementById('quote-note-text').textContent = note;
+  document.getElementById('quote-note-wrap').style.display = '';
+}
+
+// ── SIG DATE ──
+document.getElementById('sig-date').value = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+// ── EXPIRY ──
+if (expRaw && get('action') !== 'confirm') {
+  const expDate = new Date(expRaw + 'T23:59:59');
+  const now = new Date();
+  const diff = expDate - now;
+  const el = document.getElementById('expiry-banner');
+  const inner = document.getElementById('expiry-inner');
+  el.style.display = 'block';
+  if (get('signed') === '1') {
+    inner.className = 'expiry-banner warn';
+    inner.innerHTML = `📋 Jesse has received your submission and will send an official confirmation once everything is verified.`;
+  } else if (diff < 0) {
+    inner.className = 'expiry-banner';
+    inner.innerHTML = '⛔ This quote has expired. Please contact Jesse for an updated quote.';
+    document.getElementById('pay-methods').setAttribute('data-expired', '1');
+  } else {
+    inner.className = 'expiry-banner warn';
+    inner.innerHTML = `⚠️ Your booking is not complete until payment is received. Your dates are <strong>not blocked</strong> — anyone can book them until you pay.`;
+  }
+}
+
+// ── AGREEMENT TOGGLE ──
+function toggleAgreement() {
+  const btn = document.getElementById('agreement-toggle');
+  const body = document.getElementById('agreement-body');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ── AGREEMENT ITEM CHECKBOXES ──
+function checkAgreementItems() {
+  const boxes = document.querySelectorAll('.ag-item-check');
+  const allChecked = Array.from(boxes).every(b => b.checked);
+  const wrap = document.getElementById('agree-check-wrap');
+  const lockHint = document.getElementById('agree-lock-hint');
+  const unlockHint = document.getElementById('agree-unlock-hint');
+  if (allChecked) {
+    wrap.classList.remove('locked');
+    if (lockHint) lockHint.style.display = 'none';
+    if (unlockHint) unlockHint.style.display = '';
+  } else {
+    wrap.classList.add('locked');
+    const remaining = Array.from(boxes).filter(b => !b.checked).length;
+    if (lockHint) { lockHint.style.display = ''; lockHint.textContent = `${remaining} section${remaining !== 1 ? 's' : ''} left to check.`; }
+    if (unlockHint) unlockHint.style.display = 'none';
+    // uncheck main agree if items get unchecked
+    const cb = document.getElementById('agree-checkbox');
+    if (cb) { cb.checked = false; document.getElementById('agree-check-wrap').classList.remove('checked'); checkReady(); }
+  }
+}
+
+// ── CHECKBOX ──
+function toggleCheck(e) {
+  const cb = document.getElementById('agree-checkbox');
+  const wrap = document.getElementById('agree-check-wrap');
+  // If user clicked the checkbox itself, browser already toggled it — don't flip again
+  if (!e || e.target !== cb) cb.checked = !cb.checked;
+  wrap.classList.toggle('checked', cb.checked);
+  checkReady();
+}
+
+// ── SETUP PAYMENT METHODS ──
+(function setupPayMethods() {
+  const fmtAmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const noFee = noFeeTotal > 0 ? noFeeTotal : total;
+  const noFeeLabel = `${fmtAmt(noFee)} — no fee`;
+
+  // Credit Card (Square)
+  if (payUrl) {
+    document.getElementById('pm-cc-card').style.display = '';
+    document.getElementById('pm-cc-btn').href = payUrl;
+    document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
+  }
+
+  // Venmo
+  document.getElementById('pm-v-amount').textContent = noFeeLabel;
+  document.getElementById('pm-v-btn').href = `https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${noFee.toFixed(2)}&note=213+Harper+Stay`;
+
+  // Cash App
+  document.getElementById('pm-ca-amount').textContent = noFeeLabel;
+  document.getElementById('pm-ca-btn').href = `https://cash.app/$dubblejay31/${noFee.toFixed(2)}`;
+
+  // Zelle
+  document.getElementById('pm-z-amount').textContent = noFeeLabel;
+
+  // Cash
+  if (cashMode) {
+    document.getElementById('pm-cash-section').style.display = '';
+    const cashDiscPct = noFee > 0 ? (cashDisc / noFee * 100) : 0;
+    // Discount badge — show both $ and %
+    if (cashDisc > 0) {
+      const badge = document.getElementById('pm-cash-disc-badge');
+      badge.textContent = `Save ${fmtAmt(cashDisc)}`;
+      badge.style.display = '';
+      document.getElementById('pm-cash-amount').innerHTML = `${fmtAmt(cashTotal)} &nbsp;<span style="text-decoration:line-through;opacity:.5;font-weight:400;font-size:.85em;">${fmtAmt(noFee)}</span>`;
+      document.getElementById('pm-cash-note').innerHTML = `Pay 100% cash at check-in &mdash; save ${fmtAmt(cashDisc)} vs. paying by card`;
+    } else {
+      document.getElementById('pm-cash-amount').textContent = fmtAmt(cashTotal);
+      document.getElementById('pm-cash-note').textContent = 'Click "Choose Cash →" below for details on the process';
+    }
+    // Zero-deposit: auto-expand the cash section — no deposit payment step needed
+    if (cashDep === 0) {
+      document.getElementById('pm-cash-card').style.display = 'none';
+      const inner = document.getElementById('pm-cash-dep-inner');
+      const depSection = document.getElementById('pm-cash-dep-section');
+      if (inner) inner.innerHTML =
+        `<div style="font-size:.88rem;font-weight:700;color:#15803d;margin-bottom:.5rem;">💵 No Deposit Required</div>` +
+        `<p style="font-size:.84rem;color:#1f2937;margin:0 0 .5rem;">Pay <strong>${fmtAmt(cashTotal)}</strong> in cash at check-in.` +
+        (cashDisc > 0 ? ` Your ${fmtAmt(cashDisc)} (${cashDiscPct.toFixed(1)}%) cash discount has already been applied.` : '') +
+        ` Coordinate arrival with Jesse.</p>`;
+      if (depSection) depSection.style.display = '';
+    }
+  }
+})();
+
+// ── ENABLE SUBMIT BUTTON WHEN READY ──
+function checkReady() {
+  const sigFirst = document.getElementById('sig-first').value.trim();
+  const sigLast  = document.getElementById('sig-last').value.trim();
+  const signed = sigFirst.length > 0 && sigLast.length > 0;
+  const checked = document.getElementById('agree-checkbox').checked;
+  const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
+  const btn = document.getElementById('submit-agree-btn');
+  if (!btn || btn.classList.contains('done')) return;
+  const ready = signed && checked && !expired;
+  btn.disabled = !ready;
+  btn.classList.toggle('ready', ready);
+}
+
+// ── SUBMIT AGREEMENT → SHOW POPUP ──
+function submitAgreement() {
+  if (_agreementSent) return;
+  const sigFirst = document.getElementById('sig-first').value.trim();
+  const sigLast  = document.getElementById('sig-last').value.trim();
+  if (!sigFirst || !sigLast) return;
+
+  const sigData = {
+    guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
+    signedName: (sigFirst + ' ' + sigLast).trim(),
+    signedAt: new Date().toISOString()
+  };
+  _agreementUrl = window.location.href
+    + '&signed=1'
+    + '&signame=' + encodeURIComponent(sigData.signedName)
+    + '&ts=' + encodeURIComponent(sigData.signedAt);
+  _agreementSent = true;
+
+  // Lock sig fields
+  document.getElementById('sig-first').disabled = true;
+  document.getElementById('sig-last').disabled = true;
+  document.getElementById('agree-checkbox').disabled = true;
+
+  // Update submit button
+  const btn = document.getElementById('submit-agree-btn');
+  btn.classList.remove('ready'); btn.classList.add('done');
+  btn.textContent = '✅ Agreement Submitted';
+
+  // Show confirmed block
+  const conf = document.getElementById('sig-confirmed');
+  const confText = document.getElementById('sig-confirmed-text');
+  if (confText) confText.innerHTML = `<strong>${sigFirst} ${sigLast}</strong><br/><span style="font-size:.8rem;color:#4b5563;">Signed ${new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'})}</span>`;
+  if (conf) conf.classList.add('show');
+  const printBtn = document.getElementById('print-agreement-btn');
+  if (printBtn) printBtn.style.display = '';
+
+  // Show overlay
+  document.getElementById('success-overlay').classList.add('show');
+}
+
+// ── CLOSE OVERLAY → UNLOCK PAYMENTS ──
+function unlockAndPay() {
+  document.getElementById('success-overlay').classList.remove('show');
+  document.getElementById('pay-methods').classList.remove('locked');
+  document.getElementById('pay-lock-banner').style.display = 'none';
+  document.getElementById('pay-unlock-banner').classList.add('show');
+  setTimeout(() => document.querySelector('.pay-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+// ── CHOOSE CASH → reveal deposit/no-deposit flow ──
+function chooseCash() {
+  const fmtAmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const noFee = noFeeTotal > 0 ? noFeeTotal : total;
+  const cashDiscPct = noFee > 0 && cashDisc > 0 ? (cashDisc / noFee * 100).toFixed(1) : 0;
+  const depSection = document.getElementById('pm-cash-dep-section');
+  const inner = document.getElementById('pm-cash-dep-inner');
+
+  let html = '';
+  if (cashDep > 0) {
+    const balance = cashTotal - cashDep;
+    html = `
+      <div style="font-size:.88rem;font-weight:700;color:#15803d;margin-bottom:.6rem;">🔐 Here's how cash works:</div>
+      <ol style="font-size:.84rem;color:#1f2937;line-height:1.7;margin:0 0 .75rem 1.1rem;padding:0;">
+        <li>Send a <strong>${fmtAmt(cashDep)} deposit now</strong> via Venmo, Cash App, or Zelle to hold your dates.</li>
+        <li>At check-in, pay <strong>${fmtAmt(cashTotal)} in cash</strong> (the full discounted amount).</li>
+        <li>Jesse will <strong>immediately refund your ${fmtAmt(cashDep)} deposit</strong> on the spot.</li>
+      </ol>
+      <p style="font-size:.8rem;color:#6b7280;margin:0 0 .75rem;">The deposit is just a hold — you pay nothing extra for it. The cash discount${cashDiscPct ? ` (${fmtAmt(cashDisc)} / ${cashDiscPct}%)` : ''} only applies when you pay 100% in cash.</p>
+      <div style="font-size:.8rem;font-weight:700;color:#15803d;margin-bottom:.4rem;">Send your ${fmtAmt(cashDep)} deposit now to unlock confirmation:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.4rem;">
+        <a href="https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${cashDep.toFixed(2)}&note=213+Harper+Deposit" class="pm-btn" style="font-size:.8rem;padding:.5rem .9rem;" target="_blank" rel="noopener" onclick="enableCashConfirm()">💙 Venmo ${fmtAmt(cashDep)}</a>
+        <a href="https://cash.app/$dubblejay31/${cashDep.toFixed(2)}" class="pm-btn" style="font-size:.8rem;padding:.5rem .9rem;background:#00c244;color:#000;" target="_blank" rel="noopener" onclick="enableCashConfirm()">💚 Cash App ${fmtAmt(cashDep)}</a>
+        <button class="pm-btn pm-btn-outline" style="font-size:.8rem;padding:.5rem .9rem;" onclick="copyZelleNum(this);enableCashConfirm()">🏦 Copy Zelle #</button>
+      </div>
+      <div style="font-size:.78rem;color:#6b7280;">Zelle: send to 910-599-8118 in your bank app</div>
+      <div style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid #d1fae5;">
+        <button onclick="enableCashConfirm()" style="background:none;border:1.5px solid #15803d;color:#15803d;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:600;cursor:pointer;width:100%;">✅ I've already sent my ${fmtAmt(cashDep)} deposit — confirm my spot</button>
+      </div>`;
+  } else {
+    html = `
+      <div style="font-size:.88rem;font-weight:700;color:#15803d;margin-bottom:.5rem;">💵 Cash payment selected</div>
+      <p style="font-size:.84rem;color:#1f2937;margin:0 0 .5rem;">Pay <strong>${fmtAmt(cashTotal)} in cash</strong> at check-in. Coordinate arrival with Jesse.${cashDiscPct ? `<br/>The ${fmtAmt(cashDisc)} (${cashDiscPct}%) discount applies when you pay 100% in cash.` : ''}</p>`;
+  }
+
+  inner.innerHTML = html;
+  depSection.style.display = '';
+  document.getElementById('pm-cash-card').style.opacity = '.5';
+  document.getElementById('pm-cash-choose-btn').disabled = true;
+  if (cashDep > 0) {
+    const confirmBtn = document.getElementById('pm-cash-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.textContent = `I confirm I have sent my ${fmtAmt(cashDep)} deposit and agree to the house rules and cancellation policy`;
+      confirmBtn.disabled = true; confirmBtn.style.opacity = '.4'; confirmBtn.style.cursor = 'not-allowed';
+    }
+  }
+}
+
+function enableCashConfirm() {
+  const btn = document.getElementById('pm-cash-confirm-btn');
+  if (!btn || !btn.disabled) return;
+  btn.disabled = false;
+  btn.style.opacity = '';
+  btn.style.cursor = '';
+}
+
+// ── CASH CONFIRM ──
+async function handleCashConfirm() {
+  document.getElementById('pm-cash-dep-section').innerHTML = `<div style="padding:.5rem 0;color:#16a34a;font-weight:700;font-size:.95rem;">✅ Confirmed — notifying Jesse…</div>`;
+  document.getElementById('pm-cash-card').style.display = 'none';
+  await _notifyJesse('Cash');
+  await _notifyGuest('Cash');
+  const inner = document.getElementById('pm-cash-dep-section');
+  if (inner) inner.innerHTML = `<div style="padding:.5rem 0;color:#16a34a;font-weight:700;font-size:.95rem;">✅ Jesse notified — use the button below to save or print your signed agreement.</div>`;
+  showBookingComplete();
+}
+
+function showBookingComplete() {
+  const fmtAmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  // Title
+  document.getElementById('bco-title').textContent = 'You\'re all set, ' + firstName + '!';
+  // Booking bar
+  const bar = document.getElementById('bco-bar');
+  bar.innerHTML = `
+    <div class="bco-bar-item"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
+    <div class="bco-bar-item"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
+    <div class="bco-bar-item"><span>Property</span><strong>${prop}</strong></div>
+    <div class="bco-bar-item"><span>Nights</span><strong>${nights}</strong></div>`;
+  // Deposit step (addresses Jesse's concern about incomplete payments)
+  const depStep = document.getElementById('bco-dep-step');
+  if (cashDep > 0) {
+    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will verify your <strong>${fmtAmt2(cashDep)} deposit</strong> and manually confirm your booking. <strong>Your dates are not blocked until Jesse approves.</strong></span>`;
+  } else {
+    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will review your request and manually confirm your booking. <strong>Your dates are not blocked until Jesse approves.</strong></span>`;
+  }
+  // Agreement link
+  document.getElementById('bco-agreement-link').href = _agreementUrl || window.location.href;
+  // Show overlay
+  document.getElementById('bco-overlay').classList.add('show');
+}
+
+// ── BOOKING CONFIRMATION EMAIL ──
+async function _sendAgreementCopy(sigData) {
+  try {
+    const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const signedAt = new Date(sigData.signedAt).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+    const noFee = sigData.noFeeTotal || sigData.total;
+    const bookUrl = sigData.bookUrl || '';
+
+    const ROW = (label, val, bg) =>
+      `<tr><td bgcolor="${bg}" style="padding:9px 14px;color:#666;width:150px;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:${bg};">${label}</td>` +
+      `<td bgcolor="${bg}" style="padding:9px 14px;color:#0a1f3a;font-weight:600;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:${bg};">${val}</td></tr>`;
+
+    const RULEROW = (title, body) =>
+      `<tr><td bgcolor="#f9f6f0" style="padding:12px 14px 0;font-size:11px;font-weight:700;letter-spacing:.09em;color:#0a1f3a;text-transform:uppercase;border-top:1px solid #e8e3d8;font-family:Arial,Helvetica,sans-serif;background-color:#f9f6f0;">${title}</td></tr>` +
+      `<tr><td bgcolor="#f9f6f0" style="padding:4px 14px 12px;font-size:13px;color:#333;line-height:1.7;font-family:Arial,Helvetica,sans-serif;background-color:#f9f6f0;">${body}</td></tr>`;
+
+    const cashBlock = sigData.cashMode ? (() => {
+      const ct  = sigData.cashTotal || noFee;
+      const dep = sigData.cashDep  || 0;
+      const disc = sigData.cashDisc || 0;
+      const discPct = noFee > 0 && disc > 0 ? (disc / noFee * 100).toFixed(1) : 0;
+      const depPct  = ct   > 0 && dep  > 0 ? Math.round(dep / ct * 100) : 0;
+      return `
+      <tr><td height="6" style="font-size:1px;">&nbsp;</td></tr>
+      <tr><td bgcolor="#166534" style="padding:12px 16px;background-color:#166534;font-family:Arial,Helvetica,sans-serif;">
+        <strong style="font-size:13px;color:#ffffff;">💵 Cash${disc > 0 ? ` &mdash; <span style="color:#4ade80;">Save ${fmt2(disc)}</span>` : ''}</strong><br/>
+        <span style="font-size:12px;color:rgba(255,255,255,.85);">Cash price: <strong style="color:#ffffff;">${fmt2(ct)}</strong>${disc > 0 ? ` &nbsp;<span style="text-decoration:line-through;opacity:.55;color:rgba(255,255,255,.65);">${fmt2(noFee)}</span>` : ''}</span>
+        ${dep > 0
+          ? `<br/><span style="font-size:12px;color:rgba(255,255,255,.85);">Deposit now: <strong style="color:#4ade80;">${fmt2(dep)}</strong><span style="color:rgba(255,255,255,.6);font-size:11px;"> (${depPct}%)</span> via Venmo / Cash App / Zelle &nbsp;&middot;&nbsp; Balance at check-in: <strong style="color:#ffffff;">${fmt2(ct - dep)}</strong></span>`
+          : `<br/><span style="font-size:12px;color:rgba(255,255,255,.7);">Click for details on the cash payment process</span>`}
+      </td></tr>
+      ${dep > 0 ? `
+      <tr><td style="padding:4px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="padding-right:3px;width:50%;"><a href="https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${dep.toFixed(2)}&note=213+Harper+Deposit" style="display:block;background:#0a6dcd;color:#ffffff;padding:10px 12px;text-decoration:none;font-size:12px;font-weight:700;text-align:center;font-family:Arial,Helvetica,sans-serif;">💙 Venmo Deposit ${fmt2(dep)}</a></td>
+          <td style="padding-left:3px;width:50%;"><a href="https://cash.app/$dubblejay31/${dep.toFixed(2)}" style="display:block;background:#00c244;color:#000000;padding:10px 12px;text-decoration:none;font-size:12px;font-weight:700;text-align:center;font-family:Arial,Helvetica,sans-serif;">💚 Cash App Deposit ${fmt2(dep)}</a></td>
+        </tr></table>
+        <p style="margin:4px 0 0;font-size:11px;color:#555;font-family:Arial,Helvetica,sans-serif;">Or Zelle: send <strong>${fmt2(dep)}</strong> to 910-599-8118 &nbsp;&middot;&nbsp; Balance at check-in: <strong>${fmt2(ct - dep)}</strong></p>
+      </td></tr>` : ''}`;
+    })() : '';
+
+    const html =
+`<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2ede3"><tr><td align="center" bgcolor="#f2ede3" style="padding:24px 16px;background-color:#f2ede3;">
+<table width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:600px;">
+
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d">
+    <tr><td align="center" bgcolor="#0f1e3d" style="padding:32px 32px 24px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
+      <table cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr><td width="80" height="80" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:40px;">
+          <table cellpadding="0" cellspacing="0" border="0" align="center">
+            <tr><td width="70" height="70" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:35px;">
+              <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" height="58" width="58" alt="" style="display:block;border-radius:50%;object-fit:contain;"/>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+      <br/><span style="color:#c9922a;font-size:22px;font-weight:700;letter-spacing:.06em;font-family:Georgia,'Times New Roman',serif;">The Heart Of CB</span><br/>
+      <span style="color:rgba(255,255,255,.45);font-size:10px;letter-spacing:.14em;font-family:Arial,Helvetica,sans-serif;">CAROLINA BEACH, NC</span>
+      <br/><br/>
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center" style="border-top:1px solid rgba(184,136,42,.4);padding-top:18px;">
+          <span style="color:#ffffff;font-size:26px;font-weight:700;font-family:Georgia,'Times New Roman',serif;">Booking Confirmation</span><br/>
+          <span style="color:rgba(255,255,255,.55);font-size:13px;font-family:Arial,Helvetica,sans-serif;">213 Harper Avenue &nbsp;&middot;&nbsp; Front Unit &nbsp;&middot;&nbsp; Carolina Beach, NC</span>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td bgcolor="#b8882a" height="4" style="background-color:#b8882a;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+  </table>
+</td></tr>
+
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#166534">
+    <tr><td align="center" bgcolor="#166534" style="padding:18px 24px;background-color:#166534;font-family:Arial,Helvetica,sans-serif;">
+      <strong style="color:#ffffff;font-size:18px;letter-spacing:.02em;">✅ YOU'RE OFFICIALLY CONFIRMED!</strong><br/>
+      <span style="color:rgba(255,255,255,.85);font-size:13px;font-family:Arial,Helvetica,sans-serif;">Your booking is secured and your dates are locked in. See you soon!</span>
+    </td></tr>
+  </table>
+</td></tr>
+<tr><td bgcolor="#b8882a" height="3" style="background-color:#b8882a;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+
+<tr><td style="padding:28px 28px 0;font-family:Arial,Helvetica,sans-serif;">
+
+  <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;color:#b8882a;font-family:Arial,Helvetica,sans-serif;">BOOKING SUMMARY</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+    ${ROW('Guest', sigData.guest, '#f9f6f0')}
+    ${ROW('Property', '213 Harper Ave, Front Unit &middot; Carolina Beach, NC', '#f2ede3')}
+    ${ROW('Check-In', fmtDate(sigData.ci) + ' at 3:00 PM', '#f9f6f0')}
+    ${ROW('Check-Out', fmtDate(sigData.co) + ' at 11:00 AM', '#f2ede3')}
+    ${ROW('Nights', String(sigData.nights), '#f9f6f0')}
+    ${sigData.paymentMethod ? ROW('Payment via', sigData.paymentMethod, '#f2ede3') : ''}
+    <tr>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">Total Received</td>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(sigData.total)}</td>
+    </tr>
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d" style="margin-bottom:12px;">
+    <tr><td bgcolor="#0f1e3d" style="padding:14px 18px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
+      <span style="color:#b8882a;font-size:10px;font-weight:700;letter-spacing:.12em;">ELECTRONIC SIGNATURE ON FILE</span><br/><br/>
+      <span style="color:#ffffff;font-size:17px;font-family:Georgia,serif;font-style:italic;">${sigData.signedName}</span><br/>
+      <span style="color:#c8b99a;font-size:11px;font-family:Arial,Helvetica,sans-serif;">Signed: ${signedAt} &nbsp;&middot;&nbsp; Agreement becomes binding upon receipt of payment</span>
+    </td></tr>
+  </table>
+
+  ${bookUrl ? `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+    <tr><td align="center" style="padding:4px 0 2px;font-family:Arial,Helvetica,sans-serif;">
+      <a href="${bookUrl}" style="display:inline-block;background:#f2ede3;color:#0a1f3a;padding:9px 22px;text-decoration:none;font-size:12px;font-weight:700;font-family:Arial,Helvetica,sans-serif;border:1.5px solid #b8882a;">📄 View &amp; Print Your Signed Agreement</a>
+    </td></tr>
+    <tr><td align="center" style="font-size:11px;color:#999;font-family:Arial,Helvetica,sans-serif;padding-top:4px;">Open link in browser &rarr; use Print / Ctrl+P to save as PDF</td></tr>
+  </table>` : ''}
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fff5f5" style="margin-bottom:20px;">
+    <tr><td bgcolor="#fff5f5" style="padding:14px 16px;border-left:4px solid #7c1d1d;background-color:#fff5f5;font-family:Arial,Helvetica,sans-serif;">
+      <strong style="font-size:12px;color:#7c1d1d;">⚠️ CANCELLATION POLICY &mdash; STRICTLY ENFORCED</strong><br/><br/>
+      <span style="font-size:12px;color:#333;line-height:1.75;font-family:Arial,Helvetica,sans-serif;">
+        ${(() => { const cd = _cancelDates(sigData.ci); return cd
+          ? `<strong>Cancel by ${cd.fullBy}:</strong> Full refund.<br/><strong>Cancel ${cd.halfStart}&ndash;${cd.halfEnd}:</strong> 50% refund.<br/><strong>${cd.ciFormatted} (check-in day): Cancellation not accepted &mdash; no refund, no exceptions.</strong>`
+          : `<strong>5+ days before check-in:</strong> Full refund.<br/><strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/><strong>Same-day cancellation: Not accepted &mdash; no refund, no exceptions.</strong>`; })()}${sigData.cashMode ? ' For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.' : ''}<br/><br/>
+        <strong>Only two exceptions:</strong> (1) Written approval from Jesse issued in advance, or (2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" style="color:#7c1d1d;">Major Disruptive Events Policy</a> is officially activated for your dates and location.<br/><br/>
+        Personal reasons and weather in your origin area are <strong>not</strong> covered. If it is safe to travel and the property is available, the policy applies in full.
+      </span>
+    </td></tr>
+  </table>
+
+  <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;color:#b8882a;font-family:Arial,Helvetica,sans-serif;">CHECK-IN DETAILS</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+    ${ROW('Check-In Time', '3:00 PM', '#f9f6f0')}
+    <tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#666;width:150px;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:#f2ede3;">Check-Out Time</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#7c1d1d;font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:#f2ede3;">11:00 AM SHARP</td></tr>
+    ${ROW('Entry', 'FRONT DOOR ONLY', '#f9f6f0')}
+    ${ROW('Door Code', 'Last 4 digits of the phone number provided at booking', '#f2ede3')}
+    ${ROW('WiFi', 'Details posted in unit', '#f9f6f0')}
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#b8882a" style="margin-bottom:20px;">
+    <tr><td bgcolor="#b8882a" align="center" style="padding:18px 20px;background-color:#b8882a;font-family:Arial,Helvetica,sans-serif;text-align:center;">
+      <strong style="color:#ffffff;font-size:16px;">📍 PLEASE COMMUNICATE YOUR ETA</strong><br/><br/>
+      <span style="color:#fff;font-size:13px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">Text Jesse when you know your approximate arrival time &mdash; even a rough estimate helps. Please do this as early as possible!</span><br/><br/>
+      <a href="sms:9105998118" style="display:inline-block;background:#ffffff;color:#b8882a;padding:9px 24px;text-decoration:none;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">📱 Text Jesse: (910) 599-8118</a>
+    </td></tr>
+  </table>
+
+  <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;color:#b8882a;font-family:Arial,Helvetica,sans-serif;">CONTACTS</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+    ${ROW('Your Host &mdash; Jesse', '(910) 599-8118 &middot; Text or call anytime', '#f9f6f0')}
+    ${ROW('Emergency Contact', 'Alison Baringer &mdash; (330) 309-7037 &middot; Also posted in unit', '#f2ede3')}
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d" style="margin-bottom:24px;">
+    <tr><td bgcolor="#0f1e3d" align="center" style="padding:18px 20px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;text-align:center;">
+      <strong style="color:#b8882a;font-size:15px;">📣 PLEASE FORWARD THIS EMAIL TO YOUR ENTIRE GROUP</strong><br/><br/>
+      <span style="color:#ffffff;font-size:13px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">All guests are bound by these rules whether or not they have personally read them. As the reservation holder, <strong style="color:#b8882a;">you are responsible for your entire group.</strong></span>
+    </td></tr>
+  </table>
+
+</td></tr>
+
+<tr><td bgcolor="#f9f6f0" style="padding:24px 28px 0;background-color:#f9f6f0;font-family:Arial,Helvetica,sans-serif;">
+  <p style="margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#0a1f3a;border-top:3px solid #b8882a;padding-top:14px;font-family:Arial,Helvetica,sans-serif;">🚩 KEY HOUSE RULES — QUICK GLANCE</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td bgcolor="#f9f6f0" style="padding:6px 14px 14px;font-size:13px;color:#333;line-height:2;background-color:#f9f6f0;font-family:Arial,Helvetica,sans-serif;">
+      &#8226; Max 6 guests, 2 dogs &mdash; no exceptions<br/>
+      &#8226; No parties, events, or outside gatherings &mdash; <strong>$500 fee &amp; immediate cancellation</strong><br/>
+      &#8226; Quiet hours: <strong>10:00 PM &ndash; 9:00 AM</strong> &mdash; walls are shared, be considerate<br/>
+      &#8226; No smoking inside &mdash; <strong>$500 fee.</strong> Front porch only, door closed.<br/>
+      &#8226; White towels for people only &mdash; no pets, beach, or spills<br/>
+      &#8226; Checkout: <strong>11:00 AM SHARP</strong> &mdash; text Jesse when you leave<br/>
+      &#8226; Guests remain responsible for all actual damages, repair, and remediation costs, including any that exceed the amounts of listed violation fees.
+    </td></tr>
+  </table>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+    <tr><td align="center" style="padding-bottom:4px;">
+      <a href="https://theheartofcb.com/house-rules.html" style="display:inline-block;background:#0a1f3a;color:#ffffff;padding:13px 32px;text-decoration:none;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;letter-spacing:.03em;">📋 VIEW COMPLETE HOUSE RULES &rarr;</a>
+    </td></tr>
+    <tr><td align="center" style="font-size:11px;color:#999;font-family:Arial,Helvetica,sans-serif;">Please read in full and share with your entire group before arriving</td></tr>
+  </table>
+</td></tr>
+
+<tr><td style="padding:20px 28px 0;font-family:Arial,Helvetica,sans-serif;">
+  <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#0a1f3a;border-top:3px solid #b8882a;padding-top:14px;font-family:Arial,Helvetica,sans-serif;">CHECKOUT INSTRUCTIONS</p>
+  <p style="margin:0 0 12px;font-size:12px;color:#7c1d1d;font-weight:700;font-family:Arial,Helvetica,sans-serif;">Checkout Time: 11:00 AM SHARP</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f9f6f0" style="margin-bottom:24px;">
+    <tr><td bgcolor="#f9f6f0" style="padding:14px 16px;font-size:13px;color:#333;line-height:1.9;background-color:#f9f6f0;font-family:Arial,Helvetica,sans-serif;">
+      &#10003; Do not strip bed &mdash; straighten sheets, blankets not balled up<br/>
+      &#10003; Leave used towels in the bathroom<br/>
+      &#10003; Wash used dishes<br/>
+      &#10003; Remove all food and drinks from the refrigerator<br/>
+      &#10003; Wipe up spills, pick up trash, return items where they belong<br/>
+      &#10003; Take kitchen and bathroom trash to the outdoor cans under the front stairs<br/>
+      &#10003; Do a final walk-through &mdash; make sure nothing is left behind<br/>
+      <strong>&#10003; TEXT JESSE WHEN YOU LEAVE: (910) 599-8118</strong><br/><br/>
+      <span style="font-size:12px;color:#666;font-family:Arial,Helvetica,sans-serif;">If leaving early, please let Jesse know so cleaning can be planned.</span>
+    </td></tr>
+  </table>
+</td></tr>
+
+<tr><td align="center" style="padding:20px 28px 28px;font-family:Arial,Helvetica,sans-serif;border-top:1px solid #e8e3d8;">
+  <p style="font-size:14px;color:#444;font-style:italic;margin:0 0 12px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">I work hard to keep this home in excellent condition for all guests. My goal is to give every guest a 5-star experience. If anything isn&rsquo;t perfect, reach out right away so I can fix it. I hope you LOVE your stay!</p>
+  <p style="font-size:14px;font-weight:700;color:#0a1f3a;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;">Jesse &amp; Family</p>
+  <p style="font-size:13px;color:#666;margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;">(910) 599-8118 &middot; Text or call anytime</p>
+  <p style="font-size:13px;color:#666;margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;">213 Harper Ave &middot; Carolina Beach, NC 28428</p>
+  <p style="font-size:11px;color:#999;margin:0;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
+</td></tr>
+
+</table></td></tr></table>`;
+
+    const _emailResp = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: [sigData.email],
+        subject: `🎉 You're Confirmed! — 213 Harper Avenue | ${fmtDate(sigData.ci)} – ${fmtDate(sigData.co)}`,
+        html
+      })
+    });
+    if (!_emailResp.ok) throw new Error(await _emailResp.text());
+  } catch(err) { console.error('Booking confirmation email failed:', err); }
+}
+
+// ── HANDLE PAYMENT METHOD CLICK ──
+// Agreement email is sent in submitAgreement() — this just guards against expired bookings
+let _agreementSent = false;
+let _agreementUrl = '';
+function handlePayClick(method, e) {
+  const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
+  if (expired) { if (e) e.preventDefault(); return false; }
+  _showPaymentSentSection(method);
+  // Let the <a href target="_blank"> navigate naturally
+}
+
+function copyZelleNum(btn) {
+  navigator.clipboard.writeText('910-599-8118').then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+    _showPaymentSentSection('Zelle');
+  });
+}
+
+function _showPaymentSentSection(method) {
+  const section = document.getElementById('pm-sent-section');
+  const btn = document.getElementById('pm-sent-btn');
+  if (!section || !btn) return;
+  const fmtL = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const amt = fmtL(noFeeTotal > 0 ? noFeeTotal : (total > 0 ? total : 0));
+  const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash' };
+  const methodLabel = names[method] || method;
+  btn.textContent = `✅ I've sent ${amt} via ${methodLabel} — I agree to the rules & cancellation policy — notify Jesse`;
+  btn.dataset.method = method;
+  section.style.display = '';
+  // Move green box to directly after the selected payment method card
+  const cardMap = { venmo: 'pm-venmo-card', cashapp: 'pm-cashapp-card', square: 'pm-cc-card', Zelle: 'pm-zelle-card' };
+  const cardId = cardMap[method];
+  const card = cardId ? document.getElementById(cardId) : null;
+  if (card && card.parentNode) {
+    card.parentNode.insertBefore(section, card.nextSibling);
+  }
+  setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200);
+}
+
+async function _confirmPaymentSent() {
+  const btn = document.getElementById('pm-sent-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Notifying Jesse…'; }
+  const method = btn ? btn.dataset.method || 'Unknown' : 'Unknown';
+  await _notifyJesse(method);
+  await _notifyGuest(method);
+  if (btn) { btn.textContent = '✅ Jesse notified — you\'ll hear back shortly'; btn.style.background = '#166534'; }
+  showBookingComplete();
+}
+
+async function _notifyGuest(method) {
+  if (!email) return;
+  try {
+    const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const methodLabel = names[method] || method;
+    await emailjs.send('service_y5uftso', 'template_md3p13c', {
+      to_email: email,
+      name: firstName || guest,
+      email: email,
+      subject: `📋 Booking Request Received — ${prop} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+      html_body: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
+        <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
+          <strong style="font-size:16px;">📋 Booking Request Received</strong>
+        </div>
+        <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
+          <p style="margin:0 0 12px;font-size:14px;">Hi ${firstName || guest},</p>
+          <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing your payment and will send you an official confirmation shortly.</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
+            <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Total</td><td style="padding:5px 0;font-weight:700;">${fmt(total)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:600;color:#166534;">${methodLabel}</td></tr>
+          </table>
+          <p style="margin:0;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
+        </div>
+      </div>`
+    });
+  } catch(err) { console.error('Guest notification failed:', err); }
+}
+
+async function _notifyJesse(method) {
+  try {
+    const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const methodLabel = names[method] || method;
+    // Build confirm link — use agreement URL (has signame+ts) when available, otherwise current URL
+    const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
+    await emailjs.send('service_y5uftso', 'template_md3p13c', {
+      to_email: 'jessejonesrealestate@gmail.com',
+      name: 'Jesse',
+      email: 'jessejonesrealestate@gmail.com',
+      subject: `💰 Payment Sent — ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+      html_body: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
+        <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
+          <strong style="font-size:16px;">💰 Payment Sent — Verify &amp; Confirm</strong>
+        </div>
+        <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:5px 0;color:#666;width:120px;">Guest</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${guest}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Email</td><td style="padding:5px 0;">${email || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Phone</td><td style="padding:5px 0;">${phone || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Property</td><td style="padding:5px 0;font-weight:600;">${prop}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Total</td><td style="padding:5px 0;font-weight:700;">${fmt(total)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
+          </table>
+          <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
+            ⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.
+          </div>
+          <div style="margin-top:8px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
+            📅 <strong>Remember:</strong> Block these dates on your Airbnb calendar once payment is confirmed.
+          </div>
+          <div style="margin-top:14px;">
+            <a href="${baseConfirmUrl}" style="display:block;background:#16a34a;color:#fff;padding:14px 16px;text-decoration:none;font-size:14px;font-weight:700;text-align:center;border-radius:8px;">→ Open Admin to Send Confirmation</a>
+            <p style="margin:6px 0 0;font-size:11px;color:#999;text-align:center;">Opens the host confirmation page — click Send there to deliver the email to ${email || 'guest'}</p>
+          </div>
+          <p style="margin:14px 0 0;font-size:13px;color:#666;">View booking: <a href="${window.location.href}" style="color:#b8882a;">Open booking page →</a></p>
+        </div>
+      </div>`
+    });
+  } catch(err) { console.error('Jesse notification failed:', err); }
+}
+
+// ── ACTION=CONFIRM — Jesse one-click confirmation sender ──
+(function() {
+  if (get('action') !== 'confirm') return;
+  // Hide all regular booking UI
+  ['bk-hero', 'bk-main', 'agreement-print-view'].forEach(id => {
+    const el = document.getElementById(id) || document.querySelector('.' + id);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelector('.bk-hero') && (document.querySelector('.bk-hero').style.display = 'none');
+  document.querySelector('.bk-main') && (document.querySelector('.bk-main').style.display = 'none');
+
+  const sigName    = decodeURIComponent(get('signame') || '');
+  const sigTs      = get('ts') ? decodeURIComponent(get('ts')) : '';
+  const methodName = decodeURIComponent(get('method') || '');
+  const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  const div = document.createElement('div');
+  div.style.cssText = 'max-width:520px;margin:2.5rem auto;padding:0 1.25rem 3rem;font-family:Inter,sans-serif;';
+  div.innerHTML = `
+    <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:.5rem;">📬</div>
+      <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
+      <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${guest} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
+      ${methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
+        ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
+      </div>` : ''}
+      <div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
+        📅 <strong>Remember:</strong> Block these dates on your Airbnb calendar once payment is confirmed.
+      </div>
+      <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
+        <strong>This will send a full confirmation email to:</strong><br/>${email || '(no email on file)'}<br/><br/>
+        Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.
+      </div>
+      ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${sigName}</strong></div>` : ''}
+      <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
+        style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;">
+        ✅ Send Confirmation to ${guest.split(' ')[0]}
+      </button>
+      <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
+    </div>`;
+  document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+
+  window.sendGuestConfirmation = async function() {
+    const btn = document.getElementById('send-confirm-btn');
+    const status = document.getElementById('confirm-status');
+    if (!btn || btn.disabled) return;
+    btn.textContent = 'Sending…'; btn.disabled = true; btn.style.opacity = '.7';
+    try {
+      const bookUrl = window.location.href.replace(/&action=confirm/, '');
+      await _sendAgreementCopy({
+        guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
+        noFeeTotal, taxOcc, taxSales, ccFee,
+        cashMode, cashTotal, cashDep, cashDisc,
+        payUrl,
+        signedName: sigName,
+        signedAt: sigTs,
+        bookUrl,
+        paymentMethod: methodName,
+      });
+      btn.textContent = '✅ Confirmation Sent!';
+      btn.style.background = '#16a34a'; btn.style.opacity = '';
+      if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}</span>`;
+    } catch(err) {
+      btn.textContent = '✅ Send Confirmation to ' + guest.split(' ')[0];
+      btn.disabled = false; btn.style.opacity = '';
+      if (status) status.innerHTML = `<span style="color:#dc2626;">Send failed — check console</span>`;
+      console.error('Confirmation send failed:', err);
+    }
+  };
+})();
+
+// ── AGREEMENT PRINT VIEW ──
+(function() {
+  if (get('signed') !== '1') return;
+  if (get('action') === 'confirm') return; // confirm UI handled above
+  // Hide booking UI, show print view only
+  document.querySelector('.bk-hero') && (document.querySelector('.bk-hero').style.display = 'none');
+  document.querySelector('.bk-main') && (document.querySelector('.bk-main').style.display = 'none');
+  const view = document.getElementById('agreement-print-view');
+  if (!view) return;
+  view.style.display = 'block';
+  window.scrollTo({ top: 0 });
+
+  const sigName = decodeURIComponent(get('signame') || '');
+  const sigTs   = get('ts') ? new Date(decodeURIComponent(get('ts'))).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }) : '';
+  const fmtAmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // Booking summary
+  const sumEl = document.getElementById('apr-summary');
+  if (sumEl) sumEl.innerHTML = `
+    <div class="apr-si"><span>Guest</span><strong>${guest}</strong></div>
+    <div class="apr-si"><span>Property</span><strong>${prop}</strong></div>
+    <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
+    <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
+    <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
+    <div class="apr-si"><span>Total</span><strong>${fmtAmt2(total)}</strong></div>`;
+
+  // Cancellation policy (section 4)
+  const cancelEl = document.getElementById('apr-cancel');
+  if (cancelEl) {
+    const cd = _cancelDates(ciRaw);
+    if (cd) {
+      cancelEl.innerHTML =
+        `<strong>Cancel by ${cd.fullBy}:</strong> Full refund. ` +
+        `<strong>Cancel ${cd.halfStart}–${cd.halfEnd}:</strong> 50% refund. ` +
+        `<strong>${cd.ciFormatted} (check-in day): Not accepted — no refund.</strong> ` +
+        `For cash guests: deposit is non-refundable and you owe the remaining unpaid balance. ` +
+        `Only two exceptions: (1) Written approval from Jesse, or (2) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location.`;
+    } else {
+      cancelEl.innerHTML = `<strong>5+ days before check-in:</strong> Full refund. <strong>1–4 days:</strong> 50% refund. <strong>Same day:</strong> Not accepted — no refund.`;
+    }
+  }
+
+  // Signature block
+  const sigEl = document.getElementById('apr-sig');
+  if (sigEl) sigEl.innerHTML = `
+    <div class="sig-lbl">Electronic Signature</div>
+    <div class="sig-name">${sigName}</div>
+    <div class="sig-ts">Signed: ${sigTs} · Agreement becomes binding upon receipt of payment</div>`;
+})();
+</script>
+</body>
+</html>
+

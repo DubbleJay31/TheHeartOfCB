@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZHHWLTZX28"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-ZHHWLTZX28');
+  </script>
+  <link rel="icon" type="image/png" href="THOCB Pin NO BACKGROUND.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Heart Of CB — Direct Booking · Carolina Beach, NC</title>
+  <meta name="description" content="Three unique beach stays at 213 Harper Ave, Carolina Beach, NC. Book direct with Jesse — 7-year Superhost, 900+ reviews, best rate guaranteed. No platform fees." />
+  <meta property="og:title" content="The Heart Of CB — Direct Booking" />
+  <meta property="og:description" content="Three unique beach stays at one address in Carolina Beach. Book direct with a 7-year Superhost and skip the platform fees." />
+  <meta property="og:image" content="https://theheartofcb.com/THOCB%20Sign%20No%20Border.png" />
+  <meta property="og:url" content="https://theheartofcb.com" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The Heart Of CB — Direct Booking" />
+  <meta name="twitter:description" content="Three unique beach stays at one address in Carolina Beach. Book direct with a 7-year Superhost and skip the platform fees." />
+  <meta name="twitter:image" content="https://theheartofcb.com/THOCB%20Sign%20No%20Border.png" />
+  <link rel="canonical" href="https://theheartofcb.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="site-header" id="site-header">
+  <div class="nav-inner">
+    <a href="#" class="logo" onclick="showPage('home')">
+      <div class="pin-circle" style="width:140px;height:140px;">
+        <img src="THOCB Pin NO BACKGROUND.png" alt="The Heart Of CB" class="logo-pin" />
+      </div>
+    </a>
+    <nav class="main-nav">
+      <a href="#" onclick="showPage('home')">Home</a>
+      <a href="#" onclick="showPage('stay')">Stay</a>
+      <a href="#" onclick="showPage('shop')">Gear</a>
+      <a href="#" onclick="showPage('explore')">Explore</a>
+      <a href="#" onclick="showPage('consulting')">Consulting</a>
+      <a href="#" onclick="showPage('about')">About</a>
+    </nav>
+    <!-- Mobile inline nav (replaces hamburger) -->
+    <nav class="mobile-nav-inline">
+      <a href="#" onclick="showPage('stay')">Stay</a>
+      <a href="#" onclick="showPage('shop')">Gear</a>
+      <a href="#" onclick="showPage('explore')">Explore</a>
+      <a href="#" onclick="showPage('consulting')">Consult</a>
+      <div class="mobile-more-wrap">
+        <button class="mobile-more-btn" id="mobile-more-btn" aria-label="More" onclick="toggleMobileMore()">•••</button>
+        <div class="mobile-more-menu" id="mobile-more-menu">
+          <a href="#" onclick="showPage('home');closeMobileMore()">Home</a>
+          <a href="#" onclick="showPage('about');closeMobileMore()">About</a>
+        </div>
+      </div>
+    </nav>
+    <a href="#" class="btn-nav" onclick="showPage('stay')">Book Now!</a>
+    <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#" onclick="showPage('home');closeMobile()">Home</a>
+    <a href="#" onclick="showPage('stay');closeMobile()">Stay</a>
+    <a href="#" onclick="showPage('shop');closeMobile()">Gear</a>
+    <a href="#" onclick="showPage('explore');closeMobile()">Explore</a>
+    <a href="#" onclick="showPage('consulting');closeMobile()">Consulting</a>
+    <a href="#" onclick="showPage('about');closeMobile()">About</a>
+    <a href="#" class="btn-nav" onclick="showPage('stay');closeMobile()">Book Now!</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ══════════════════════════════════════
+     HOME
+══════════════════════════════════════ -->
+<section class="page active" id="page-home">
+
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-pattern"></div>
+    <div class="hero-content">
+      <div class="hero-logo-lockup">
+        <img src="THOCB Sign No Border.png" alt="The Heart Of CB" class="hero-logo-img" />
+      </div>
+      <div class="hero-divider"></div>
+      <h1>Three unique stays.<br>One incredible location.</h1>
+      <p class="hero-sub">Walk to everything, then unwind in your own private retreat.<br>Book direct — no platform fees, no middlemen.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="num">3</div><div class="label">Properties</div></div>
+        <div class="hero-stat"><div class="num">★ 4.99</div><div class="label">Avg Rating</div></div>
+        <div class="hero-stat"><div class="num">900+</div><div class="label">Reviews</div></div>
+        <div class="hero-stat"><div class="num">7+</div><div class="label">Yrs Superhost</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="perks-bar">
+    <div class="perk"><span class="perk-icon">🏆</span> Superhost · 7 Years</div>
+    <div class="perk"><span class="perk-icon">🔑</span> Self Check-In</div>
+    <div class="perk"><span class="perk-icon">🐾</span> Dog Friendly</div>
+    <div class="perk"><span class="perk-icon">🚭</span> No Smoking</div>
+    <div class="perk"><span class="perk-icon"><img src="THOCB Pin NO BACKGROUND.png" alt="" style="height:1.1em;vertical-align:middle;filter:none;"></span> 2 Blocks to Beach</div>
+  </div>
+
+  <!-- PROPERTIES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-label">213 Harper Ave, Carolina Beach, NC</span>
+      <h2 class="section-title">Three Stays. One Address.</h2>
+      <p class="section-sub">The main house sleeps 6 (+ 2 dogs) with 3 bedrooms. The two private back suites each sleep 2 (+ 1 dog). All on the same property — steps from the boardwalk and beach.</p>
+    </div>
+    <div class="home-tiles">
+
+      <!-- STAY -->
+      <div class="home-tile" onclick="showPage('stay')">
+        <div class="home-tile-media ht-navy">
+          <div class="pin-circle" style="width:110px;height:110px;">
+            <img src="THOCB Pin NO BACKGROUND.png" alt="The Heart Of CB" class="ht-pin" />
+          </div>
+        </div>
+        <div class="home-tile-body">
+          <div class="ht-title">STAY</div>
+          <p class="ht-desc">Three unique stays at 213 Harper Ave. Book direct and skip the Airbnb fees.</p>
+          <span class="ht-cta">See Availability →</span>
+        </div>
+      </div>
+
+      <!-- GEAR -->
+      <div class="home-tile" onclick="showPage('shop')">
+        <div class="home-tile-media ht-navy">
+          <div class="pin-circle" style="width:110px;height:110px;">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="62" height="62">
+              <path d="M18 10 L8 22 L18 28 L18 56 L46 56 L46 28 L56 22 L46 10 Q40 12 38 14 Q35 20 32 20 Q29 20 26 14 Q24 12 18 10 Z" stroke="#c9a84c" stroke-width="2" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+        </div>
+        <div class="home-tile-body">
+          <div class="ht-title">GEAR</div>
+          <p class="ht-desc">Official THOCB gear. Rep The Heart Of CB.</p>
+          <span class="ht-cta">Shop →</span>
+        </div>
+      </div>
+
+      <!-- EXPLORE -->
+      <div class="home-tile" onclick="showPage('explore')">
+        <div class="home-tile-media ht-navy">
+          <div class="pin-circle" style="width:110px;height:110px;">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="62" height="62">
+              <circle cx="32" cy="32" r="24" stroke="#c9a84c" stroke-width="2"/>
+              <polygon points="32,12 36,28 52,32 36,36 32,52 28,36 12,32 28,28" fill="#c9a84c" opacity=".9"/>
+              <circle cx="32" cy="32" r="3.5" fill="#14213d"/>
+            </svg>
+          </div>
+        </div>
+        <div class="home-tile-body">
+          <div class="ht-title">EXPLORE</div>
+          <p class="ht-desc">Your insider guide to The Heart Of CB — beaches, restaurants, and hidden gems worth knowing.</p>
+          <span class="ht-cta">Explore →</span>
+        </div>
+      </div>
+
+      <!-- CONSULTING -->
+      <div class="home-tile" onclick="showPage('consulting')">
+        <div class="home-tile-media ht-navy">
+          <div class="pin-circle" style="width:110px;height:110px;">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="62" height="62">
+              <rect x="8"  y="38" width="12" height="16" rx="2" fill="#c9a84c" opacity=".65"/>
+              <rect x="26" y="26" width="12" height="28" rx="2" fill="#c9a84c" opacity=".8"/>
+              <rect x="44" y="14" width="12" height="40" rx="2" fill="#c9a84c"/>
+              <line x1="6" y1="54" x2="58" y2="54" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="home-tile-body">
+          <div class="ht-title">CONSULTING</div>
+          <p class="ht-desc">Seven straight Superhost seasons. Book a session with Jesse and get the real playbook.</p>
+          <span class="ht-cta">Learn More →</span>
+        </div>
+      </div>
+
+    </div>
+    <!-- All 3 on Airbnb link -->
+    <div class="airbnb-strip">
+      <span>Also listed on <strong style="color:#FF5A5F">Airbnb</strong> — but you save the fees booking here.</span>
+      <a href="https://www.airbnb.com/users/profile/1469231363763843136" target="_blank" class="btn btn-sm" style="background:var(--sand);color:var(--navy);border:1px solid var(--border)">View on Airbnb ↗</a>
+    </div>
+  </div>
+
+  <!-- REAL REVIEWS -->
+  <div style="background:var(--sand)">
+    <div class="section" style="padding-top:4rem;padding-bottom:4rem">
+      <div class="section-header center">
+        <span class="section-label">Guest Reviews</span>
+        <h2 class="section-title">★ 4.99 · 900+ Reviews</h2>
+        <p class="section-sub">Superhost Jesse · 7 years hosting · Carolina Beach, NC</p>
+      </div>
+      <div class="reviews-grid">
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"Jesse's place was exactly what the doctor ordered. The space felt so clean without smelling like cleaner and had everything perfectly organized to make it feel like home."</p>
+          <span class="reviewer">Emily &nbsp;·&nbsp; San Diego, CA &nbsp;·&nbsp; April 2026</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"Clean, bigger than expected, great location — walkable to the boardwalk, great parking, nice patio. Great option for a weekend trip to the beach."</p>
+          <span class="reviewer">Clayton &nbsp;·&nbsp; Raleigh, NC &nbsp;·&nbsp; May 2026</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"We had such a wonderful stay! The place was spotless, cozy, and incredibly comfortable — especially the beds, which made it so easy to relax after long days out."</p>
+          <span class="reviewer">Jessica &nbsp;·&nbsp; Cameron, NC &nbsp;·&nbsp; May 2026</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"Great hosts! Shared property but this space felt completely like your own — really well insulated sound wise from the adjoining property."</p>
+          <span class="reviewer">Jenifer &nbsp;·&nbsp; Fletcher, NC &nbsp;·&nbsp; April 2026</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"Jesse was a great host! Great location. Beach and lots of restaurants and shops within walking distance. Very clean home — perfect spring break getaway."</p>
+          <span class="reviewer">Emily &nbsp;·&nbsp; 10 years on Airbnb &nbsp;·&nbsp; April 2026</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">"Jesse was a very accommodating and gracious host. The apartment was clean and spacious enough for our needs. There were even musical instruments we could use!"</p>
+          <span class="reviewer">Arika &nbsp;·&nbsp; 8 years on Airbnb &nbsp;·&nbsp; April 2026</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:2rem">
+        <a href="https://www.airbnb.com/users/show/1469231363763843136" target="_blank" class="btn btn-navy">Read All 900+ Reviews on Airbnb ↗</a>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════
+     PROPERTY 1 — HOME IN The Heart Of CB
+══════════════════════════════════════ -->
+<section class="page" id="page-prop1">
+  <div class="listing-hero">
+    <div class="listing-hero-inner">
+      <div class="listing-title-row">
+        <div>
+          <div class="listing-gf"><span>🏅</span> Guest Favorite</div>
+          <h1 class="listing-h1">(FRONT) Home in The Heart Of CB</h1>
+          <div class="listing-meta-row">
+            <span class="listing-stars">★ 4.98</span>
+            <a href="https://airbnb.com/h/213harper" target="_blank" class="listing-reviews-link">459+ reviews</a>
+            <span class="listing-dot">·</span>
+            <span>🏆 Superhost</span>
+            <span class="listing-dot">·</span>
+            <span>Carolina Beach, North Carolina</span>
+          </div>
+        </div>
+        <div class="listing-share-row">
+          <a href="https://airbnb.com/h/213harper" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy)">View on Airbnb ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY PROP SWITCHER + CHECK DATES BAR -->
+  <div class="listing-top-bar">
+    <div class="prop-switcher-inline">
+      <button class="prop-sw-btn active" onclick="showPage('prop1')">🏠 Front Home</button>
+      <button class="prop-sw-btn" onclick="showPage('prop2')">🛎️ Left Suite</button>
+      <button class="prop-sw-btn" onclick="showPage('prop3')">🛎️ Right Suite</button>
+    </div>
+    <div style="display:flex;gap:.5rem;pointer-events:auto;">
+      <button id="ltb-house-rules-prop1" class="btn btn-primary listing-check-dates-btn" onclick="scrollToHouseRules()">House Rules ↓</button>
+      <button id="ltb-check-dates-prop1" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop1-cal-wrap')">Check Dates ↓</button>
+    </div>
+  </div>
+
+  <!-- PHOTO GALLERY -->
+  <div class="prop-gallery" id="gallery-prop1"></div>
+
+  <!-- FULL-WIDTH CHECK DATES BAR -->
+  <div class="listing-cta-bar">
+    <div class="lcb-left">
+      <div class="lcb-rating">⭐ 4.98 · <a href="https://airbnb.com/h/213harper" target="_blank">459+ reviews</a></div>
+      <div class="lcb-text">No platform fees. Book direct with Jesse and save.</div>
+    </div>
+    <div class="lcb-right">
+      <button class="btn btn-primary lcb-btn" onclick="scrollToCalendar('prop1-cal-wrap')">Check Dates ↓</button>
+      <div class="lcb-nofee">💸 Save $</div>
+    </div>
+  </div>
+
+  <div class="listing-body">
+    <div class="listing-main">
+
+      <!-- SPECS -->
+      <div class="listing-specs-row">
+        <span>Entire home</span>
+        <span class="listing-dot">·</span>
+        <span>6 guests · 🐾 2 dogs</span>
+        <span class="listing-dot">·</span>
+        <span>3 bedrooms</span>
+        <span class="listing-dot">·</span>
+        <span>3 beds</span>
+        <span class="listing-dot">·</span>
+        <span>2 baths</span>
+      </div>
+
+      <!-- HIGHLIGHTS -->
+      <div class="listing-highlights">
+        <div class="highlight-item">
+          <div class="hi-icon">🏅</div>
+          <div><strong>Guest Favorite</strong><br><span>One of the most loved homes on Airbnb, according to guests.</span></div>
+        </div>
+        <div class="highlight-item">
+          <div class="hi-icon">🔑</div>
+          <div><strong>Self check-in</strong><br><span>Check yourself in with the smartlock.</span></div>
+        </div>
+        <div class="highlight-item">
+          <div class="hi-icon">🐾</div>
+          <div><strong>Dog friendly</strong><br><span>Bring your furry family members along.</span></div>
+        </div>
+      </div>
+
+      <!-- DESCRIPTION -->
+      <div class="listing-desc">
+        <h3>About this place</h3>
+        <p>NO FEES! Super clean & comfortable. Dog friendly. CENTRALLY LOCATED in CB's business district. ½ block to Lake Park. 2 short blocks to boardwalk & beach. Walk to everything. On-site parking for 2 vehicles plus free public parking nearby.</p>
+        <p>Back of house has 2 suites occupied by owner and/or other guests. NO SPACES SHARED.</p>
+        <p>I work hard to maintain a clean, peaceful place for respectful guests. Perfect for low-key beach stays with friends or family.</p>
+      </div>
+
+      <!-- WHERE YOU'LL SLEEP -->
+      <div class="listing-sleep">
+        <h3>Where you'll sleep</h3>
+        <div class="sleep-grid">
+          <div class="sleep-card">
+            <div class="sleep-img photo-slot">
+              <img class="sleep-hero-img" data-prop="front" data-tag="Master Bedroom" alt="Master Bedroom" />
+              <div class="photo-placeholder"></div>
+            </div>
+            <strong>Master Bedroom</strong>
+            <span>1 king bed</span>
+          </div>
+          <div class="sleep-card">
+            <div class="sleep-img photo-slot">
+              <img class="sleep-hero-img" data-prop="front" data-tag="Bed #2" alt="Bed #2" />
+              <div class="photo-placeholder"></div>
+            </div>
+            <strong>Bed #2</strong>
+            <span>1 king bed</span>
+          </div>
+          <div class="sleep-card">
+            <div class="sleep-img photo-slot">
+              <img class="sleep-hero-img" data-prop="front" data-tag="Bed #3" alt="Bed #3" />
+              <div class="photo-placeholder"></div>
+            </div>
+            <strong>Bed #3</strong>
+            <span>1 bed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AMENITIES -->
+      <div class="listing-amenities">
+        <h3>What this place offers</h3>
+        <div class="amenity-list">
+          <div class="amenity-item"><span class="am-icon">🏖️</span> Beach access</div>
+          <div class="amenity-item"><span class="am-icon">🍳</span> Kitchen</div>
+          <div class="amenity-item"><span class="am-icon">📶</span> Fast wifi — 293 Mbps</div>
+          <div class="amenity-item"><span class="am-icon">🚗</span> Free parking on premises</div>
+          <div class="amenity-item"><span class="am-icon">🐾</span> Pets allowed</div>
+          <div class="amenity-item"><span class="am-icon">📺</span> TV</div>
+          <div class="amenity-item"><span class="am-icon">👕</span> Free washer — in unit</div>
+          <div class="amenity-item"><span class="am-icon">🌀</span> Free dryer — in unit</div>
+          <div class="amenity-item"><span class="am-icon">❄️</span> Central air conditioning</div>
+          <div class="amenity-item"><span class="am-icon">📷</span> Exterior security cameras</div>
+        </div>
+        <a href="https://airbnb.com/h/213harper" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy);margin-top:1rem">Show all 59 amenities ↗</a>
+      </div>
+
+      <!-- LOCATION -->
+      <div class="listing-location">
+        <h3>Location</h3>
+        <p class="listing-location-addr">213 Harper Avenue · Carolina Beach, NC 28428</p>
+        <div class="listing-location-map">
+          <iframe src="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428&t=h&z=17&output=embed" width="100%" height="280" style="border:0;display:block;" allowfullscreen="" loading="lazy" title="213 Harper Ave, Carolina Beach NC"></iframe>
+        </div>
+        <ul class="listing-location-list">
+          <li>🏖️ 2 short blocks to the boardwalk &amp; beach</li>
+          <li>🌿 ½ block to Lake Park — bars, restaurants, nightlife &amp; the freshwater lake</li>
+          <li>🚗 On-site parking for 2 vehicles · Free public parking nearby</li>
+        </ul>
+        <a href="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428" target="_blank" rel="noopener" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy);margin-top:.5rem">Get directions ↗</a>
+      </div>
+
+      <!-- REVIEWS PREVIEW -->
+      <div class="listing-reviews">
+        <h3>★ 4.98 · 459+ reviews</h3>
+        <div class="review-cols">
+          <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p class="review-text">"Jesse's place was exactly what the doctor ordered. The space felt so clean and had everything perfectly organized to make it feel like home."</p>
+            <span class="reviewer">Emily · San Diego, CA · April 2026</span>
+          </div>
+          <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p class="review-text">"Clean, bigger than expected, great location. Walkable to the boardwalk, great parking, nice patio. Great option for a weekend trip to the beach."</p>
+            <span class="reviewer">Clayton · Raleigh, NC · May 2026</span>
+          </div>
+          <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p class="review-text">"We had such a wonderful stay! The place was spotless, cozy, and incredibly comfortable — especially the beds."</p>
+            <span class="reviewer">Jessica · Cameron, NC · May 2026</span>
+          </div>
+          <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p class="review-text">"Jesse was a great host! Great location. Beach and lots of restaurants and shops within walking distance. Very clean home."</p>
+            <span class="reviewer">Emily · 10 years on Airbnb · April 2026</span>
+          </div>
+        </div>
+        <a href="https://airbnb.com/h/213harper" target="_blank" class="btn btn-navy" style="margin-top:1.5rem">Show all 459+ reviews on Airbnb ↗</a>
+      </div>
+
+    </div>
+
+    <!-- BOOKING SIDEBAR -->
+    <div class="listing-sidebar">
+      <div class="booking-widget">
+        <a href="https://airbnb.com/h/213harper" target="_blank" class="bw-airbnb-link">Also available on Airbnb ↗</a>
+      </div>
+      <div class="bw-highlights-card">
+        <div class="bwh-item">🏅 Guest Favorite</div>
+        <div class="bwh-item">🔑 Self check-in</div>
+        <div class="bwh-item">🐾 Pets allowed</div>
+        <div class="bwh-item">🚗 Free parking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDEBOOK & HOUSE RULES -->
+  <div class="listing-guidebook-section">
+    <div class="lgb-header">
+      <span class="section-label">Guest Guidebook</span>
+      <h2>House Rules & Local Guide</h2>
+      <p>Everything you need to know before and during your stay.</p>
+    </div>
+
+    <div class="lgb-accordion">
+
+    <div class="lgb-acc-item" id="lgb-acc-rules">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('rules')">
+        <span>📋 House Rules</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-rules">
+      <div class="lgb-quickglance">
+        <strong>Quick Glance — Key Rules</strong>
+        <ul>
+          <li>Max 6 guests, 2 dogs — no exceptions</li>
+          <li>Quiet hours: 10:00 PM – 9:00 AM</li>
+          <li><strong>No parties, events, or outside visitors without approval</strong></li>
+          <li>No smoking inside — $500 fee. Front porch only, door closed.</li>
+          <li>No pets on furniture or bedding without your own covering</li>
+          <li>Dogs must be leashed outside at all times</li>
+          <li>Hose off sand outside before entering</li>
+          <li>White towels for people only — no dogs, beach, or spills</li>
+          <li>Report damage immediately — don't wait until checkout</li>
+          <li>Checkout 11:00 AM sharp · Exterior cameras on parking &amp; entrance</li>
+        </ul>
+      </div>
+      <a class="lgb-print-btn" href="house-rules.html" target="_blank">🖨️ Print / Save Full Rules</a>
+
+      <h4>Low-Key Stays Only</h4>
+      <p>This home is meant for relaxing beach stays, not parties. Please keep things low-key and respectful at all times. <strong>NOT allowed:</strong> Parties · Loud music · Roughhousing or horseplay · Heavy drinking or drug use · Beer pong / flip cup / drinking games · Rowdy or disruptive behavior. The back of the house has suites occupied by the owner and/or other guests — walls are shared. Neighbors are close too. Everyone's peace matters.</p>
+
+      <h4>Guest Limit</h4>
+      <p>Maximum occupancy: <strong>6 people and 2 dogs.</strong> No exceptions. Only registered guests and approved pets may be on the property. No booking for others under your account. You must be present for the entire stay if you made the reservation. No outside visitors without prior approval. Unauthorized guests: $150 per person per night.</p>
+
+      <h4>Quiet Hours</h4>
+      <p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> The house shares walls — be especially mindful after dark: walk softly, close doors gently, keep voices and music low. Any behavior that disturbs neighbors may result in immediate termination of the reservation without refund.</p>
+
+      <h4>No Parties or Events</h4>
+      <p>The property may not be used for parties, events, or gatherings beyond the stated occupancy. No outside guests without prior approval. Unauthorized parties or events: <strong>$500 fee and immediate cancellation without refund.</strong></p>
+
+      <h4>Smoking</h4>
+      <p>No smoking inside the home. Smoking is allowed on the front porch only, with the door closed. Dispose of cigarette butts in the container provided — not on the porch, yard, or driveway. <strong>$500 fee for smoking inside.</strong></p>
+
+      <h4>Pets</h4>
+      <p>Dogs are allowed — <strong>maximum 2 dogs.</strong> No cats, ferrets, or other animals (including service animals — due to a severe family allergy). Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Bring your own towels for your dogs. If allowing your dog on furniture or bedding, bring your own clean sheets/blankets. Do not use house towels on dogs. Do not bathe dogs inside the home. No puppy pads or going to the bathroom inside. Use a kennel if your dog may chew, scratch doors, or bark excessively when left alone. Guests are responsible for any damage caused by pets. Unauthorized pets: $100 per pet per night. Note: Thursday night and holiday fireworks are a summer tradition here — loud and frequent. If your dog is sensitive to fireworks, plan accordingly.</p>
+
+      <h4>Children</h4>
+      <p>Families with children are welcome. Parents must supervise at all times: no running inside the house, clean up messes promptly, notify Jesse immediately of any stains or spills.</p>
+
+      <h4>Neighborhood &amp; Outside</h4>
+      <p>My neighbors' peace matters most. Keep it low-key and respectful, and keep the outside spotless — no littering and no cigarette butts on the porch, lawn, or driveway.</p>
+
+      <h4>Carport &amp; Outside Areas</h4>
+      <p>The backyard and carport are private — do not hang out there. You may use the beach cart and store beach gear behind the sliding fence. Everything else behind the fence is off limits. Do not use the grill without asking first.</p>
+
+      <h4>Sand</h4>
+      <p>Hose off outside before coming in. Do not sit on wet or sandy couches or beds. Shake out beach items outside.</p>
+
+      <h4>Towels &amp; Bedding</h4>
+      <p>Use only what you need. White towels are for people only — no pets, beach, or spills. Laundry is one of the biggest challenges with hosting and your help is greatly appreciated.</p>
+
+      <h4>Washer &amp; Dryer</h4>
+      <p>Available if needed. Do not put heavily sandy items in the machines. Let sandy items dry outside and shake them out first.</p>
+
+      <h4>Damage</h4>
+      <p>Please notify Jesse immediately of any damage — do not wait until checkout. Most issues are easy to resolve when addressed quickly. I work very hard to keep this home in excellent condition for all guests.</p>
+
+      <h4>Cooking</h4>
+      <p>You are welcome to use the kitchen. Please avoid cooking foods that leave strong lingering odors (seafood boils, etc.). If you'd like to use the grill or seafood boiler outside, please ask first.</p>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks and summer holiday fireworks are a local tradition — but very loud. Typically 8:55 PM – 9:15 PM, Memorial Day through Labor Day. May upset dogs.</p>
+
+      <h4>Security Cameras</h4>
+      <p>Exterior security cameras monitor the parking area and staircase entrance for safety. There are NO cameras inside the home.</p>
+
+      <h4>Violation Fees</h4>
+      <ul>
+        <li>Unauthorized guests: <strong>$150 per person per night</strong></li>
+        <li>Unauthorized pets: <strong>$100 per pet per night</strong></li>
+        <li>Smoking inside: <strong>$500</strong></li>
+        <li>Unauthorized parties or events: <strong>$500 + immediate cancellation without refund</strong></li>
+        <li>Rule violation requiring host response: <strong>$150 per incident</strong></li>
+        <li>Excessive cleaning beyond normal turnover: <strong>$150</strong></li>
+      </ul>
+      <p style="font-size:.82rem;color:var(--muted);margin-top:.6rem;line-height:1.5;font-style:italic;">These are standard baseline amounts. You remain responsible for the full cost of any remediation, repair, or replacement that exceeds a listed fee.</p>
+    </div></div><!-- /lgb-acc-rules -->
+
+    <div class="lgb-acc-item" id="lgb-acc-cancel">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('cancel')">
+        <span>📅 Cancellation</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-cancel">
+
+      <div style="background:var(--navy);border-radius:var(--radius);padding:1.4rem 1.6rem 1rem;margin-bottom:1.4rem;">
+        <p style="color:#c8d8f0;margin:0 0 .25rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Cancellation Policy</p>
+        <p style="color:var(--white);font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin:0 0 .6rem;">Know your refund window before you book.</p>
+        <p style="color:#bcd;font-size:.88rem;margin:0;line-height:1.6;">This property follows the <strong style="color:#fff;">Airbnb Moderate Cancellation Policy.</strong> The chart below shows exactly what applies, and the calculator lets you look up your specific dates.</p>
+      </div>
+
+      <!-- Refund Chart -->
+      <div style="display:grid;gap:.7rem;margin-bottom:1.6rem;">
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#15603a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#f0f9f4;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#15603a;font-size:.95rem;">5 or more days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancel at least 5 days ahead and you get everything back.</div>
+              </div>
+              <div style="background:#15603a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">Full refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#b8882a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fdf8ee;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#8a6010;font-size:.95rem;">1–4 days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Less than 5 days out, you'll receive half your accommodation cost back.</div>
+              </div>
+              <div style="background:#b8882a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">50% refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#9b1c1c;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fef2f2;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#9b1c1c;font-size:.95rem;">Same day (check-in day)</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancellations on your check-in day are not accepted — no refund, no exceptions. Cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.</div>
+              </div>
+              <div style="background:#9b1c1c;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">No refund</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Day-of-week reference chart -->
+      <div style="margin-bottom:1.6rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.7rem;font-size:.92rem;text-transform:uppercase;letter-spacing:.06em;">Quick Reference — Last Day to Cancel by Check-In Day</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.86rem;min-width:280px;">
+            <thead>
+              <tr style="background:var(--navy);color:var(--white);">
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;border-radius:var(--radius-sm) 0 0 0;">Your Check-In Day</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:var(--gold-light);">Last Day to Cancel — Full Refund</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:#f0d0a0;border-radius:0 var(--radius-sm) 0 0;">Last Day — 50% Refund</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Sunday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Tuesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Saturday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Monday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Wednesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Sunday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Tuesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Thursday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Monday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Wednesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Friday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Tuesday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Thursday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Saturday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Wednesday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Friday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Sunday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Thursday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Saturday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Monday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Friday</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:.78rem;color:#888;margin:.5rem 0 0 .2rem;">"Prior week" means last week relative to your check-in week. The 50% window runs from the day after the full-refund cutoff through the day before check-in.</p>
+      </div>
+
+      <!-- Date Calculator -->
+      <div style="background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem 1.4rem 1.4rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
+        <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
+        <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
+          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <input type="date" id="cancel-calc-date" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
+        </div>
+        <div id="cancel-calc-result" style="margin-top:1rem;display:none;">
+          <div id="ccr-full"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#f0f9f4;border-left:4px solid #15603a;font-size:.88rem;color:#15603a;"></div>
+          <div id="ccr-half"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fdf8ee;border-left:4px solid #b8882a;font-size:.88rem;color:#8a6010;"></div>
+          <div id="ccr-none"  style="padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.88rem;color:#9b1c1c;"></div>
+        </div>
+      </div>
+
+      <!-- Exceptions note -->
+      <div style="margin-top:1.2rem;padding:.9rem 1.1rem;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#555;line-height:1.65;">
+        <strong style="color:var(--navy);">Only two exceptions apply:</strong>
+        (1) Written approval from Jesse issued in advance, or
+        (2) Airbnb's <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600;">Major Disruptive Events Policy (MDEP) ↗</a> is officially activated for your specific dates and location.
+        Personal reasons and weather in your area of origin are not covered — if it is safe to travel and the property is available, the policy applies in full.
+      </div>
+
+      <!-- Rebook good-faith note -->
+      <div style="margin-top:1rem;padding:1rem 1.1rem 1.1rem;background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#444;line-height:1.7;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.5rem;font-size:.88rem;">🔄 If You Cancel — I Will Try to Rebook</div>
+        If you cancel, I will make every effort to rebook your dates. The sooner you cancel, the more time I have to find a new guest — early cancellations give me the best chance of recovering your nights. Here is how a successful rebook affects your refund:
+        <ul style="margin:.55rem 0 0 1rem;padding:0;display:grid;gap:.3rem;">
+          <li><strong style="color:#15603a;">Rebooked at your rate:</strong> Full refund.</li>
+          <li><strong style="color:#8a6010;">Rebooked at a lower rate:</strong> I retain the nightly difference to offset the shortfall (e.g., if your rate was $100/night and I rebook at $90/night, I keep $10/night) and refund the remainder to you.</li>
+          <li><strong style="color:#9b1c1c;">Unable to rebook:</strong> The standard cancellation policy applies. That said, your reservation remains open — you are welcome to use it right up until check-in. If you decide you want it back, reach out and I will reinstate it for the full amount.</li>
+        </ul>
+        <p style="margin:.6rem 0 0;color:#888;font-size:.79rem;">This is a good-faith effort, not a guarantee. Whether and how I rebook is entirely at my discretion, but I will always try.</p>
+      </div>
+
+    </div></div><!-- /lgb-acc-cancel -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkin">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkin')">
+        <span>🔑 Check-In</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkin">
+      <h4>Times</h4>
+      <p><strong>Check-In: 3:00 PM</strong> &nbsp;|&nbsp; <strong>Check-Out: 11:00 AM sharp</strong></p>
+
+      <h4>Access</h4>
+      <p><strong>Use the FRONT DOOR only.</strong> Your door code is the last 4 digits of the phone number provided at booking. Details sent in your booking confirmation email.</p>
+
+      <div class="lgb-eta-box">
+        <strong>📍 PLEASE COMMUNICATE YOUR ETA</strong>
+        <span>Text Jesse your approximate arrival time as soon as you know it — even a rough idea helps. Text anytime: (910) 599-8118</span>
+      </div>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+
+      <h4>Questions?</h4>
+      <p>Text or call Jesse at <strong>(910) 599-8118</strong> anytime before or during your stay.</p>
+    </div></div><!-- /lgb-acc-checkin -->
+
+    <div class="lgb-acc-item" id="lgb-acc-area">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('area')">
+        <span>🏖️ Local Area</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-area">
+      <h4>Location</h4>
+      <p>213 Harper Avenue, Carolina Beach, NC 28428. You're right in the heart of it all — walkable to everything.</p>
+      <ul>
+        <li>½ block to Lake Park</li>
+        <li>2 short blocks to the boardwalk &amp; beach</li>
+        <li>On-site parking for 2 vehicles — plus free public parking right nearby</li>
+        <li>Bringing more than 2 vehicles, a trailer, or a boat? Reach out to Jesse ahead of time.</li>
+      </ul>
+
+      <h4>Map</h4>
+      <div class="lgb-map">
+        <iframe src="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428&t=h&z=17&output=embed" width="100%" height="320" style="border:0;display:block;" allowfullscreen="" loading="lazy" title="213 Harper Ave, Carolina Beach NC"></iframe>
+      </div>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks run all summer (Memorial Day – Labor Day), plus major holidays. Typically 8:55 – 9:15 PM. Loud but a great local tradition!</p>
+
+      <h4>Dog Beach Rules</h4>
+      <p><strong>April 1 – September 30:</strong> Dogs allowed on beach before 9:00 AM and after 5:00 PM only.<br/><strong>October 1 – March 31:</strong> Dogs allowed on beach any time. Always carry a bag. <a href="https://www.carolinabeach.gov/293/Pet-Rules" target="_blank" rel="noopener" style="color:var(--navy);">View full town pet rules →</a></p>
+    </div></div><!-- /lgb-acc-area -->
+
+    <div class="lgb-acc-item" id="lgb-acc-inunit">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('inunit')">
+        <span>🛎️ In-Unit</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-inunit">
+      <h4>The Space</h4>
+      <p>1,000 sqft · 3 bedrooms · 2 full bathrooms · Full kitchen with open floor plan · Front porch with patio furniture</p>
+
+      <h4>Entertainment</h4>
+      <ul class="lgb-amenity-list">
+        <li>📺 75" Smart TV</li>
+        <li>🔊 Bluetooth sound system</li>
+      </ul>
+
+      <h4>Laundry</h4>
+      <ul class="lgb-amenity-list">
+        <li>🧺 Washer — in unit</li>
+        <li>🌀 Dryer — in unit</li>
+        <li>🧴 Detergent &amp; dryer sheets provided</li>
+      </ul>
+
+      <h4>Beach Gear</h4>
+      <ul class="lgb-amenity-list">
+        <li>🏖️ Beach towels available</li>
+        <li>🛒 Beach wagon — use it!</li>
+        <li>🚿 Outdoor hose to rinse off</li>
+      </ul>
+
+      <h4>Bathroom</h4>
+      <ul class="lgb-amenity-list">
+        <li>🧴 Shampoo &amp; conditioner dispensers</li>
+        <li>🧼 Body wash dispensers</li>
+      </ul>
+
+      <h4>Kitchen</h4>
+      <ul class="lgb-amenity-list">
+        <li>☕ Coffee maker &amp; filters</li>
+        <li>🔥 Grill — available on request</li>
+        <li>Full kitchen equipment</li>
+      </ul>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+    </div></div><!-- /lgb-acc-inunit -->
+
+    <div class="lgb-acc-item" id="lgb-acc-emergency">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('emergency')">
+        <span>🚨 Emergency</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-emergency">
+      <h4>Property Issues</h4>
+      <p>For anything related to the property — maintenance, questions, or concerns — text or call Jesse directly:</p>
+      <p style="font-size:1.1rem;font-weight:700;color:var(--navy);">(910) 599-8118 — Text or call anytime</p>
+
+      <h4>Life-Threatening Emergency</h4>
+      <p><strong>Call 911.</strong></p>
+
+      <h4>Additional Emergency Contact</h4>
+      <p>Emergency contact details are provided in your booking confirmation email and posted in the unit.</p>
+    </div></div><!-- /lgb-acc-emergency -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkout">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkout')">
+        <span>✅ Checkout</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkout">
+      <div class="lgb-checkout-time">⏰ Checkout: <strong>11:00 AM Sharp</strong></div>
+      <p>If you know your checkout time in advance — especially if leaving early — please let Jesse know so cleaning can be planned for the next guest.</p>
+
+      <h4>Checkout Checklist</h4>
+      <ul>
+        <li>Do <strong>not</strong> strip the bed — straighten sheets so nothing is left inside, blankets not balled up</li>
+        <li>Leave used towels in the bathroom</li>
+        <li>Wash used dishes</li>
+        <li>Remove all food and drinks from the refrigerator</li>
+        <li>Wipe up spills, pick up trash, return items where they belong</li>
+        <li>Take kitchen and bathroom trash to the outdoor cans under the front stairs</li>
+        <li>Do a final walk-through — make sure nothing is left behind</li>
+        <li><strong>Text Jesse when you leave: (910) 599-8118</strong></li>
+      </ul>
+      <p>Thank you for helping keep this home in excellent condition for every guest. I hope you had an incredible stay!</p>
+    </div></div><!-- /lgb-acc-checkout -->
+
+    </div><!-- /lgb-accordion -->
+
+    <!-- ATTESTATION — unlocks booking bar after all tabs visited -->
+    <div style="margin-top:1.75rem;padding:1.25rem 1.5rem;background:#f9f6f0;border:1px solid #e5ddd0;border-radius:12px;text-align:center;">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        Review all <strong>7 sections</strong> above before booking —
+        <span id="attest-tab-count">0</span> of 7 reviewed
+      </div>
+      <button id="attest-rules-btn" disabled onclick="attestHouseRules()"
+        style="width:100%;max-width:520px;padding:.9rem 1.5rem;background:#9ca3af;color:#fff;border:none;border-radius:50px;font-size:.9rem;font-weight:700;cursor:not-allowed;transition:background .3s,color .3s;">
+        Click all tabs above to unlock (0 of 7 reviewed)
+      </button>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">
+        By clicking, you confirm you have read and agree to all house rules, cancellation policy, and guidelines.
+      </div>
+      <button onclick="scrollToGuide()" style="margin-top:.85rem;background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:.25rem .5rem;">↑ Back to top of guide</button>
+    </div>
+
+  </div>
+
+  <!-- AVAILABILITY CALENDAR -->
+  <div class="listing-cal-section">
+    <div class="listing-cal-header">
+      <span class="section-label">Live Availability</span>
+      <h2>Check Open Dates</h2>
+      <p>Select check-in then check-out — no Airbnb fees when you book direct.</p>
+    </div>
+    <div id="prop1-cal-wrap" class="cal-wrap"></div>
+    <div class="cal-legend">
+      <span><span class="cal-dot cal-dot-avail"></span> Available</span>
+      <span><span class="cal-dot cal-dot-booked"></span> Booked</span>
+      <span><span class="cal-dot-star">★</span> 1-Night Exception</span>
+      <span><span class="cal-dot cal-dot-past"></span> Past</span>
+    </div>
+    <p class="cal-note">🔄 Synced from Airbnb · updates within 24 hrs &nbsp;·&nbsp; No Saturday check-in or check-out &nbsp;·&nbsp; 2-night minimum</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     PROPERTY 2 — LEFT SUITE
+══════════════════════════════════════ -->
+<section class="page" id="page-prop2">
+  <div class="listing-hero">
+    <div class="listing-hero-inner">
+      <div class="listing-title-row">
+        <div>
+          <div class="listing-gf" style="background:rgba(13,148,136,.15);color:#0d9488"><span>🥇</span> Guest Favorite · Top 1% of Homes</div>
+          <h1 class="listing-h1">(LEFT) Private Guest Suite in The Heart Of CB</h1>
+          <div class="listing-meta-row">
+            <span class="listing-stars">★ 5.0</span>
+            <a href="https://airbnb.com/h/213harperleft" target="_blank" class="listing-reviews-link">205+ reviews</a>
+            <span class="listing-dot">·</span>
+            <span>🏆 Superhost</span>
+            <span class="listing-dot">·</span>
+            <span>Carolina Beach, North Carolina</span>
+          </div>
+        </div>
+        <div class="listing-share-row">
+          <a href="https://airbnb.com/h/213harperleft" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy)">View on Airbnb ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY PROP SWITCHER + CHECK DATES BAR -->
+  <div class="listing-top-bar">
+    <div class="prop-switcher-inline">
+      <button class="prop-sw-btn" onclick="showPage('prop1')">🏠 Front Home</button>
+      <button class="prop-sw-btn active" onclick="showPage('prop2')">🛎️ Left Suite</button>
+      <button class="prop-sw-btn" onclick="showPage('prop3')">🛎️ Right Suite</button>
+    </div>
+    <button id="ltb-check-dates-prop2" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop2-cal-wrap')">Check Dates ↓</button>
+  </div>
+
+  <!-- PHOTO GALLERY -->
+  <div class="prop-gallery" id="gallery-prop2"></div>
+
+  <!-- FULL-WIDTH CHECK DATES BAR -->
+  <div class="listing-cta-bar">
+    <div class="lcb-left">
+      <div class="lcb-rating">⭐ 5.0 · <a href="https://airbnb.com/h/213harperleft" target="_blank">205+ reviews</a></div>
+      <div class="lcb-text">No platform fees. Book direct with Jesse and save.</div>
+    </div>
+    <div class="lcb-right">
+      <button class="btn btn-primary lcb-btn" onclick="scrollToCalendar('prop2-cal-wrap')">Check Dates ↓</button>
+      <div class="lcb-nofee">💸 Save $</div>
+    </div>
+  </div>
+
+  <div class="listing-body">
+    <div class="listing-main">
+      <div class="listing-specs-row">
+        <span>Entire guest suite</span><span class="listing-dot">·</span>
+        <span>2 guests · 🐾 1 dog</span><span class="listing-dot">·</span>
+        <span>1 bedroom</span><span class="listing-dot">·</span>
+        <span>1 king bed</span><span class="listing-dot">·</span>
+        <span>1 bath</span>
+      </div>
+      <div class="listing-highlights">
+        <div class="highlight-item"><div class="hi-icon">🥇</div><div><strong>Top 1% of homes</strong><br><span>One of the highest ranked on Airbnb.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🔑</div><div><strong>Self check-in</strong><br><span>Check yourself in with the keypad.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🔇</div><div><strong>Double soundproof walls</strong><br><span>Private space — no shared areas.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🚪</div><div><strong>Private entrance</strong><br><span>Your own door, completely separate.</span></div></div>
+      </div>
+      <div class="listing-desc">
+        <h3>About this place</h3>
+        <p>Super clean, comfy, & dog friendly! NO FEES! CENTRALLY LOCATED in CB's Business District — ½ block to Lake Park, 2 short blocks to the boardwalk & beach. Walk to shops, restaurants, night life, and everywhere you want to be!</p>
+        <p>Private space with own entrance — no shared areas. Double soundproof walls; please be noise conscious. You may see me or other guests only in passing outside.</p>
+      </div>
+      <div class="listing-sleep">
+        <h3>Where you'll sleep</h3>
+        <div class="sleep-grid" style="grid-template-columns:1fr">
+          <div class="sleep-card">
+            <div class="sleep-img photo-slot">
+              <img class="sleep-hero-img" data-prop="left" data-tag="Bedroom" alt="Bedroom" />
+              <div class="photo-placeholder"></div>
+            </div>
+            <strong>Bedroom</strong><span>1 king bed</span>
+          </div>
+        </div>
+      </div>
+      <div class="listing-amenities">
+        <h3>What this place offers</h3>
+        <div class="amenity-list">
+          <div class="amenity-item"><span class="am-icon">🏖️</span> Beach access</div>
+          <div class="amenity-item"><span class="am-icon">🍳</span> Kitchen</div>
+          <div class="amenity-item"><span class="am-icon">📶</span> Fast wifi — 279 Mbps</div>
+          <div class="amenity-item"><span class="am-icon">💻</span> Dedicated workspace</div>
+          <div class="amenity-item"><span class="am-icon">🚗</span> Free parking garage</div>
+          <div class="amenity-item"><span class="am-icon">🐾</span> Pets allowed</div>
+          <div class="amenity-item"><span class="am-icon">📺</span> TV</div>
+          <div class="amenity-item"><span class="am-icon">❄️</span> AC — split type ductless</div>
+          <div class="amenity-item"><span class="am-icon">🛁</span> Bathtub</div>
+          <div class="amenity-item"><span class="am-icon">📷</span> Exterior security cameras</div>
+        </div>
+        <a href="https://airbnb.com/h/213harperleft" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy);margin-top:1rem">Show all 48 amenities ↗</a>
+      </div>
+      <div class="listing-reviews">
+        <h3>★ 5.0 · 205+ reviews</h3>
+        <div class="review-cols">
+          <div class="review-card"><div class="stars">★★★★★</div><p class="review-text">"Great hosts! Shared property but this space felt completely like your own — really well insulated sound wise from the adjoining property."</p><span class="reviewer">Jenifer · Fletcher, NC · April 2026</span></div>
+          <div class="review-card"><div class="stars">★★★★★</div><p class="review-text">"Jesse was a very accommodating and gracious host. The apartment was clean and spacious. There were even musical instruments we could use!"</p><span class="reviewer">Arika · 8 years on Airbnb · April 2026</span></div>
+        </div>
+        <a href="https://airbnb.com/h/213harperleft" target="_blank" class="btn btn-navy" style="margin-top:1.5rem">Show all 205+ reviews on Airbnb ↗</a>
+      </div>
+    </div>
+
+    <div class="listing-sidebar">
+      <div class="booking-widget">
+        <a href="https://airbnb.com/h/213harperleft" target="_blank" class="bw-airbnb-link">Also available on Airbnb ↗</a>
+      </div>
+      <div class="bw-highlights-card">
+        <div class="bwh-item">🥇 Top 1% of homes</div>
+        <div class="bwh-item">🔑 Self check-in (keypad)</div>
+        <div class="bwh-item">🚪 Private entrance</div>
+        <div class="bwh-item">🔇 Soundproof walls</div>
+        <div class="bwh-item">🐾 Pets allowed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDEBOOK & HOUSE RULES -->
+  <div class="listing-guidebook-section">
+    <div class="lgb-header">
+      <span class="section-label">Guest Guidebook</span>
+      <h2>House Rules & Local Guide</h2>
+      <p>Everything you need to know before and during your stay.</p>
+    </div>
+    <div class="lgb-grid">
+      <div class="lgb-card">
+        <div class="lgb-icon">📋</div>
+        <h3>House Rules</h3>
+        <p class="lgb-placeholder">Check-in / check-out times, quiet hours, smoking policy, pet rules, and everything else guests need to know. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🔑</div>
+        <h3>Arrival & Access</h3>
+        <p class="lgb-placeholder">Self check-in instructions, parking details, lock box code info, and how to reach Jesse. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🏖️</div>
+        <h3>Around The Heart Of CB</h3>
+        <p class="lgb-placeholder">Best restaurants, beach access points, boardwalk tips, hidden gems, and Jesse's personal favorites nearby. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🛎️</div>
+        <h3>Amenities & How-Tos</h3>
+        <p class="lgb-placeholder">WiFi password, TV setup, kitchen equipment, washer/dryer, HVAC, and anything with a learning curve. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🚨</div>
+        <h3>Emergencies & Contacts</h3>
+        <p class="lgb-placeholder">What to do in an emergency, local urgent care, nearest hospital, and how to reach Jesse any time. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">♻️</div>
+        <h3>Trash & Recycling</h3>
+        <p class="lgb-placeholder">Pickup days, bin locations, what goes where, and checkout cleanup expectations. <em>Content coming soon.</em></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVAILABILITY CALENDAR -->
+  <div class="listing-cal-section">
+    <div class="listing-cal-header">
+      <span class="section-label">Live Availability</span>
+      <h2>Check Open Dates</h2>
+      <p>Select check-in then check-out — no Airbnb fees when you book direct.</p>
+    </div>
+    <div id="prop2-cal-wrap" class="cal-wrap"></div>
+    <div class="cal-legend">
+      <span><span class="cal-dot cal-dot-avail"></span> Available</span>
+      <span><span class="cal-dot cal-dot-booked"></span> Booked</span>
+      <span><span class="cal-dot-star">★</span> 1-Night Exception</span>
+      <span><span class="cal-dot cal-dot-past"></span> Past</span>
+    </div>
+    <p class="cal-note">🔄 Synced from Airbnb · updates within 24 hrs &nbsp;·&nbsp; No Saturday check-in or check-out &nbsp;·&nbsp; 2-night minimum</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     PROPERTY 3 — RIGHT SUITE
+══════════════════════════════════════ -->
+<section class="page" id="page-prop3">
+  <div class="listing-hero">
+    <div class="listing-hero-inner">
+      <div class="listing-title-row">
+        <div>
+          <div class="listing-gf" style="background:rgba(13,148,136,.15);color:#0d9488"><span>🥇</span> Guest Favorite · Top 1% of Homes</div>
+          <h1 class="listing-h1">(RIGHT) Private Guest Suite in The Heart Of CB</h1>
+          <div class="listing-meta-row">
+            <span class="listing-stars">★ 5.0</span>
+            <a href="https://airbnb.com/h/213harperright" target="_blank" class="listing-reviews-link">231+ reviews</a>
+            <span class="listing-dot">·</span>
+            <span>🏆 Superhost</span>
+            <span class="listing-dot">·</span>
+            <span>Carolina Beach, North Carolina</span>
+          </div>
+        </div>
+        <div class="listing-share-row">
+          <a href="https://airbnb.com/h/213harperright" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy)">View on Airbnb ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY PROP SWITCHER + CHECK DATES BAR -->
+  <div class="listing-top-bar">
+    <div class="prop-switcher-inline">
+      <button class="prop-sw-btn" onclick="showPage('prop1')">🏠 Front Home</button>
+      <button class="prop-sw-btn" onclick="showPage('prop2')">🛎️ Left Suite</button>
+      <button class="prop-sw-btn active" onclick="showPage('prop3')">🛎️ Right Suite</button>
+    </div>
+    <button id="ltb-check-dates-prop3" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop3-cal-wrap')">Check Dates ↓</button>
+  </div>
+
+  <!-- PHOTO GALLERY -->
+  <div class="prop-gallery" id="gallery-prop3"></div>
+
+  <!-- FULL-WIDTH CHECK DATES BAR -->
+  <div class="listing-cta-bar">
+    <div class="lcb-left">
+      <div class="lcb-rating">⭐ 5.0 · <a href="https://airbnb.com/h/213harperright" target="_blank">231+ reviews</a></div>
+      <div class="lcb-text">No platform fees. Book direct with Jesse and save.</div>
+    </div>
+    <div class="lcb-right">
+      <button class="btn btn-primary lcb-btn" onclick="scrollToCalendar('prop3-cal-wrap')">Check Dates ↓</button>
+      <div class="lcb-nofee">💸 Save $</div>
+    </div>
+  </div>
+
+  <div class="listing-body">
+    <div class="listing-main">
+      <div class="listing-specs-row">
+        <span>Entire guest suite</span><span class="listing-dot">·</span>
+        <span>2 guests · 🐾 1 dog</span><span class="listing-dot">·</span>
+        <span>1 bedroom</span><span class="listing-dot">·</span>
+        <span>1 king bed</span><span class="listing-dot">·</span>
+        <span>1 bath</span>
+      </div>
+      <div class="listing-highlights">
+        <div class="highlight-item"><div class="hi-icon">🥇</div><div><strong>Top 1% of homes</strong><br><span>One of the highest ranked on Airbnb.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🔑</div><div><strong>Self check-in</strong><br><span>Check yourself in with the keypad.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🔇</div><div><strong>Double soundproof walls</strong><br><span>Private space — no shared areas.</span></div></div>
+        <div class="highlight-item"><div class="hi-icon">🚪</div><div><strong>Private entrance</strong><br><span>Your own door, completely separate.</span></div></div>
+      </div>
+      <div class="listing-desc">
+        <h3>About this place</h3>
+        <p>Super clean, comfy, & dog friendly! NO FEES! CENTRALLY LOCATED in CB's Business District — ½ block to Lake Park, 2 short blocks to the boardwalk & beach. Walk to shops, restaurants, night life, and everywhere you want to be!</p>
+        <p>Private space with own entrance — no shared areas. Double soundproof walls; please be noise conscious.</p>
+      </div>
+      <div class="listing-sleep">
+        <h3>Where you'll sleep</h3>
+        <div class="sleep-grid" style="grid-template-columns:1fr">
+          <div class="sleep-card">
+            <div class="sleep-img photo-slot"><img class="sleep-hero-img" data-prop="right" data-tag="Bedroom" alt="Bedroom" /><div class="photo-placeholder"></div></div>
+            <strong>Bedroom</strong><span>1 king bed</span>
+          </div>
+        </div>
+      </div>
+      <div class="listing-amenities">
+        <h3>What this place offers</h3>
+        <div class="amenity-list">
+          <div class="amenity-item"><span class="am-icon">🏖️</span> Beach access</div>
+          <div class="amenity-item"><span class="am-icon">🍳</span> Kitchen</div>
+          <div class="amenity-item"><span class="am-icon">📶</span> Fast wifi</div>
+          <div class="amenity-item"><span class="am-icon">💻</span> Dedicated workspace</div>
+          <div class="amenity-item"><span class="am-icon">🚗</span> Free parking garage</div>
+          <div class="amenity-item"><span class="am-icon">🐾</span> Pets allowed</div>
+          <div class="amenity-item"><span class="am-icon">📺</span> TV</div>
+          <div class="amenity-item"><span class="am-icon">❄️</span> AC — split type ductless</div>
+          <div class="amenity-item"><span class="am-icon">🛁</span> Bathtub</div>
+          <div class="amenity-item"><span class="am-icon">📷</span> Exterior security cameras</div>
+        </div>
+        <a href="https://airbnb.com/h/213harperright" target="_blank" class="btn btn-sm" style="background:var(--sand);border:1px solid var(--border);color:var(--navy);margin-top:1rem">Show all amenities on Airbnb ↗</a>
+      </div>
+      <div class="listing-reviews">
+        <h3>★ 5.0 · 231+ reviews</h3>
+        <a href="https://airbnb.com/h/213harperright" target="_blank" class="btn btn-navy" style="margin-top:.5rem">Show all 231+ reviews on Airbnb ↗</a>
+      </div>
+    </div>
+
+    <div class="listing-sidebar">
+      <div class="booking-widget">
+        <a href="https://airbnb.com/h/213harperright" target="_blank" class="bw-airbnb-link">Also available on Airbnb ↗</a>
+      </div>
+      <div class="bw-highlights-card">
+        <div class="bwh-item">🥇 Top 1% of homes</div>
+        <div class="bwh-item">🔑 Self check-in (keypad)</div>
+        <div class="bwh-item">🚪 Private entrance</div>
+        <div class="bwh-item">🔇 Soundproof walls</div>
+        <div class="bwh-item">🐾 Pets allowed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDEBOOK & HOUSE RULES -->
+  <div class="listing-guidebook-section">
+    <div class="lgb-header">
+      <span class="section-label">Guest Guidebook</span>
+      <h2>House Rules & Local Guide</h2>
+      <p>Everything you need to know before and during your stay.</p>
+    </div>
+    <div class="lgb-grid">
+      <div class="lgb-card">
+        <div class="lgb-icon">📋</div>
+        <h3>House Rules</h3>
+        <p class="lgb-placeholder">Check-in / check-out times, quiet hours, smoking policy, pet rules, and everything else guests need to know. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🔑</div>
+        <h3>Arrival & Access</h3>
+        <p class="lgb-placeholder">Self check-in instructions, parking details, lock box code info, and how to reach Jesse. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🏖️</div>
+        <h3>Around The Heart Of CB</h3>
+        <p class="lgb-placeholder">Best restaurants, beach access points, boardwalk tips, hidden gems, and Jesse's personal favorites nearby. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🛎️</div>
+        <h3>Amenities & How-Tos</h3>
+        <p class="lgb-placeholder">WiFi password, TV setup, kitchen equipment, washer/dryer, HVAC, and anything with a learning curve. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">🚨</div>
+        <h3>Emergencies & Contacts</h3>
+        <p class="lgb-placeholder">What to do in an emergency, local urgent care, nearest hospital, and how to reach Jesse any time. <em>Content coming soon.</em></p>
+      </div>
+      <div class="lgb-card">
+        <div class="lgb-icon">♻️</div>
+        <h3>Trash & Recycling</h3>
+        <p class="lgb-placeholder">Pickup days, bin locations, what goes where, and checkout cleanup expectations. <em>Content coming soon.</em></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVAILABILITY CALENDAR -->
+  <div class="listing-cal-section">
+    <div class="listing-cal-header">
+      <span class="section-label">Live Availability</span>
+      <h2>Check Open Dates</h2>
+      <p>Select check-in then check-out — no Airbnb fees when you book direct.</p>
+    </div>
+    <div id="prop3-cal-wrap" class="cal-wrap"></div>
+    <div class="cal-legend">
+      <span><span class="cal-dot cal-dot-avail"></span> Available</span>
+      <span><span class="cal-dot cal-dot-booked"></span> Booked</span>
+      <span><span class="cal-dot-star">★</span> 1-Night Exception</span>
+      <span><span class="cal-dot cal-dot-past"></span> Past</span>
+    </div>
+    <p class="cal-note">🔄 Synced from Airbnb · updates within 24 hrs &nbsp;·&nbsp; No Saturday check-in or check-out &nbsp;·&nbsp; 2-night minimum</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     STAY (property selector)
+══════════════════════════════════════ -->
+<section class="page" id="page-stay">
+  <div class="page-hero">
+    <div class="page-hero-content">
+      <div class="stay-hero-pin-wrap">
+        <div class="pin-circle" style="width:180px;height:180px;">
+          <img src="THOCB Pin NO BACKGROUND.png" alt="" class="stay-hero-pin" />
+        </div>
+      </div>
+      <p class="stay-hero-address">213 Harper Ave<br>Carolina Beach, NC</p>
+      <h1 class="stay-hero-tagline">Choose Your Perfect Stay.</h1>
+    </div>
+  </div>
+
+  <!-- 3-COLUMN PROPERTY CARDS + CALENDARS (one unified grid) -->
+  <div class="stay-cals-section section" id="stay-cals-anchor">
+    <div class="section-header" style="text-align:center;margin-bottom:1.8rem">
+      <span class="section-label">Three Stays · One Address</span>
+      <h2 class="section-title">Choose &amp; Check Availability</h2>
+      <p style="color:var(--muted);font-size:.9rem">Select check-in then check-out on any calendar · No Saturday check-in/out · 2-night minimum</p>
+    </div>
+    <!-- Sticky wrapper: property cards + toggle stick together as one block -->
+    <div class="stay-sticky-wrapper">
+    <div class="stay-sticky-header">
+      <!-- Property cards row — same 3-col width as calendars below -->
+      <div class="stay-cals-grid stay-props-row">
+        <div class="stay-prop-summary" onclick="showPage('prop1')">
+          <div class="sps-cover" id="sps-cover-prop1"></div>
+          <span class="sps-badge">🏠 Front Home</span>
+          <div class="sps-name">(FRONT) Home in The Heart Of CB</div>
+          <div class="sps-meta">👥 6 guests &nbsp;·&nbsp; 🛏 3 bed &nbsp;·&nbsp; 🛁 2 bath &nbsp;·&nbsp; 🐾 2 dogs</div>
+          <div class="sps-rating">⭐ 4.98 &nbsp;·&nbsp; 459+ reviews &nbsp;·&nbsp; 🏅 Guest Favorite</div>
+          <button class="btn btn-navy btn-sm sps-view-btn">View Full Listing →</button>
+        </div>
+        <div class="stay-prop-summary" onclick="showPage('prop2')">
+          <div class="sps-cover" id="sps-cover-prop2"></div>
+          <span class="sps-badge" style="background:rgba(13,148,136,.12);color:#0d9488">🛎️ Private Suite</span>
+          <div class="sps-name">(LEFT) Private Guest Suite</div>
+          <div class="sps-meta">👥 2 guests &nbsp;·&nbsp; 🛏 1 bed &nbsp;·&nbsp; 🛁 1 bath &nbsp;·&nbsp; 🐾 1 dog</div>
+          <div class="sps-rating">⭐ 5.0 &nbsp;·&nbsp; 205+ reviews &nbsp;·&nbsp; 🥇 Top 1%</div>
+          <button class="btn btn-navy btn-sm sps-view-btn">View Full Listing →</button>
+        </div>
+        <div class="stay-prop-summary" onclick="showPage('prop3')">
+          <div class="sps-cover" id="sps-cover-prop3"></div>
+          <span class="sps-badge" style="background:rgba(13,148,136,.12);color:#0d9488">🛎️ Private Suite</span>
+          <div class="sps-name">(RIGHT) Private Guest Suite</div>
+          <div class="sps-meta">👥 2 guests &nbsp;·&nbsp; 🛏 1 bed &nbsp;·&nbsp; 🛁 1 bath &nbsp;·&nbsp; 🐾 1 dog</div>
+          <div class="sps-rating">⭐ 5.0 &nbsp;·&nbsp; 231+ reviews &nbsp;·&nbsp; 🥇 Top 1%</div>
+          <button class="btn btn-navy btn-sm sps-view-btn">View Full Listing →</button>
+        </div>
+      </div>
+    </div>
+    </div><!-- end stay-sticky-wrapper -->
+    <!-- Toggle + mobile property tabs — sticky independently so they persist through the full calendar scroll -->
+    <div class="stay-sticky-toggle" id="stay-sticky-toggle">
+      <div class="cal-toggle-wrap">
+        <div class="cal-toggle-track" id="cal-toggle-track" onclick="_toggleCalView()">
+          <div class="cal-toggle-slider"></div>
+          <button class="cal-toggle-opt" data-view="cal">📅 Calendar</button>
+          <button class="cal-toggle-opt active" data-view="timeline">▬ Timeline</button>
+        </div>
+      </div>
+      <!-- Mobile property tabs (hidden on desktop) -->
+      <div class="stay-mob-tabs" id="stay-mob-tabs">
+        <button class="stay-mob-tab active" onclick="_setMobileTab(0)">🏠 Front Home</button>
+        <button class="stay-mob-tab" onclick="_setMobileTab(1)">🛎️ Left Suite</button>
+        <button class="stay-mob-tab" onclick="_setMobileTab(2)">🛎️ Right Suite</button>
+      </div>
+    </div>
+    <!-- Timeline view -->
+    <div id="stay-timeline">
+      <div id="tl-sticky-month" style="display:none;position:sticky;left:0;z-index:20;background:var(--navy);color:var(--gold2);font-size:.75rem;font-weight:700;padding:.3rem .6rem .3rem calc(115px + .5rem);pointer-events:none;"></div>
+    </div>
+    <!-- Calendar columns row -->
+    <div class="stay-cals-grid" id="stay-cals-grid" style="margin-top:1.2rem;display:none">
+      <div class="stay-cal-col">
+        <div class="stay-cal-hd">🏠 Front Home · ⭐ 4.98</div>
+        <div id="stay-cal-wrap-prop1" class="cal-wrap"></div>
+      </div>
+      <div class="stay-cal-col">
+        <div class="stay-cal-hd">🛎️ Left Suite · ⭐ 5.0</div>
+        <div id="stay-cal-wrap-prop2" class="cal-wrap"></div>
+      </div>
+      <div class="stay-cal-col">
+        <div class="stay-cal-hd">🛎️ Right Suite · ⭐ 5.0</div>
+        <div id="stay-cal-wrap-prop3" class="cal-wrap"></div>
+      </div>
+    </div>
+    <div class="cal-legend" style="justify-content:center;margin-top:1rem">
+      <span><span class="cal-dot cal-dot-avail"></span> Available</span>
+      <span><span class="cal-dot cal-dot-booked"></span> Booked</span>
+      <span><span class="cal-dot-star">★</span> 1-Night Exception</span>
+      <span><span class="cal-dot cal-dot-past"></span> Past</span>
+    </div>
+    <p class="cal-note" style="text-align:center">🔄 Synced from Airbnb · updates within 24 hrs</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     BOOK (reservation form only)
+══════════════════════════════════════ -->
+<section class="page" id="page-book">
+  <div class="page-hero gold-hero">
+    <div class="page-hero-content">
+      <span class="section-label" style="color:var(--gold2)">No Fees. No Middlemen.</span>
+      <h1>Request a Reservation</h1>
+      <p>Select dates on any property's calendar, then fill out below — Jesse responds personally.</p>
+    </div>
+  </div>
+
+  <div class="section">
+
+    <!-- ── BOOKING REQUEST FORM ── -->
+    <div class="booking-layout" id="booking-form-section">
+      <div class="booking-form-wrap">
+        <div id="form-cost-summary" class="form-cost-summary" style="display:none"></div>
+        <h2><img src="THOCB Pin NO BACKGROUND.png" alt="" class="pin-accent-sm" />Request a Reservation</h2>
+        <p class="form-sub">Select dates from any property calendar, then fill this out — Jesse will be in touch soon with your exact direct-booking quote.</p>
+        <form class="booking-form" onsubmit="submitBooking(event)">
+          <!-- Locked property & dates — set from calendar selection -->
+          <div class="form-locked-block">
+            <div class="form-locked-row">
+              <div class="form-locked-item">
+                <div class="form-locked-label">Property</div>
+                <div class="form-locked-val" id="form-locked-prop">Select dates from a calendar first →</div>
+              </div>
+              <a href="#" class="form-locked-change" onclick="showPage('stay');return false;">Change property</a>
+            </div>
+            <div class="form-locked-row">
+              <div class="form-locked-item">
+                <div class="form-locked-label">Check-In</div>
+                <div class="form-locked-val" id="form-locked-ci">—</div>
+              </div>
+              <div class="form-locked-item">
+                <div class="form-locked-label">Check-Out</div>
+                <div class="form-locked-val" id="form-locked-co">—</div>
+              </div>
+              <a href="#" class="form-locked-change" id="form-change-dates-link" onclick="showPage('stay');return false;">Change dates</a>
+            </div>
+          </div>
+          <!-- Hidden fields submitted with form -->
+          <input type="hidden" id="form-checkin"  name="checkin"  />
+          <input type="hidden" id="form-checkout" name="checkout" />
+          <input type="hidden" id="form-property-hidden" name="property" />
+          <div class="form-row">
+            <div class="form-group"><label>Guests</label><select name="guests" required><option value="" disabled selected>— How many? —</option><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 guests</option><option value="6">6 guests</option></select></div>
+            <div class="form-group"><label>Pets?</label><select name="pets" required><option value="" disabled selected>— Bringing a dog? —</option><option value="No pets">No pets</option><option value="1 dog">1 dog</option><option value="2 dogs (main home only)">2 dogs (main home only)</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="First" required /></div>
+            <div class="form-group"><label>Last Name</label><input type="text" name="last_name" placeholder="Last" required /></div>
+          </div>
+          <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="your@email.com" required /></div>
+          <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="(910) 599-8118" required /></div>
+          <div class="form-group"><label>Tell me about your trip</label><textarea name="trip_description" rows="3" placeholder="What's the occasion? Family vacation, couples getaway, friends trip? Low-key stays only — this is a peaceful, residential property. No parties, events, or excessive noise." required></textarea></div>
+          <input type="hidden" name="estimated_total" id="form-est-total" value="" />
+          <button type="submit" class="btn btn-primary full-width" style="border-radius:10px;padding:.9rem;">Send Booking Request</button>
+        </form>
+        <div class="booking-confirmation hidden" id="booking-confirm">
+          <div class="confirm-icon">✅</div>
+          <h3>Request Received!</h3>
+          <p>Jesse will be in touch soon to confirm your dates and send your exact quote.</p>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-card">
+          <h3>Why Book Now!?</h3>
+          <ul class="benefit-list">
+            <li>✅ Best rate — beat Airbnb pricing</li>
+            <li>✅ No platform fees — Save $</li>
+            <li>✅ Direct line to Jesse</li>
+            <li>✅ Flexible cancellation options</li>
+            <li>✅ Returning guest discounts</li>
+          </ul>
+        </div>
+        <div class="sidebar-card navy-card">
+          <h3>Prefer Airbnb?</h3>
+          <p>All 3 properties are listed there too.</p>
+          <div class="contact-links" style="margin-top:.8rem">
+            <a href="https://airbnb.com/h/213harper" target="_blank">🏠 Home in The Heart Of CB ↗</a>
+            <a href="https://airbnb.com/h/213harperleft" target="_blank">🛎️ Left Private Suite ↗</a>
+            <a href="https://airbnb.com/h/213harperright" target="_blank">🛎️ Right Private Suite ↗</a>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <h3>Contact Jesse Directly</h3>
+          <ul class="benefit-list">
+            <li>📧 stay@theheartofcb.com</li>
+            <li>📞 (910) 599-8118</li>
+            <li>🏆 Superhost · 7 years hosting</li>
+            <li>⚡ Response time: under 1 hour</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     EXPLORE
+══════════════════════════════════════ -->
+<section class="page" id="page-explore">
+  <div class="page-hero">
+    <div class="page-hero-content">
+      <span class="section-label" style="color:var(--gold2)">Carolina Beach, NC</span>
+      <h1>Explore CB</h1>
+      <p>Your local insider's guide — curated by a host who actually lives here.</p>
+    </div>
+  </div>
+  <div class="section">
+    <p class="guide-intro">The Heart Of CB is more than a destination — it's a vibe. From the classic boardwalk to hidden trails and the freshest seafood on the coast.</p>
+    <div class="guide-grid">
+      <div class="guide-category"><div class="guide-cat-header">🍽️ Eat & Drink</div><div class="guide-items">
+        <div class="guide-item"><div class="gi-name">Shuckin' Shack</div><div class="gi-desc">Raw bar, cold beer, and the best oysters on the island.</div><span class="gi-tag">Seafood · Casual</span></div>
+        <div class="guide-item"><div class="gi-name">Gulf Stream</div><div class="gi-desc">Old-school diner breakfast. Cash only, no frills, perfect food.</div><span class="gi-tag">Breakfast · Local Favorite</span></div>
+        <div class="guide-item"><div class="gi-name">Fat Pelican</div><div class="gi-desc">Classic Carolina Beach dive bar. Cold beer, local crowd, no frills — exactly what it should be.</div><span class="gi-tag">Bar · Dive Bar</span></div>
+        <div class="guide-item"><div class="gi-name">Island Creamery</div><div class="gi-desc">Locally made ice cream — walk to the boardwalk after.</div><span class="gi-tag">Dessert · Family</span></div>
+      </div></div>
+      <div class="guide-category"><div class="guide-cat-header">🏄 Activities</div><div class="guide-items">
+        <div class="guide-item"><div class="gi-name">Carolina Beach State Park</div><div class="gi-desc">Hiking, camping, and the only carnivorous plants in NC wild.</div><span class="gi-tag">Nature · Hiking</span></div>
+        <div class="guide-item"><div class="gi-name">Tony Silvagni Surf School</div><div class="gi-desc">Beginner to advanced lessons — great for kids and adults.</div><span class="gi-tag">Surfing · Lessons</span></div>
+        <div class="guide-item"><div class="gi-name">Freeman Park</div><div class="gi-desc">Drive your 4x4 right onto the beach. Bonfires allowed.</div><span class="gi-tag">Beach · 4x4 Access</span></div>
+        <div class="guide-item"><div class="gi-name">Kayak Carolina</div><div class="gi-desc">Guided tours through the Cape Fear River estuary.</div><span class="gi-tag">Kayaking · Tours</span></div>
+      </div></div>
+      <div class="guide-category"><div class="guide-cat-header">🎡 Entertainment</div><div class="guide-items">
+        <div class="guide-item"><div class="gi-name">Carolina Beach Boardwalk</div><div class="gi-desc">Classic rides, games, and live music every Friday in summer.</div><span class="gi-tag">Boardwalk · Family</span></div>
+        <div class="guide-item"><div class="gi-name">CB Farmers Market</div><div class="gi-desc">Saturday mornings — local produce, art, and the best tamales.</div><span class="gi-tag">Market · Saturday</span></div>
+        <div class="guide-item"><div class="gi-name">Lake Park Disc Golf</div><div class="gi-desc">Free 18-hole course. About 7 blocks from the property — worth the drive or bike ride.</div><span class="gi-tag">Free · 7 Blocks Away</span></div>
+      </div></div>
+      <div class="guide-category"><div class="guide-cat-header">⭐ Must-See Spots</div><div class="guide-items">
+        <div class="guide-item"><div class="gi-name">Fort Fisher Historic Site</div><div class="gi-desc">Civil War earthworks and a world-class NC Aquarium nearby.</div><span class="gi-tag">History · Aquarium</span></div>
+        <div class="guide-item"><div class="gi-name">Carolina Beach Lake</div><div class="gi-desc">Freshwater lake right in town. 4 blocks from the property.</div><span class="gi-tag">Lake · 4 Blocks Away</span></div>
+        <div class="guide-item"><div class="gi-name">Carolina Beach State Park</div><div class="gi-desc">Miles of trails, a boat launch on the Cape Fear River, stunning sunsets, and great dog walking. One of the most underrated spots on the coast.</div><span class="gi-tag">Trails · Boat Launch · Dogs Welcome</span></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONSULTING, GUIDEBOOK, SHOP, ABOUT — preserved from previous build -->
+<section class="page" id="page-consulting">
+  <div class="page-hero gold-hero"><div class="page-hero-content"><span class="section-label" style="color:var(--gold2)">213 Harper Ave · Carolina Beach, NC</span><h1>STR Consulting</h1><p>7 years. 900+ reviews. Superhost every year. Here's what I've learned.</p></div></div>
+  <div class="section">
+    <div class="consulting-intro">
+      <div class="consulting-intro-text"><span class="section-label">Real Experience</span><h2>Built from the ground up.<br>Happy to share what worked.</h2><p>Three properties. Seven years. 900+ reviews. Superhost every single year. I've figured out what works in this market — and I enjoy helping my neighbors do the same.</p><p>Whether you're thinking about your first STR, trying to improve what you've got, or just want a second opinion — reach out. Every project is different, and every quote is custom.</p><a href="#" class="btn btn-primary" onclick="event.preventDefault();document.getElementById('consult-form').scrollIntoView({behavior:'smooth'})">Get In Touch</a></div>
+      <div class="consulting-intro-img"><img src="THOCB Biz Card Front.png" alt="The Heart Of CB" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" /></div>
+    </div>
+    <div class="section-header center" style="margin-top:1rem"><span class="section-label">Services</span><h2 class="section-title">What I Offer</h2></div>
+    <div class="service-cards">
+      <div class="service-card"><div class="sc-icon">💻</div><h3>Direct Booking Setup</h3><p>Custom website, initial property tech setup, channel management, and inventory systems — so you stop paying platform fees and own your guest relationships.</p></div>
+      <div class="service-card"><div class="sc-icon">📝</div><h3>Listing Optimization</h3><p>Professional copy, photo strategy, pricing setup, and algorithm optimization for Airbnb, VRBO, and direct booking.</p></div>
+      <div class="service-card"><div class="sc-icon">🔍</div><h3>Market Analysis</h3><p>Deep-dive research — occupancy rates, ADR, seasonality, competition, and ideal property profiles for your market.</p></div>
+      <div class="service-card"><div class="sc-icon">📈</div><h3>Revenue Management</h3><p>Dynamic pricing strategy, seasonal rate calendars, minimum stay rules, and demand optimization to maximize every booking.</p></div>
+      <div class="service-card"><div class="sc-icon">🏠</div><h3>Property Acquisition</h3><p>Investment analysis, deal evaluation, ROI projections, and STR-specific due diligence before you buy.</p></div>
+      <div class="service-card"><div class="sc-icon">🤝</div><h3>Operations & Coaching</h3><p>Cleaning systems, inventory management, turnover protocols, and ongoing performance reviews to keep everything running smoothly.</p></div>
+    </div>
+    <div class="consulting-contact" id="consult-form">
+      <h2>Let's Talk</h2>
+      <p>I take real pride in what I've built — and helping serious operators get there faster is genuinely one of my favorite things. Wherever you are, reach out. Straight talk, real experience, fair price.</p>
+      <div class="consult-contact-direct">
+        <a href="tel:9105998118" class="consult-phone-btn">📞 (910) 599-8118 — call or text anytime</a>
+        <p class="consult-form-note">Or fill out the form below and I'll get back to you personally.</p>
+      </div>
+      <form class="contact-form" onsubmit="submitConsult(event)" style="text-align:left;max-width:600px;margin:0 auto;position:relative">
+        <div class="form-row"><div class="form-group"><label>Name</label><input type="text" placeholder="Your name" /></div><div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com" /></div></div>
+        <div class="form-group"><label>What's on your mind?</label><textarea rows="4" placeholder="Tell me about your property, your goals, or whatever you're trying to figure out."></textarea></div>
+        <button type="submit" class="btn btn-primary full-width" style="border-radius:10px;padding:.9rem;">Send Message</button>
+      </form>
+      <div class="confirm-msg hidden" id="consult-confirm">✅ Got it! Jesse will be in touch soon.</div>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-guidebook">
+  <div class="page-hero"><div class="page-hero-content"><span class="section-label" style="color:var(--gold2)">For My Guests</span><h1>The THOCB Guidebook</h1><p>Everything you need for your stay at The Heart Of CB.</p></div></div>
+  <div class="section">
+    <p class="guidebook-intro">Your go-to resource from arrival to checkout. I also send this straight to your phone 24 hours before check-in.</p>
+    <div class="guidebook-sections">
+      <div class="gb-section"><div class="gb-section-header">🏠 Arrival & Check-In</div><div class="gb-content">
+        <div class="gb-item"><h4>Check-In Time</h4><p>4:00 PM standard. Ask about early check-in — I'll do my best. Door code sent via email and text 24 hrs before arrival (smartlock for main house, keypad for suites).</p></div>
+        <div class="gb-item"><h4>Parking</h4><p>Main house: free parking on premises. Suites: free parking garage on premises. Easy parking — no stress.</p></div>
+        <div class="gb-item"><h4>WiFi</h4><p>Main house: 293 Mbps. Suites: 279 Mbps. Network and password on the laminated card in your unit.</p></div>
+        <div class="gb-item"><h4>Location</h4><p>213 Harper Ave, Carolina Beach, NC. ½ block to Lake Park. 2 short blocks to boardwalk & beach. Walk everywhere.</p></div>
+      </div></div>
+      <div class="gb-section"><div class="gb-section-header">🏖️ Beach & Outdoor</div><div class="gb-content">
+        <div class="gb-item"><h4>Beach Access</h4><p>2 short blocks away. Nearest public access with parking at Carolina Beach Ave S and Lake Park Blvd.</p></div>
+        <div class="gb-item"><h4>Lake Park</h4><p>½ block away — bars, restaurants, nightlife, and the freshwater lake. This is where everything happens in Carolina Beach.</p></div>
+        <div class="gb-item"><h4>Beach Gear</h4><p>Chairs, umbrellas, and boogie boards available. Check the outdoor closet or ask Jesse.</p></div>
+        <div class="gb-item"><h4>Outdoor Shower</h4><p>All units have outdoor shower access. Please rinse off before coming inside.</p></div>
+      </div></div>
+      <div class="gb-section"><div class="gb-section-header">📋 House Rules</div><div class="gb-content">
+        <div class="gb-item"><h4>Noise</h4><p>Double soundproof walls in suites, but please be noise conscious. No loud gatherings outdoors after 10 PM.</p></div>
+        <div class="gb-item"><h4>Pets</h4><p>Dog friendly — all 3 units! Please clean up after your dog and keep them off furniture if possible.</p></div>
+        <div class="gb-item"><h4>No Parties</h4><p>Perfect for low-key stays with friends or family. Not suitable for parties or large groups beyond listed capacity.</p></div>
+        <div class="gb-item"><h4>Check-Out</h4><p>10:00 AM. Load dishwasher, take out trash, lock up. Checklist posted in each unit.</p></div>
+      </div></div>
+      <div class="gb-section"><div class="gb-section-header">🆘 Emergencies</div><div class="gb-content">
+        <div class="gb-item"><h4>Host</h4><p>Text or call Jesse anytime. Response typically under 30 minutes. Email: stay@theheartofcb.com</p></div>
+        <div class="gb-item"><h4>Emergency</h4><p>911 for emergencies. Nearest ER: Novant Health NHRMC, Wilmington (25 min). AFC Urgent Care Carolina Beach (5 min).</p></div>
+      </div></div>
+    </div>
+    <div class="guidebook-cta"><h3>Ready for Your Stay?</h3><p>Book direct for the best rate — personalized guidebook sent before you arrive.</p><a href="#" class="btn btn-primary" onclick="showPage('book')">Book Your Stay</a></div>
+  </div>
+</section>
+
+<section class="page" id="page-shop">
+  <div class="page-hero gold-hero"><div class="page-hero-content"><span class="section-label" style="color:var(--gold2)">THOCB Store</span><h1>Shop The Heart Of CB</h1></div></div>
+  <div class="section" style="max-width:900px;margin:0 auto;padding:3rem 1.5rem;">
+    <div style="display:flex;flex-wrap:wrap;gap:2rem;align-items:flex-start;">
+      <div style="flex:0 0 280px;max-width:100%;">
+        <img src="Mug.png" alt="THOCB Coffee Mug" style="width:100%;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.12);" />
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <p style="color:var(--gold);font-weight:700;letter-spacing:.08em;font-size:.85rem;margin-bottom:.4rem;">The Heart Of CB</p>
+        <h2 style="color:var(--navy);margin:0 0 .5rem;">THOCB Coffee Mug</h2>
+        <p style="font-size:1.6rem;font-weight:700;color:var(--navy);margin:0 0 1rem;">$12.99</p>
+        <p style="color:#555;margin-bottom:1.75rem;line-height:1.6;">Start your morning with The Heart Of CB. Classic white ceramic mug with the THOCB pin logo. 11oz.</p>
+        <a href="https://square.link/u/tPnLAvgL" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-block;text-decoration:none;padding:.85rem 2rem;font-size:1rem;">Buy Now — $12.99</a>
+        <p style="color:#999;font-size:.8rem;margin-top:.75rem;">Secure checkout via Square</p>
+      </div>
+    </div>
+    <p style="text-align:center;color:#aaa;font-size:.85rem;margin-top:3rem;">More products coming soon.</p>
+  </div>
+</section>
+
+<section class="page" id="page-about">
+  <div class="page-hero"><div class="page-hero-content"><span class="section-label" style="color:var(--gold2)">Hosted by Jesse</span><h1>About The Heart Of CB</h1><p>Superhost · 7 years · Carolina Beach, NC</p></div></div>
+  <div class="section">
+    <div class="about-layout">
+      <div class="about-text">
+        <span class="section-label">Your Host</span>
+        <h2><img src="THOCB Pin NO BACKGROUND.png" alt="" class="pin-accent-sm" />Hi, I'm Jesse</h2>
+        <div class="host-stats-card">
+          <div class="hsc-stat"><div class="hsc-num">900+</div><div class="hsc-label">Reviews</div></div>
+          <div class="hsc-stat"><div class="hsc-num">4.99★</div><div class="hsc-label">Rating</div></div>
+          <div class="hsc-stat"><div class="hsc-num">7</div><div class="hsc-label">Years Hosting</div></div>
+        </div>
+        <p>Family is at the heart of everything I do, and I bring that same care and dedication into hosting. I value hard work, comfort, and creating experiences worth remembering. I personally manage every property to keep it spotless, welcoming, and thoughtfully prepared — the little details that make a big difference.</p>
+        <p>My goal is simple: give you a smooth, stress-free stay that feels like home and keeps you coming back.</p>
+        <div class="host-facts">
+          <div class="hf-item">🏈 Packers fan (obsessed)</div>
+          <div class="hf-item">🏈 Kicked a 47-yard game-winning field goal</div>
+          <div class="hf-item">🎓 Wisconsin alum</div>
+          <div class="hf-item">🐾 Dog dad to Belle</div>
+          <div class="hf-item">🌊 Lives in Carolina Beach, NC</div>
+          <div class="hf-item">📅 Born in the 80s</div>
+        </div>
+      </div>
+      <div class="about-img"><img src="THOCB Sign Vertical Border.png" alt="The Heart Of CB" style="width:100%;height:100%;object-fit:contain;border-radius:12px;display:block;background:#fff;" /></div>
+    </div>
+    <div class="contact-section">
+      <span class="section-label">Get In Touch</span>
+      <h2>Contact Jesse</h2>
+      <div class="contact-grid">
+        <div class="contact-block"><h3>Reservations</h3><p>📧 stay@theheartofcb.com</p><p>📞 (910) 599-8118</p><p style="font-size:.8rem;color:var(--muted2)">Response under 1 hour</p></div>
+        <div class="contact-block"><h3>STR Consulting</h3><p>📧 consulting@theheartofcb.com</p><p style="font-size:.8rem;color:var(--muted2)">Custom quotes for every project</p></div>
+        <div class="contact-block"><h3>Airbnb Profile</h3><p><a href="https://www.airbnb.com/users/profile/1469231363763843136" target="_blank" style="color:var(--ocean)">View all listings on Airbnb ↗</a></p><p style="font-size:.8rem;color:var(--muted2)">900+ reviews · Superhost</p></div>
+      </div>
+      <form class="contact-form" onsubmit="submitAbout(event)" style="max-width:640px">
+        <div class="form-row"><div class="form-group"><label>Name</label><input type="text" placeholder="Your name" /></div><div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com" /></div></div>
+        <div class="form-group"><label>Message</label><textarea rows="4" placeholder="How can I help?"></textarea></div>
+        <button type="submit" class="btn btn-primary" style="border-radius:10px;">Send Message</button>
+      </form>
+      <div class="confirm-msg hidden" id="about-confirm">✅ Message received! Jesse will be in touch soon.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY POLICY -->
+<section class="page" id="page-privacy">
+  <div class="page-hero"><div class="page-hero-content"><span class="section-label" style="color:var(--gold2)">The Heart Of CB</span><h1>Privacy Policy</h1><p>Last updated August 2026</p></div></div>
+  <div class="section" style="max-width:780px;margin:0 auto;padding:3rem 1.5rem">
+    <p style="color:var(--muted2);margin-bottom:2.5rem;">This policy explains what information we collect when you use this site and how we use it.</p>
+    <h3 style="color:var(--navy);margin-bottom:.75rem;">What We Collect</h3>
+    <p>When you submit a booking inquiry or contact form, we collect your name, email address, phone number, and any details you choose to share about your trip or question. We do not collect any information beyond what you voluntarily provide.</p>
+    <h3 style="color:var(--navy);margin:2rem 0 .75rem;">How We Use It</h3>
+    <p>Your information is used solely to respond to your inquiry and, if applicable, to complete a booking at The Heart Of CB. We do not sell, rent, or share your personal information with third parties for marketing purposes.</p>
+    <h3 style="color:var(--navy);margin:2rem 0 .75rem;">Email Communications</h3>
+    <p>If you submit an inquiry, you may receive a follow-up email from Jesse regarding your request. You can opt out of any further communication by replying to any email or contacting us directly.</p>
+    <h3 style="color:var(--navy);margin:2rem 0 .75rem;">Third-Party Services</h3>
+    <p>This site uses <strong>EmailJS</strong> to transmit contact form submissions. Form data passes through EmailJS's servers to deliver your message. We also link to Airbnb, whose privacy policy governs any data you submit there.</p>
+    <h3 style="color:var(--navy);margin:2rem 0 .75rem;">Cookies</h3>
+    <p>This site does not use tracking cookies or third-party analytics. The only browser storage used is session data for the booking calendar and availability display.</p>
+    <h3 style="color:var(--navy);margin:2rem 0 .75rem;">Contact</h3>
+    <p>Questions about this policy? Email <a href="mailto:stay@theheartofcb.com" style="color:var(--ocean)">stay@theheartofcb.com</a> or call <a href="tel:9105998118" style="color:var(--ocean)">(910) 599-8118</a>.</p>
+    <div style="margin-top:3rem;"><a href="#" onclick="history.back()" class="btn btn-secondary">← Back</a></div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-brand-banner">
+    <div class="pin-circle" style="width:116px;height:116px;">
+      <img src="THOCB Pin NO BACKGROUND.png" alt="THOCB" class="footer-logo" />
+    </div>
+    <div class="footer-brand-text">
+      <div class="fbb-line1">The Heart Of CB</div>
+      <div class="fbb-line2">⭐ 4.99 &nbsp;·&nbsp; 213 Harper Ave, Carolina Beach, NC</div>
+      <div class="fbb-line3">Superhost Jesse &nbsp;·&nbsp; 7 years hosting &nbsp;·&nbsp; 900+ reviews</div>
+      <div class="fbb-line4"><a href="mailto:stay@theheartofcb.com">stay@theheartofcb.com</a> &nbsp;·&nbsp; <a href="tel:9105998118">(910) 599-8118</a></div>
+    </div>
+  </div>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Properties</h4>
+        <a href="#" onclick="showPage('prop1')">(FRONT) Home in The Heart Of CB</a>
+        <a href="#" onclick="showPage('prop2')">(LEFT) Private Guest Suite in The Heart Of CB</a>
+        <a href="#" onclick="showPage('prop3')">(RIGHT) Private Guest Suite in The Heart Of CB</a>
+        <a href="#" onclick="showPage('stay')">Book Now!</a>
+      </div>
+      <div class="footer-col">
+        <h4>On Airbnb</h4>
+        <a href="https://airbnb.com/h/213harper" target="_blank">Main House ↗</a>
+        <a href="https://airbnb.com/h/213harperleft" target="_blank">Left Suite ↗</a>
+        <a href="https://airbnb.com/h/213harperright" target="_blank">Right Suite ↗</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="#" onclick="showPage('explore')">Explore CB</a>
+        <a href="#" onclick="showPage('guidebook')">Guest Guidebook</a>
+        <a href="#" onclick="showPage('consulting')">STR Consulting</a>
+        <a href="#" onclick="showPage('shop')">Gear</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="mailto:stay@theheartofcb.com">stay@theheartofcb.com</a>
+        <a href="tel:9105550000">(910) 599-8118</a>
+        <a href="#" onclick="showPage('about')">About Jesse</a>
+        <a href="admin.html" style="opacity:.55;font-size:.85em;">⚙ Admin</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 The Heart Of CB · Carolina Beach, NC</span>
+    <span><a href="#" onclick="showPage('privacy')" style="color:inherit;text-decoration:underline;opacity:.6">Privacy Policy</a> &nbsp;·&nbsp; Hosted by Jesse · Superhost</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+<!-- STICKY BOOKING BAR -->
+<div id="booking-bar" class="booking-bar" style="display:none">
+  <div class="booking-bar-inner">
+    <div class="bb-info">
+      <div class="bb-dates" id="bb-dates">—</div>
+      <div class="bb-price" id="bb-price">—</div>
+    </div>
+    <div class="bb-actions">
+      <button class="bb-clear-btn" onclick="clearDates()" title="Clear dates">✕</button>
+      <button class="btn btn-primary bb-btn" onclick="bbListingPage()"><span class="bb-btn-long">Agree to House Rules to Book →</span><span class="bb-btn-short">Book →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PHOTO LIGHTBOX ──────────────────────────────────────────────── -->
+<div class="gallery-lb" id="gallery-lb" role="dialog" aria-modal="true">
+  <button class="gallery-lb-close" onclick="_lbClose()" aria-label="Close">✕</button>
+  <div class="gallery-lb-img-wrap">
+    <button class="gallery-lb-arrow gallery-lb-prev" onclick="_lbNav(-1)" aria-label="Previous">‹</button>
+    <img id="gallery-lb-img" src="" alt="" />
+    <button class="gallery-lb-arrow gallery-lb-next" onclick="_lbNav(1)" aria-label="Next">›</button>
+  </div>
+  <div class="gallery-lb-caption" id="gallery-lb-caption"></div>
+  <div class="gallery-lb-strip" id="gallery-lb-strip"></div>
+</div>
+
+<script>
+// ── PHOTO GALLERY ────────────────────────────────────────────────────
+var _photosData = null;
+var _lbPhotos = [];
+var _lbIndex = 0;
+
+function _photoUrl(prop, file) {
+  var folder = _photosData[prop].folder;
+  return folder + '/' + file;
+}
+
+function _renderGallery(prop, containerId) {
+  if (!_photosData || !_photosData[prop]) return;
+  var photos = _photosData[prop].photos;
+  var el = document.getElementById(containerId);
+  if (!el || !photos.length) return;
+
+  // Hero
+  var hero = photos[0];
+  var heroUrl = _photoUrl(prop, hero.file);
+  var html = '<div class="gallery-hero" onclick="_lbOpen(\'' + prop + '\',0)">';
+  html += '<img src="' + heroUrl + '" alt="' + (hero.caption || '') + '" loading="lazy" />';
+  if (hero.tag && hero.tag !== 'Cover') html += '<span class="gallery-tag-badge">' + hero.tag + '</span>';
+  if (hero.caption) html += '<div class="gallery-hero-caption">' + hero.caption + '</div>';
+  html += '<div class="gallery-hero-count">📸 ' + photos.length + ' photos</div>';
+  html += '</div>';
+
+  // Grid (remaining photos)
+  if (photos.length > 1) {
+    html += '<div class="gallery-grid">';
+    for (var i = 1; i < photos.length; i++) {
+      var p = photos[i];
+      var url = _photoUrl(prop, p.file);
+      html += '<div class="gallery-grid-item" onclick="_lbOpen(\'' + prop + '\',' + i + ')">';
+      html += '<img src="' + url + '" alt="' + (p.caption || '') + '" loading="lazy" />';
+      if (p.tag && p.tag !== 'Cover') html += '<span class="gallery-tag-badge">' + p.tag + '</span>';
+      if (p.caption) html += '<div class="gallery-grid-caption">' + p.caption + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function _lbOpen(prop, index) {
+  _lbPhotos = _photosData[prop].photos.map(function(p) {
+    return { url: _photoUrl(prop, p.file), caption: p.caption || '' };
+  });
+  _lbIndex = index;
+  _lbShow();
+  document.getElementById('gallery-lb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function _lbShow() {
+  var p = _lbPhotos[_lbIndex];
+  document.getElementById('gallery-lb-img').src = p.url;
+  document.getElementById('gallery-lb-img').alt = p.caption;
+  document.getElementById('gallery-lb-caption').textContent = p.caption;
+
+  // Filmstrip
+  var strip = document.getElementById('gallery-lb-strip');
+  if (!strip._built || strip._builtFor !== _lbPhotos) {
+    strip.innerHTML = _lbPhotos.map(function(ph, i) {
+      return '<div class="gallery-lb-strip-thumb" data-i="' + i + '" onclick="_lbGoto(' + i + ')">' +
+             '<img src="' + ph.url + '" alt="" loading="lazy" /></div>';
+    }).join('');
+    strip._built = true;
+    strip._builtFor = _lbPhotos;
+  }
+  strip.querySelectorAll('.gallery-lb-strip-thumb').forEach(function(t) {
+    t.classList.toggle('active', +t.dataset.i === _lbIndex);
+  });
+  var active = strip.querySelector('.active');
+  if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+function _lbNav(dir) {
+  _lbIndex = (_lbIndex + dir + _lbPhotos.length) % _lbPhotos.length;
+  _lbShow();
+}
+
+function _lbGoto(i) {
+  _lbIndex = i;
+  _lbShow();
+}
+
+function _lbClose() {
+  document.getElementById('gallery-lb').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Keyboard nav
+document.addEventListener('keydown', function(e) {
+  var lb = document.getElementById('gallery-lb');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'ArrowRight') _lbNav(1);
+  else if (e.key === 'ArrowLeft') _lbNav(-1);
+  else if (e.key === 'Escape') _lbClose();
+});
+
+// Load photos.json and render all galleries + property card cover photos
+fetch('photos.json').then(function(r) { return r.json(); }).then(function(data) {
+  _photosData = data;
+  _renderGallery('front', 'gallery-prop1');
+  _renderGallery('left',  'gallery-prop2');
+  _renderGallery('right', 'gallery-prop3');
+  // Populate cover photos on Stay page property cards
+  [['front','prop1'],['left','prop2'],['right','prop3']].forEach(function(pair) {
+    var prop = pair[0], id = pair[1];
+    var el = document.getElementById('sps-cover-' + id);
+    if (!el) return;
+    var photos = data[prop] && data[prop].photos;
+    if (!photos || !photos.length) return;
+    var cover = photos.find(function(p) { return p.tag === 'Cover'; }) || photos[0];
+    var img = document.createElement('img');
+    img.src = _photoUrl(prop, cover.file);
+    img.alt = cover.caption || prop;
+    img.className = 'sps-cover-img';
+    el.appendChild(img);
+  });
+
+  // Populate bedroom/room hero cards using hero flag (falls back to first photo with that tag)
+  document.querySelectorAll('.sleep-hero-img').forEach(function(img) {
+    var prop = img.dataset.prop;
+    var tag = img.dataset.tag;
+    var photos = data[prop] && data[prop].photos;
+    if (!photos) return;
+    var match = photos.find(function(p) { return p.tag === tag && p.hero; })
+             || photos.find(function(p) { return p.tag === tag; });
+    if (match) {
+      img.src = _photoUrl(prop, match.file);
+      img.onerror = function() { this.style.display = 'none'; this.nextElementSibling.style.display = 'flex'; };
+    } else {
+      img.style.display = 'none';
+      if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
+    }
+  });
+}).catch(function(e) { console.warn('photos.json not loaded', e); });
+</script>
+
+</body>
+</html>
+
+
+

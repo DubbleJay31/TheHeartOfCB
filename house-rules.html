@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="THOCB Pin NO BACKGROUND.png" />
+<title>House Rules — The Heart Of CB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --navy: #0f1e3d;
+  --gold: #b8882a;
+  --gold2: #d4a44c;
+  --sand: #faf7f2;
+  --sand2: #f2ede3;
+  --border: #e8e3d8;
+  --text: #1a1f2e;
+  --muted: #6b7280;
+  --red: #8b1a1a;
+  --red2: #a82020;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--sand); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+h1, h2 { font-family: 'Playfair Display', serif; }
+
+/* ── STICKY HEADER ── */
+.hr-header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--navy);
+  padding: 1rem 2rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  border-bottom: 3px solid var(--gold);
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.hr-logo { display: flex; align-items: center; gap: .8rem; text-decoration: none; }
+.hr-logo-pin { display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; width: 52px; height: 52px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2); }
+.hr-logo-pin img { height: 38px; width: auto; }
+.hr-logo-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--gold2); }
+.hr-logo-sub { font-size: .68rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .1em; }
+.hr-print-btn {
+  background: var(--gold); color: #fff; border: none; padding: .5rem 1.1rem;
+  border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
+  white-space: nowrap;
+}
+.hr-print-btn:hover { background: var(--gold2); }
+
+/* ── HERO ── */
+.hr-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #162649 100%);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.hr-hero h1 { color: #fff; font-size: clamp(1.6rem, 3vw, 2.4rem); margin-bottom: .4rem; }
+.hr-hero p { color: rgba(255,255,255,.65); font-size: .9rem; }
+.hr-hero .hr-prop-badge {
+  display: inline-block; margin-top: 1rem;
+  background: var(--gold); border: none;
+  color: #fff; font-size: 1rem; font-weight: 700;
+  padding: .6rem 1.4rem; border-radius: 50px;
+  letter-spacing: .02em;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+
+/* ── NO PARTIES BANNER ── */
+.hr-no-parties {
+  background: var(--red);
+  padding: 2.25rem 2rem;
+  text-align: center;
+  border-bottom: 4px solid #6b1010;
+}
+.hr-no-parties-inner {
+  display: flex; align-items: center; justify-content: center; gap: 1.25rem;
+  margin-bottom: .6rem;
+}
+.hr-no-parties-icon {
+  font-size: clamp(3.75rem, 10vw, 5.75rem);
+  line-height: 1; flex-shrink: 0;
+}
+.hr-no-parties-text { text-align: center; }
+.hr-no-parties-line1 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(2rem, 5.5vw, 3.25rem);
+  font-weight: 700; color: #fff;
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1.1;
+}
+.hr-no-parties-line2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.6rem, 4.25vw, 2.6rem);
+  font-weight: 700; color: rgba(255,255,255,.88);
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1.15;
+}
+.hr-no-parties-sub {
+  font-size: clamp(.85rem, 2vw, 1rem);
+  color: rgba(255,255,255,.85);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── BODY ── */
+.hr-body { max-width: 760px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* inline print button (above note) */
+.hr-print-inline {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: .75rem;
+}
+.hr-share-btn {
+  background: var(--navy); color: #fff; border: none; padding: .5rem 1.1rem;
+  border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
+  white-space: nowrap;
+}
+.hr-share-btn:hover { background: #1a2f5a; }
+
+.hr-intro {
+  background: var(--sand2); border-left: 4px solid var(--gold);
+  padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 2rem;
+  font-size: .9rem; color: var(--muted); font-style: italic;
+}
+.hr-intro strong { display: block; color: var(--navy); font-style: normal; font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .3rem; }
+
+/* ── QUICK GLANCE ── */
+.hr-quickglance {
+  background: var(--navy); color: #fff; border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 2rem;
+}
+.hr-quickglance h2 { font-size: 1rem; font-weight: 700; color: var(--gold2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .8rem; font-family: 'Inter', sans-serif; }
+.hr-quickglance ul { padding-left: 1.2rem; }
+.hr-quickglance li { font-size: .88rem; line-height: 1.75; margin-bottom: .25rem; color: rgba(255,255,255,.85); }
+
+/* ── ACCORDION ── */
+.hr-acc-item { border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: .6rem; }
+.hr-acc-hd { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; background: var(--sand); border: none; font-size: .95rem; font-weight: 700; color: var(--navy); cursor: pointer; font-family: 'Inter', sans-serif; text-align: left; transition: background .15s; }
+.hr-acc-hd:hover { background: var(--sand2); }
+.hr-acc-hd.active { background: var(--navy); color: var(--white); }
+.hr-acc-hd.active .hr-acc-arrow { transform: rotate(180deg); color: rgba(255,255,255,.6); }
+.hr-acc-arrow { font-size: .7rem; flex: 0 0 1.25rem; text-align: center; transition: transform .2s; color: var(--muted); }
+.hr-acc-body { display: none; padding: 1.5rem 1.6rem 1.6rem; background: var(--white); border-top: 1.5px solid var(--border); }
+.hr-acc-body.open { display: block; }
+.hr-acc-body h4 { font-family: 'Inter', sans-serif; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin: 1.1rem 0 .4rem; }
+.hr-acc-body h4:first-child { margin-top: 0; }
+.hr-acc-body p { font-size: .88rem; line-height: 1.8; color: var(--text); margin-bottom: .5rem; }
+.hr-acc-body ul { padding-left: 1.3rem; margin-bottom: .6rem; }
+.hr-acc-body li { font-size: .88rem; line-height: 1.75; color: var(--text); margin-bottom: .25rem; }
+.hr-acc-body a { color: var(--gold); }
+.hr-acc-body table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.hr-acc-body .hr-eta-box { background: var(--navy); color: #fff; border-radius: 8px; padding: .85rem 1.1rem; margin: .8rem 0; font-size: .85rem; line-height: 1.55; }
+.hr-acc-body .hr-eta-box strong { display: block; color: var(--gold2); margin-bottom: .25rem; font-size: .88rem; }
+.hr-acc-body iframe { border-radius: 8px; width: 100%; margin-top: .4rem; }
+
+/* ── SECTIONS (legacy, keep for fees note) ── */
+.hr-section { margin-bottom: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+.hr-section:last-child { border-bottom: none; }
+.hr-section h3 { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin-bottom: .6rem; font-family: 'Inter', sans-serif; }
+.hr-section p { font-size: .88rem; line-height: 1.8; color: var(--text); margin-bottom: .5rem; }
+.hr-section ul { padding-left: 1.3rem; margin-bottom: .5rem; }
+.hr-section li { font-size: .88rem; line-height: 1.75; color: var(--text); margin-bottom: .2rem; }
+.hr-section a { color: var(--gold); }
+
+/* ── LOW-KEY STAYS — PROMINENT ── */
+.hr-section-lk {
+  margin-bottom: 1.75rem;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  background: #fff;
+}
+.hr-section-lk h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: .88rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--navy); margin-bottom: .75rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.hr-section-lk p { font-size: .9rem; line-height: 1.8; color: var(--text); margin-bottom: .6rem; }
+.hr-section-lk .lk-not-allowed {
+  background: var(--sand2);
+  border-left: 4px solid var(--navy);
+  border-radius: 0 8px 8px 0;
+  padding: .75rem 1rem;
+  font-size: .88rem;
+  color: var(--text);
+  margin-bottom: .6rem;
+}
+.hr-section-lk .lk-not-allowed strong { color: var(--navy); }
+
+/* ── FEES ── */
+.hr-fees {
+  background: #fff; border: 2px solid var(--gold); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: .75rem;
+}
+.hr-fees h3 { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin-bottom: .75rem; font-family: 'Inter', sans-serif; }
+.hr-fees ul { padding-left: 1.3rem; margin-bottom: .5rem; }
+.hr-fees li { font-size: .88rem; line-height: 1.8; color: var(--text); margin-bottom: .25rem; }
+.hr-fees-note {
+  font-size: .85rem; color: var(--text);
+  padding: .75rem 1rem .75rem 1.1rem;
+  background: var(--sand2);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 2rem;
+}
+
+/* ── CLOSING ── */
+.hr-closing {
+  background: var(--navy); color: #fff; border-radius: 10px; padding: 1.5rem 1.75rem; text-align: center;
+}
+.hr-closing p { font-size: .88rem; color: rgba(255,255,255,.8); margin-bottom: .5rem; font-style: italic; }
+.hr-closing .hr-sig { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold2); margin-top: .5rem; }
+.hr-closing .hr-phone { font-size: .88rem; color: rgba(255,255,255,.65); margin-top: .25rem; }
+
+/* ── FOOTER ── */
+.hr-footer {
+  text-align: center; padding: 1.5rem; font-size: .78rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.hr-footer a { color: var(--gold); text-decoration: none; }
+
+/* ── PRINT ── */
+@media print {
+  .hr-print-btn, .hr-print-inline { display: none !important; }
+  body { background: #fff; }
+  .hr-header { position: static !important; background: #fff !important; border-bottom: 2px solid #000; box-shadow: none; }
+  .hr-logo-name { color: #000 !important; }
+  .hr-logo-sub { color: #555 !important; }
+  .hr-hero { background: #f0f0f0 !important; }
+  .hr-hero h1, .hr-hero p, .hr-hero .hr-prop-badge { color: #000 !important; }
+  .hr-no-parties { background: #222 !important; }
+  .hr-no-parties-main { color: #fff !important; }
+  .hr-no-parties-sub { color: #ddd !important; }
+  .hr-quickglance { background: #f0f0f0 !important; }
+  .hr-quickglance h2 { color: #333 !important; }
+  .hr-quickglance li { color: #000 !important; }
+  .hr-closing { background: #f0f0f0 !important; }
+  .hr-closing p { color: #000 !important; }
+  .hr-closing .hr-sig { color: #333 !important; }
+  .hr-closing .hr-phone { color: #555 !important; }
+  .hr-section-lk { border-color: #000; }
+}
+@media (max-width: 600px) {
+  .hr-header { padding: .75rem 1rem; }
+  .hr-body { padding: 1.5rem 1rem 3rem; }
+  .hr-no-parties { padding: 1.75rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<header class="hr-header">
+  <a href="/" class="hr-logo">
+    <div class="hr-logo-pin"><img src="THOCB Pin NO BACKGROUND.png" alt="The Heart Of CB" /></div>
+    <div>
+      <div class="hr-logo-name">The Heart Of CB</div>
+      <div class="hr-logo-sub">Carolina Beach, NC</div>
+    </div>
+  </a>
+  <button class="hr-print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</header>
+
+<!-- HERO -->
+<div class="hr-hero">
+  <h1>House Rules</h1>
+  <p>Front Unit · 213 Harper Avenue · Carolina Beach, NC 28428</p>
+  <div class="hr-prop-badge">Please read and share with your entire group before arriving</div>
+</div>
+
+<!-- NO PARTIES BANNER -->
+<div class="hr-no-parties">
+  <div class="hr-no-parties-inner">
+    <span class="hr-no-parties-icon">🚫</span>
+    <div class="hr-no-parties-text">
+      <div class="hr-no-parties-line1">NO PARTIES</div>
+      <div class="hr-no-parties-line2">NO EXCEPTIONS.</div>
+    </div>
+    <span class="hr-no-parties-icon">🚫</span>
+  </div>
+  <div class="hr-no-parties-sub">This is a quiet residential neighborhood. Parties, outside gatherings, and events beyond the registered guest count are strictly prohibited and will result in immediate cancellation without refund.</div>
+</div>
+
+<div class="hr-body">
+
+  <!-- INLINE PRINT + SHARE BUTTONS -->
+  <div class="hr-print-inline">
+    <button class="hr-share-btn" onclick="
+      if(navigator.share){navigator.share({title:'House Rules — The Heart Of CB',text:'Please read before your stay at 213 Harper Ave, Carolina Beach.',url:window.location.href})}
+      else{navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied!'))}
+    ">📤 Share</button>
+    <button class="hr-print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
+
+  <!-- NOTE FROM JESSE -->
+  <div class="hr-intro">
+    <strong>A note from Jesse</strong>
+    Thank you for choosing to stay at my home. My goal is simple: give great guests a great stay. Most guests are wonderful. These rules simply help everyone know what to expect. I hope you LOVE your stay here and make memories to last a lifetime!
+  </div>
+
+  <!-- ACCORDION — 7 sections matching the guidebook -->
+  <div id="hr-accordion">
+
+    <!-- 1. HOUSE RULES -->
+    <div class="hr-acc-item" id="hr-acc-rules">
+      <button class="hr-acc-hd" onclick="hrAcc('rules')">
+        <span>📋 House Rules</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <div class="hr-quickglance" style="margin-bottom:1.2rem;">
+          <h2>Quick Glance — Key Rules</h2>
+          <ul>
+            <li>Max 6 guests, 2 dogs — no exceptions</li>
+            <li>Quiet hours: 10:00 PM – 9:00 AM</li>
+            <li><strong>NO parties, events, or outside visitors without approval</strong></li>
+            <li>No smoking inside — $500 fee · Front porch only, door closed</li>
+            <li>No pets on furniture or bedding without your own covering</li>
+            <li>Dogs must be leashed outside at all times</li>
+            <li>Hose off sand outside before entering</li>
+            <li>White towels for people only — no dogs, beach, or spills</li>
+            <li>Report damage immediately — do not wait until checkout</li>
+            <li>Checkout: 11:00 AM sharp · Exterior cameras on parking &amp; entrance</li>
+          </ul>
+        </div>
+
+        <h4>Low-Key Stays Only</h4>
+        <p>This home is meant for relaxing beach stays, not parties. Please keep things low-key and respectful at all times. <strong>NOT allowed:</strong> Parties · Loud music · Roughhousing or horseplay · Heavy drinking or drug use · Beer pong / flip cup / drinking games · Rowdy or disruptive behavior. The back of the house has suites occupied by the owner and/or other guests — walls are shared. Neighbors are close too. Everyone's peace matters.</p>
+
+        <h4>Guest Limit</h4>
+        <p>Maximum occupancy: <strong>6 people and 2 dogs.</strong> No exceptions. Only registered guests and approved pets may be on the property. No booking for others under your account. You must be present for the entire stay if you made the reservation. No outside visitors without prior approval. Unauthorized guests: $150 per person per night.</p>
+
+        <h4>Quiet Hours</h4>
+        <p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> The house shares walls — be especially mindful after dark: walk softly, close doors gently, keep voices and music low. Any behavior that disturbs neighbors may result in immediate termination of the reservation without refund.</p>
+
+        <h4>No Parties or Events</h4>
+        <p>The property may not be used for parties, events, or gatherings beyond the stated occupancy. No outside guests without prior approval. Unauthorized parties or events: <strong>$500 fee and immediate cancellation without refund.</strong></p>
+
+        <h4>Smoking</h4>
+        <p>No smoking inside the home. Smoking is allowed on the front porch only, with the door closed. Dispose of cigarette butts in the container provided — not on the porch, yard, or driveway. <strong>$500 fee for smoking inside.</strong></p>
+
+        <h4>Pets</h4>
+        <p>Dogs are allowed — <strong>maximum 2 dogs.</strong> No cats, ferrets, or other animals (including service animals — due to a severe family allergy). Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Bring your own towels for your dogs. If allowing your dog on furniture or bedding, bring your own clean sheets/blankets. Do not use house towels on dogs. Do not bathe dogs inside the home. No puppy pads or going to the bathroom inside. Use a kennel if your dog may chew, scratch doors, or bark excessively when left alone. Guests are responsible for any damage caused by pets. Unauthorized pets: $100 per pet per night. Note: Thursday night and holiday fireworks are a summer tradition here — loud and frequent. If your dog is sensitive to fireworks, plan accordingly.</p>
+
+        <h4>Children</h4>
+        <p>Families with children are welcome. Parents must supervise at all times: no running inside the house, clean up messes promptly, notify Jesse immediately of any stains or spills.</p>
+
+        <h4>Neighborhood &amp; Outside</h4>
+        <p>My neighbors' peace matters most. Keep it low-key and respectful, and keep the outside spotless — no littering and no cigarette butts on the porch, lawn, or driveway.</p>
+
+        <h4>Carport &amp; Outside Areas</h4>
+        <p>On-site parking for 2 vehicles — plus free public parking right nearby. The backyard and carport are private — do not hang out there. You may use the beach cart and store beach gear behind the sliding fence. Everything else behind the fence is off limits. Do not use the grill without asking first. Bringing more than 2 vehicles, a trailer, or a boat? Text Jesse ahead of time: (910) 599-8118.</p>
+
+        <h4>Sand</h4>
+        <p>Hose off outside before coming in. Do not sit on wet or sandy couches or beds. Shake out beach items outside.</p>
+
+        <h4>Towels &amp; Bedding</h4>
+        <p>Use only what you need. White towels are for people only — no pets, beach, or spills. Laundry is one of the biggest challenges with hosting and your help is greatly appreciated.</p>
+
+        <h4>Washer &amp; Dryer</h4>
+        <p>Available if needed. Do not put heavily sandy items in the machines. Let sandy items dry outside and shake them out first.</p>
+
+        <h4>Damage</h4>
+        <p>Please notify Jesse immediately of any damage — do not wait until checkout. Most issues are easy to resolve when addressed quickly. I work very hard to keep this home in excellent condition for all guests.</p>
+
+        <h4>Cooking</h4>
+        <p>You are welcome to use the kitchen. Please avoid cooking foods that leave strong lingering odors (seafood boils, etc.). If you'd like to use the grill or seafood boiler outside, please ask first.</p>
+
+        <h4>Fireworks</h4>
+        <p>Thursday night boardwalk fireworks and summer holiday fireworks are a local tradition — but very loud. Typically 8:55 PM – 9:15 PM, Memorial Day through Labor Day. May upset dogs.</p>
+
+        <h4>Security Cameras</h4>
+        <p>Exterior security cameras monitor the parking area and staircase entrance for safety. There are NO cameras inside the home.</p>
+
+        <h4>Violation Fees</h4>
+        <ul>
+          <li>Unauthorized guests: <strong>$150 per person per night</strong></li>
+          <li>Unauthorized pets: <strong>$100 per pet per night</strong></li>
+          <li>Smoking inside: <strong>$500</strong></li>
+          <li>Unauthorized parties or events: <strong>$500 + immediate cancellation without refund</strong></li>
+          <li>Rule violation requiring host response: <strong>$150 per incident</strong></li>
+          <li>Excessive cleaning beyond normal turnover: <strong>$150</strong></li>
+        </ul>
+        <p style="font-size:.82rem;color:var(--muted);margin-top:.4rem;line-height:1.5;font-style:italic;">These are standard baseline amounts. You remain responsible for the full cost of any remediation, repair, or replacement that exceeds a listed fee.</p>
+
+      </div>
+    </div>
+
+    <!-- 2. CANCELLATION -->
+    <div class="hr-acc-item" id="hr-acc-cancel">
+      <button class="hr-acc-hd" onclick="hrAcc('cancel')">
+        <span>📅 Cancellation Policy</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <div style="background:var(--navy);border-radius:8px;padding:1.2rem 1.4rem .9rem;margin-bottom:1.2rem;">
+          <p style="color:#c8d8f0;margin:0 0 .2rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Cancellation Policy</p>
+          <p style="color:#fff;font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;margin:0 0 .5rem;">Know your refund window before you book.</p>
+          <p style="color:#bcd;font-size:.85rem;margin:0;line-height:1.6;">This property follows the <strong style="color:#fff;">Airbnb Moderate Cancellation Policy.</strong></p>
+        </div>
+
+        <div style="display:grid;gap:.65rem;margin-bottom:1.4rem;">
+          <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+            <div style="background:#15603a;min-width:7px;flex-shrink:0;"></div>
+            <div style="background:#f0f9f4;padding:.9rem 1rem;flex:1;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
+              <div><div style="font-weight:700;color:#15603a;font-size:.92rem;">5 or more days before check-in</div><div style="color:#444;font-size:.82rem;margin-top:.15rem;">Cancel at least 5 days ahead — full refund.</div></div>
+              <div style="background:#15603a;color:#fff;border-radius:50px;padding:.25rem .85rem;font-size:.82rem;font-weight:700;white-space:nowrap;">Full refund</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+            <div style="background:#b8882a;min-width:7px;flex-shrink:0;"></div>
+            <div style="background:#fdf8ee;padding:.9rem 1rem;flex:1;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
+              <div><div style="font-weight:700;color:#8a6010;font-size:.92rem;">1–4 days before check-in</div><div style="color:#444;font-size:.82rem;margin-top:.15rem;">Less than 5 days out — half your accommodation cost back.</div></div>
+              <div style="background:#b8882a;color:#fff;border-radius:50px;padding:.25rem .85rem;font-size:.82rem;font-weight:700;white-space:nowrap;">50% refund</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+            <div style="background:#9b1c1c;min-width:7px;flex-shrink:0;"></div>
+            <div style="background:#fef2f2;padding:.9rem 1rem;flex:1;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
+              <div><div style="font-weight:700;color:#9b1c1c;font-size:.92rem;">Same day (check-in day)</div><div style="color:#444;font-size:.82rem;margin-top:.15rem;">Cancellations on your check-in day are not accepted — no refund, no exceptions.</div></div>
+              <div style="background:#9b1c1c;color:#fff;border-radius:50px;padding:.25rem .85rem;font-size:.82rem;font-weight:700;white-space:nowrap;">No refund</div>
+            </div>
+          </div>
+        </div>
+
+        <h4>Quick Reference — Last Day to Cancel by Check-In Day</h4>
+        <div style="overflow-x:auto;margin-bottom:1.2rem;">
+          <table style="width:100%;border-collapse:collapse;font-size:.83rem;min-width:260px;">
+            <thead><tr style="background:var(--navy);color:#fff;">
+              <th style="padding:.5rem .9rem;text-align:left;font-weight:700;">Check-In Day</th>
+              <th style="padding:.5rem .9rem;text-align:left;font-weight:700;color:#d4f0c0;">Last Day — Full Refund</th>
+              <th style="padding:.5rem .9rem;text-align:left;font-weight:700;color:#f0d0a0;">Last Day — 50% Refund</th>
+            </tr></thead>
+            <tbody>
+              <tr style="background:#f0f9f4;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Sunday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Tuesday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Saturday</td></tr>
+              <tr style="background:#faf7f2;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Monday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Wednesday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Sunday</td></tr>
+              <tr style="background:#f0f9f4;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Tuesday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Thursday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Monday</td></tr>
+              <tr style="background:#faf7f2;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Wednesday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Friday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Tuesday</td></tr>
+              <tr style="background:#f0f9f4;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Thursday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Saturday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Wednesday</td></tr>
+              <tr style="background:#faf7f2;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Friday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Sunday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Thursday</td></tr>
+              <tr style="background:#f0f9f4;"><td style="padding:.45rem .9rem;font-weight:600;color:#15603a;">Saturday</td><td style="padding:.45rem .9rem;color:#15603a;font-weight:700;">Monday (prior week)</td><td style="padding:.45rem .9rem;color:#b8882a;font-weight:600;">Friday</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background:var(--sand2);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.2rem 1.2rem;margin-bottom:1rem;">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:.5rem;font-size:.9rem;">📅 Look up your cutoff dates</div>
+          <p style="font-size:.83rem;color:#555;margin:0 0 .75rem;">Enter your check-in date to see the exact deadlines for your reservation.</p>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <label style="font-size:.83rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+            <input type="date" id="cancel-calc-date" oninput="cancelCalcHR()" style="padding:.4rem .65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;color:var(--navy);font-family:inherit;" />
+          </div>
+          <div id="cancel-calc-result" style="margin-top:.9rem;display:none;">
+            <div id="ccr-full"  style="margin-bottom:.45rem;padding:.65rem .9rem;border-radius:8px;background:#f0f9f4;border-left:4px solid #15603a;font-size:.85rem;color:#15603a;"></div>
+            <div id="ccr-half"  style="margin-bottom:.45rem;padding:.65rem .9rem;border-radius:8px;background:#fdf8ee;border-left:4px solid #b8882a;font-size:.85rem;color:#8a6010;"></div>
+            <div id="ccr-none"  style="padding:.65rem .9rem;border-radius:8px;background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.85rem;color:#9b1c1c;"></div>
+          </div>
+        </div>
+
+        <div style="padding:.85rem 1rem;background:var(--sand);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:#555;line-height:1.65;margin-bottom:.75rem;">
+          <strong style="color:var(--navy);">Only two exceptions apply:</strong> (1) Written approval from Jesse issued in advance, or (2) Airbnb's <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600;">Major Disruptive Events Policy ↗</a> is officially activated for your specific dates and location. Personal reasons and weather are not covered — if it is safe to travel and the property is available, the policy applies in full.
+        </div>
+
+        <div style="padding:.9rem 1rem 1rem;background:var(--sand2);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:#444;line-height:1.7;">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:.4rem;font-size:.87rem;">🔄 If You Cancel — I Will Try to Rebook</div>
+          If you cancel, I will make every effort to rebook your dates. The sooner you cancel, the better the chance. A successful rebook may increase your refund:
+          <ul style="margin:.5rem 0 0 1rem;padding:0;display:grid;gap:.25rem;">
+            <li><strong style="color:#15603a;">Rebooked at your rate:</strong> Full refund.</li>
+            <li><strong style="color:#8a6010;">Rebooked at a lower rate:</strong> I retain the nightly difference and refund the remainder.</li>
+            <li><strong style="color:#9b1c1c;">Unable to rebook:</strong> Standard cancellation policy applies. Your reservation stays open — you are welcome to use it right up until check-in.</li>
+          </ul>
+          <p style="margin:.5rem 0 0;color:#888;font-size:.78rem;">This is a good-faith effort, not a guarantee.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. CHECK-IN -->
+    <div class="hr-acc-item" id="hr-acc-checkin">
+      <button class="hr-acc-hd" onclick="hrAcc('checkin')">
+        <span>🔑 Check-In</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <h4>Times</h4>
+        <p><strong>Check-In: 3:00 PM</strong> &nbsp;|&nbsp; <strong>Check-Out: 11:00 AM sharp</strong></p>
+
+        <h4>Access</h4>
+        <p><strong>Use the FRONT DOOR only.</strong> Your door code is the last 4 digits of the phone number provided at booking. Details sent in your booking confirmation email.</p>
+
+        <div class="hr-eta-box">
+          <strong>📍 PLEASE COMMUNICATE YOUR ETA</strong>
+          <span>Text Jesse your approximate arrival time as soon as you know it — even a rough idea helps. Text anytime: (910) 599-8118</span>
+        </div>
+
+        <h4>WiFi</h4>
+        <p>Network name and password posted in unit.</p>
+
+        <h4>Questions?</h4>
+        <p>Text or call Jesse at <strong>(910) 599-8118</strong> anytime before or during your stay.</p>
+
+      </div>
+    </div>
+
+    <!-- 4. LOCAL AREA -->
+    <div class="hr-acc-item" id="hr-acc-area">
+      <button class="hr-acc-hd" onclick="hrAcc('area')">
+        <span>🏖️ Local Area</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <h4>Location</h4>
+        <p>213 Harper Avenue, Carolina Beach, NC 28428. You're right in the heart of it all — walkable to everything.</p>
+        <ul>
+          <li>½ block to Lake Park</li>
+          <li>2 short blocks to the boardwalk &amp; beach</li>
+          <li>On-site parking for 2 vehicles — plus free public parking right nearby</li>
+          <li>Bringing more than 2 vehicles, a trailer, or a boat? Reach out to Jesse ahead of time.</li>
+        </ul>
+
+        <h4>Map</h4>
+        <iframe src="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428&t=h&z=17&output=embed" height="280" allowfullscreen loading="lazy" title="213 Harper Ave, Carolina Beach NC"></iframe>
+
+        <h4>Fireworks</h4>
+        <p>Thursday night boardwalk fireworks run all summer (Memorial Day – Labor Day), plus major holidays. Typically 8:55 – 9:15 PM. Loud but a great local tradition!</p>
+
+        <h4>Dog Beach Rules</h4>
+        <p><strong>April 1 – September 30:</strong> Dogs allowed on beach before 9:00 AM and after 5:00 PM only.<br/><strong>October 1 – March 31:</strong> Dogs allowed on beach any time. Always carry a bag. <a href="https://www.carolinabeach.gov/293/Pet-Rules" target="_blank" rel="noopener">View full town pet rules →</a></p>
+
+      </div>
+    </div>
+
+    <!-- 5. IN-UNIT -->
+    <div class="hr-acc-item" id="hr-acc-inunit">
+      <button class="hr-acc-hd" onclick="hrAcc('inunit')">
+        <span>🛎️ In-Unit Guide</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <h4>The Space</h4>
+        <p>1,000 sqft · 3 bedrooms · 2 full bathrooms · Full kitchen with open floor plan · Front porch with patio furniture</p>
+
+        <h4>Entertainment</h4>
+        <ul>
+          <li>📺 75" Smart TV</li>
+          <li>🔊 Bluetooth sound system</li>
+        </ul>
+
+        <h4>Laundry</h4>
+        <ul>
+          <li>🧺 Washer — in unit</li>
+          <li>🌀 Dryer — in unit</li>
+          <li>🧴 Detergent &amp; dryer sheets provided</li>
+        </ul>
+        <p style="font-size:.82rem;color:var(--muted);">Do not put heavily sandy items in the machines — let them dry and shake out first.</p>
+
+        <h4>Beach Gear</h4>
+        <ul>
+          <li>🏖️ Beach towels available</li>
+          <li>🛒 Beach wagon — use it!</li>
+          <li>🚿 Outdoor hose to rinse off</li>
+        </ul>
+
+        <h4>Bathroom</h4>
+        <ul>
+          <li>🧴 Shampoo &amp; conditioner dispensers</li>
+          <li>🧼 Body wash dispensers</li>
+        </ul>
+
+        <h4>Kitchen</h4>
+        <ul>
+          <li>☕ Coffee maker &amp; filters</li>
+          <li>🔥 Grill — available on request</li>
+          <li>Full kitchen equipment</li>
+        </ul>
+        <p style="font-size:.82rem;color:var(--muted);">Please avoid cooking foods that leave strong lingering odors. Ask first to use the grill or seafood boiler outside.</p>
+
+        <h4>WiFi</h4>
+        <p>Network name and password posted in unit.</p>
+
+      </div>
+    </div>
+
+    <!-- 6. EMERGENCY -->
+    <div class="hr-acc-item" id="hr-acc-emergency">
+      <button class="hr-acc-hd" onclick="hrAcc('emergency')">
+        <span>🚨 Emergency</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <h4>Property Issues</h4>
+        <p>For anything related to the property — maintenance, questions, or concerns — text or call Jesse directly:</p>
+        <p style="font-size:1.05rem;font-weight:700;color:var(--navy);">(910) 599-8118 — Text or call anytime</p>
+
+        <h4>Life-Threatening Emergency</h4>
+        <p><strong>Call 911.</strong></p>
+
+        <h4>Additional Emergency Contact</h4>
+        <p>Emergency contact details are provided in your booking confirmation email and posted in the unit.</p>
+
+      </div>
+    </div>
+
+    <!-- 7. CHECKOUT -->
+    <div class="hr-acc-item" id="hr-acc-checkout">
+      <button class="hr-acc-hd" onclick="hrAcc('checkout')">
+        <span>✅ Checkout</span><span class="hr-acc-arrow">▼</span>
+      </button>
+      <div class="hr-acc-body">
+
+        <div style="background:var(--navy);color:#fff;border-radius:8px;padding:.75rem 1.1rem;margin-bottom:1rem;font-size:.95rem;font-weight:700;text-align:center;">⏰ Checkout: 11:00 AM Sharp</div>
+        <p>If you know your checkout time in advance — especially if leaving early — please let Jesse know so cleaning can be planned for the next guest.</p>
+
+        <h4>Checkout Checklist</h4>
+        <ul>
+          <li>Do <strong>not</strong> strip the bed — straighten sheets so nothing is left inside, blankets not balled up</li>
+          <li>Leave used towels in the bathroom</li>
+          <li>Wash used dishes</li>
+          <li>Remove all food and drinks from the refrigerator</li>
+          <li>Wipe up spills, pick up trash, return items where they belong</li>
+          <li>Take kitchen and bathroom trash to the outdoor cans under the front stairs</li>
+          <li>Do a final walk-through — make sure nothing is left behind</li>
+          <li><strong>Text Jesse when you leave: (910) 599-8118</strong></li>
+        </ul>
+        <p>Thank you for helping keep this home in excellent condition for every guest. I hope you had an incredible stay!</p>
+
+      </div>
+    </div>
+
+  </div><!-- /hr-accordion -->
+
+  <!-- CLOSING -->
+  <div class="hr-closing" style="margin-top:1.75rem;">
+    <p>I work very hard to maintain a clean, peaceful place for respectful guests. My public reviews mean everything — my goal is to give every guest a 5-star experience! If anything isn't perfect, please reach out right away so I can make it right.</p>
+    <p class="hr-sig">Jesse &amp; Family</p>
+    <p class="hr-phone">(910) 599-8118 — Text or call anytime</p>
+  </div>
+
+</div>
+
+<script>
+function hrAcc(id) {
+  const item = document.getElementById('hr-acc-' + id);
+  if (!item) return;
+  const hd = item.querySelector('.hr-acc-hd');
+  const body = item.querySelector('.hr-acc-body');
+  const isOpen = hd.classList.contains('active');
+  document.querySelectorAll('.hr-acc-item').forEach(it => {
+    it.querySelector('.hr-acc-hd').classList.remove('active');
+    it.querySelector('.hr-acc-body').classList.remove('open');
+  });
+  if (!isOpen) { hd.classList.add('active'); body.classList.add('open'); }
+}
+
+function cancelCalcHR() {
+  const val = document.getElementById('cancel-calc-date').value;
+  const result = document.getElementById('cancel-calc-result');
+  if (!val) { result.style.display = 'none'; return; }
+  const ci = new Date(val + 'T12:00:00');
+  const full = new Date(ci); full.setDate(full.getDate() - 5);
+  const h1 = new Date(ci); h1.setDate(h1.getDate() - 4);
+  const h2 = new Date(ci); h2.setDate(h2.getDate() - 1);
+  const fmt = d => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('ccr-full').innerHTML = `<strong>Full refund:</strong> Cancel by <strong>${fmt(full)}</strong>`;
+  document.getElementById('ccr-half').innerHTML = `<strong>50% refund:</strong> Cancel <strong>${fmt(h1)}</strong> – <strong>${fmt(h2)}</strong>`;
+  document.getElementById('ccr-none').innerHTML = `<strong>No refund:</strong> Cancellations on <strong>${fmt(ci)}</strong> (check-in day) are not accepted`;
+  result.style.display = '';
+}
+</script>
+
+<footer class="hr-footer">
+  <a href="/">← Back to The Heart Of CB</a> &nbsp;·&nbsp; 213 Harper Ave · Carolina Beach, NC 28428
+</footer>
+
+</body>
+</html>
