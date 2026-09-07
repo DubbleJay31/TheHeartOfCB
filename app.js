@@ -41,10 +41,13 @@ async function _sendGuestConfirmation(inquiry) {
   if (!inquiry.email) return;
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
   const firstName = inquiry.first || inquiry.name || 'there';
-  const html = `<!DOCTYPE html><html><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
   <div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="56" height="56" alt="" style="display:block;margin:0 auto 10px;border-radius:50%;" />
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+      <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="48" height="48" alt="" style="display:block;border-radius:50%;" />
+    </td></tr></table>
+    <div style="height:10px;"></div>
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Inquiry Received!</h1>
     <p style="color:#c9a84c;margin:.3rem 0 0;font-size:.85rem;">The Heart Of CB · Carolina Beach, NC</p>
   </div>

@@ -853,7 +853,7 @@ a { color: inherit; text-decoration: none; }
       <!-- Payment sent confirmation — moved dynamically under selected payment method by JS -->
       <div id="pm-sent-section" style="display:none;border:1.5px solid #16a34a;border-radius:10px;padding:1rem 1rem .85rem;background:#f0fdf4;margin-top:.65rem;">
         <p style="font-size:.85rem;color:#166534;margin:0 0 .7rem;line-height:1.5;">Once your payment goes through, tap below. Jesse will be notified to verify and confirm your booking.</p>
-        <button id="pm-sent-btn" onclick="_confirmPaymentSent()" style="width:100%;padding:.8rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;line-height:1.4;">✅ I've sent my payment — notify Jesse</button>
+        <button id="pm-sent-btn" onclick="_confirmPaymentSent()" style="width:100%;padding:.8rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;line-height:1.4;">✅ CLICK HERE — I've sent my payment</button>
       </div>
 
       <div class="pay-badges">
@@ -1319,7 +1319,8 @@ async function _sendAgreementCopy(sigData) {
     })() : '';
 
     const html =
-`<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2ede3"><tr><td align="center" bgcolor="#f2ede3" style="padding:24px 16px;background-color:#f2ede3;">
+`<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="margin:0;padding:0;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2ede3"><tr><td align="center" bgcolor="#f2ede3" style="padding:24px 16px;background-color:#f2ede3;">
 <table width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:600px;">
 
 <tr><td>
@@ -1481,7 +1482,8 @@ async function _sendAgreementCopy(sigData) {
   <p style="font-size:11px;color:#999;margin:0;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
 </td></tr>
 
-</table></td></tr></table>`;
+</table></td></tr></table>
+</body></html>`;
 
     const _emailResp = await fetch('/.netlify/functions/send-email', {
       method: 'POST',

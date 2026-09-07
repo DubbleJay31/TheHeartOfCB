@@ -2091,10 +2091,13 @@ async function resendQuote(q, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
   const propName = PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
-  const html = `<!DOCTYPE html><html><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
   <div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="56" height="56" alt="" style="display:block;margin:0 auto 10px;border-radius:50%;" />
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+      <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="48" height="48" alt="" style="display:block;border-radius:50%;" />
+    </td></tr></table>
+    <div style="height:10px;"></div>
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Your Booking Link</h1>
   </div>
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
@@ -2308,10 +2311,13 @@ async function doResend(id, guest, ci, co, prop, total) {
   const propName = PROPS[prop]?.name || prop || 'your stay';
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
-  const html = `<!DOCTYPE html><html><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
   <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
     <div style="background:#0a1f3a;padding:24px;text-align:center;">
-      <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="56" height="56" alt="" style="display:block;margin:0 auto 10px;border-radius:50%;" />
+      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="48" height="48" alt="" style="display:block;border-radius:50%;" />
+      </td></tr></table>
+      <div style="height:10px;"></div>
       <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Booking Confirmed</h1>
       <p style="color:#c9a84c;margin:.3rem 0 0;font-size:.85rem;">The Heart Of CB</p>
     </div>
