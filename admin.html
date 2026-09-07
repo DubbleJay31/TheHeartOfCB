@@ -284,8 +284,10 @@ a { color: inherit; text-decoration: none; }
 }
 .bi-btn:hover { background: var(--border); }
 .bi-btn.resend { background: rgba(184,136,42,.1); color: var(--gold); }
-.bi-btn.confirm-res { background: rgba(16,185,129,.12); color: #059669; border-color: rgba(16,185,129,.3); }
-.bi-btn.confirm-res:hover { background: rgba(16,185,129,.2); }
+.bi-btn.confirm-res { background: rgba(245,158,11,.16); color: #b45309; border-color: rgba(245,158,11,.4); font-weight: 700; }
+.bi-btn.confirm-res:hover { background: rgba(245,158,11,.28); }
+.bi-btn.confirm-res.is-confirmed { background: rgba(16,185,129,.15); color: #059669; border-color: rgba(16,185,129,.3); cursor: default; }
+.bi-btn.confirm-res.is-confirmed:hover { background: rgba(16,185,129,.15); }
 .no-bookings { font-size: .85rem; color: var(--muted2); text-align: center; padding: 1rem 0; font-style: italic; }
 
 /* ── CONFIRMED RESERVATIONS TAB ── */
@@ -611,7 +613,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 /* ── ADMIN PAGE TABS ── */
 .adm-tabs-nav {
   display: flex; gap: 0; border-bottom: 2px solid var(--border);
-  background: var(--white); position: sticky; top: 72px; z-index: 90;
+  background: var(--white); position: sticky; top: 90px; z-index: 90;
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 .adm-tab-btn {
@@ -2059,7 +2061,7 @@ function renderRecent() {
       </div>
       <div class="bi-actions">
         <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}])">Resend</button>
-        <button class="bi-btn confirm-res" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">✓ Confirm</button>
+        <button class="bi-btn confirm-res${q.confirmed ? ' is-confirmed' : ''}" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">${q.confirmed ? '✓ Confirmed' : '✓ Confirm'}</button>
       </div>
     </div>
   `).join('');
@@ -2328,9 +2330,16 @@ async function confirmFromQuote(q, btn) {
     });
     if (r.ok) {
       if (btn) {
+        btn.disabled = false;
         btn.textContent = '✓ Confirmed';
-        btn.style.background = 'rgba(16,185,129,.25)';
-        btn.style.color = '#059669';
+        btn.classList.add('is-confirmed');
+      }
+      const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
+      const match = saved.find(s => s.ts === q.ts && s.guest === q.guest);
+      if (match) {
+        match.confirmed = true;
+        localStorage.setItem('thocb_quotes', JSON.stringify(saved));
+        _recentQuotesCache = saved;
       }
     } else {
       const txt = await r.text();
