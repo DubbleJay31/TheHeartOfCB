@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" type="image/png" href="THOCB Pin NO BACKGROUND.png" />
+<link rel="icon" type="image/png" href="THOCB Pin Square.png" />
+<link rel="apple-touch-icon" href="THOCB Pin Square.png" />
 <title>ADMIN — The Heart Of CB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1338,7 +1339,7 @@ function loadInquiries() {
     const prop = propLabel[inq.prop] || inq.prop || '?';
     const dates = inq.ci && inq.co ? `${fmtD(inq.ci)} → ${fmtD(inq.co)}` : 'No dates';
     const ago = _timeAgo(inq.ts);
-    return `<div class="recent-item" style="cursor:pointer;border-left:3px solid var(--gold);padding-left:.8rem;" onclick="fillFromInquiry(${i})">
+    return `<div class="recent-item inquiry-item" id="inq-item-${i}" style="cursor:pointer;border-left:3px solid var(--gold);padding-left:.8rem;transition:background .25s,border-color .25s;" onclick="fillFromInquiry(${i}, this)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div style="font-weight:600;color:var(--navy)">${name}</div>
@@ -1347,16 +1348,34 @@ function loadInquiries() {
           ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${inq.guests}${inq.pets && inq.pets !== 'No pets' ? ' · ' + inq.pets : ''}</div>` : ''}
           ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${inq.message.slice(0,80)}${inq.message.length>80?'…':''}"</div>` : ''}
         </div>
-        <span style="font-size:.7rem;color:var(--muted);white-space:nowrap;margin-left:.5rem">${ago}</span>
+        <span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.7rem;color:var(--muted);white-space:nowrap;margin-left:.5rem">${ago}</span>
       </div>
     </div>`;
   }).join('');
 }
 
-function fillFromInquiry(i) {
+function fillFromInquiry(i, el) {
   const data = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
   const inq = data[i];
   if (!inq) return;
+  document.querySelectorAll('.inquiry-item.is-loaded').forEach(node => {
+    node.classList.remove('is-loaded');
+    node.style.background = '';
+    node.style.borderLeftColor = 'var(--gold)';
+  });
+  if (el) {
+    el.classList.add('is-loaded');
+    el.style.background = 'rgba(16,185,129,.08)';
+    el.style.borderLeftColor = '#059669';
+  }
+  const badge = document.getElementById(`inq-badge-${i}`);
+  if (badge) {
+    const orig = badge.textContent;
+    badge.textContent = '✓ Loaded';
+    badge.style.color = '#059669';
+    badge.style.fontWeight = '700';
+    setTimeout(() => { if (badge.textContent === '✓ Loaded') { badge.textContent = orig; badge.style.color = ''; badge.style.fontWeight = ''; } }, 3000);
+  }
   // Guest info
   document.getElementById('f-first').value = inq.first || '';
   document.getElementById('f-last').value  = inq.last  || '';
@@ -2060,15 +2079,58 @@ function renderRecent() {
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
-        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}])">Resend</button>
+        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}], this)">Resend</button>
         <button class="bi-btn confirm-res${q.confirmed ? ' is-confirmed' : ''}" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">${q.confirmed ? '✓ Confirmed' : '✓ Confirm'}</button>
       </div>
     </div>
   `).join('');
 }
 
-function resendQuote(q) {
-  if (q.url) window.open(q.url, '_blank');
+async function resendQuote(q, btn) {
+  if (!q) { alert('Could not find that quote — try refreshing.'); return; }
+  if (!q.email) { alert('No email on file for this guest — opening link instead.'); if (q.url) window.open(q.url, '_blank'); return; }
+  if (!q.url) { alert('No booking link saved for this quote.'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
+  const propName = PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const html = `<!DOCTYPE html><html><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+<div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+  <div style="background:#0a1f3a;padding:24px;text-align:center;">
+    <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="56" height="56" alt="" style="display:block;margin:0 auto 10px;border-radius:50%;" />
+    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Your Booking Link</h1>
+  </div>
+  <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
+    <p>Hi ${q.guest},</p>
+    <p>Here's your booking link for <strong>${propName}</strong>:</p>
+    <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
+      <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(q.ci)}</div>
+      <div><strong>Check-out:</strong> ${fmtD(q.co)}</div>
+    </div>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View &amp; Complete Your Booking</a>
+    </div>
+    <p>Questions? Reach out anytime.</p>
+    <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
+    📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
+  </div>
+</div></body></html>`;
+  try {
+    const r = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: [q.email], subject: `Your Booking Link — The Heart Of CB`, html })
+    });
+    if (r.ok) {
+      if (btn) { btn.textContent = '✅ Sent'; }
+      setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Resend'; } }, 2500);
+    } else {
+      throw new Error(await r.text());
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Resend'; }
+    alert('Send failed — check console.');
+    console.error(e);
+  }
 }
 
 // ── CLOUD SYNC (JSONBin.io) ──
