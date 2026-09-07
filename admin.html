@@ -2039,15 +2039,18 @@ function saveRecent() {
   _cloudWrite();
 }
 
+let _recentQuotesCache = [];
+
 function renderRecent() {
   const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
+  _recentQuotesCache = saved;
   const el = document.getElementById('recent-quotes');
   if (!saved.length) {
     el.innerHTML = '<div class="no-bookings">No quotes sent yet.</div>';
     return;
   }
   const fmtD = s => { const d = new Date(s+'T12:00:00'); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); };
-  el.innerHTML = saved.map(q => `
+  el.innerHTML = saved.map((q, i) => `
     <div class="booking-item">
       <div class="bi-prop">${PROPS[q.prop]?.icon || '🏠'}</div>
       <div class="bi-info">
@@ -2055,8 +2058,8 @@ function renderRecent() {
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
-        <button class="bi-btn resend" onclick="resendQuote(${JSON.stringify(q).replace(/"/g,'&quot;')})">Resend</button>
-        <button class="bi-btn confirm-res" onclick="confirmFromQuote(${JSON.stringify(q).replace(/"/g,'&quot;')})">✓ Confirm</button>
+        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}])">Resend</button>
+        <button class="bi-btn confirm-res" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">✓ Confirm</button>
       </div>
     </div>
   `).join('');
@@ -2303,7 +2306,9 @@ async function _saveAdditionalContacts(id, contacts) {
   } catch(e) { console.warn('Could not save additional contacts:', e); }
 }
 
-async function confirmFromQuote(q) {
+async function confirmFromQuote(q, btn) {
+  if (!q) { alert('Could not find that quote — try refreshing.'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
   const nights = q.nights || _sbNights(q.ci, q.co);
   const payload = {
     guest: q.guest,
@@ -2322,9 +2327,14 @@ async function confirmFromQuote(q) {
       body: JSON.stringify(payload)
     });
     if (r.ok) {
-      alert(`✅ ${q.guest} saved to Confirmed Reservations!`);
+      if (btn) {
+        btn.textContent = '✓ Confirmed';
+        btn.style.background = 'rgba(16,185,129,.25)';
+        btn.style.color = '#059669';
+      }
     } else {
       const txt = await r.text();
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Confirm'; }
       if (txt.includes('already exists') || txt.includes('duplicate')) {
         alert('This reservation may already be confirmed.');
       } else {
@@ -2333,6 +2343,7 @@ async function confirmFromQuote(q) {
       }
     }
   } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Confirm'; }
     alert('Network error saving reservation.');
     console.error(e);
   }
