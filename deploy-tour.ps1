@@ -56,9 +56,16 @@ Get-ChildItem (Join-Path $destDir 'locale') -Filter '*.txt' -ErrorAction Silentl
 }
 
 # -- Cloudflare Pages: create project (ok if it already exists) + deploy --
+# Wrapped in try/catch with ErrorAction Continue: PowerShell 5.1 treats a native command's
+# stderr as a terminating NativeCommandError under $ErrorActionPreference = 'Stop', and an
+# "already exists" response here (a normal re-deploy of an existing tour) is not a failure.
 Write-Host "Creating Cloudflare Pages project '$projectName' (skips if it already exists) ..."
-& npx wrangler pages project create $projectName --production-branch main --force 2>&1 |
-    ForEach-Object { $_ } # stream output; an "already exists"-style error here is fine, deploy will still work
+try {
+    & npx wrangler pages project create $projectName --production-branch main --force 2>&1 |
+        ForEach-Object { Write-Host $_ }
+} catch {
+    Write-Host "(project create step reported an issue - normal if '$projectName' already exists; continuing to deploy)"
+}
 
 Write-Host "Deploying $destDir to Cloudflare Pages ..."
 & npx wrangler pages deploy $destDir --project-name $projectName --commit-dirty=true
