@@ -1,1 +1,12 @@
 /ical/:file  https://www.airbnb.com/calendar/ical/:file  200
+/stay        /index.html  200
+/gear        /index.html  200
+/explore     /index.html  200
+/consulting  /index.html  200
+/about       /index.html  200
+/guidebook   /index.html  200
+/book        /index.html  200
+/prop1       /index.html  200
+/prop2       /index.html  200
+/prop3       /index.html  200
+/privacy     /index.html  200

@@ -11,6 +11,10 @@ while ($listener.IsListening) {
     $path = $req.Url.LocalPath -replace '/', '\'
     if ($path -eq '\') { $path = '\index.html' }
     $file = Join-Path $root $path.TrimStart('\')
+    if (-not (Test-Path $file -PathType Leaf) -and [System.IO.Path]::GetExtension($file) -eq '') {
+        # SPA fallback: extensionless paths (e.g. /stay, /gear) serve index.html, mirroring the Netlify _redirects rules
+        $file = Join-Path $root 'index.html'
+    }
     if (Test-Path $file -PathType Leaf) {
         $mime = switch ([System.IO.Path]::GetExtension($file)) {
             '.html' { 'text/html; charset=utf-8' }

@@ -1085,7 +1085,42 @@ function _clearCalError() {
 }
 
 // ─── PAGE NAVIGATION ───
-function showPage(id) {
+var PAGE_SLUGS = {
+  home: '/', stay: '/stay', shop: '/gear', explore: '/explore',
+  consulting: '/consulting', about: '/about', guidebook: '/guidebook',
+  book: '/book', prop1: '/prop1', prop2: '/prop2', prop3: '/prop3', privacy: '/privacy'
+};
+var SLUG_PAGES = {};
+Object.keys(PAGE_SLUGS).forEach(function (id) { SLUG_PAGES[PAGE_SLUGS[id]] = id; });
+
+var PAGE_TITLES = {
+  home: 'The Heart Of CB — Direct Booking · Carolina Beach, NC',
+  stay: 'Book Your Stay — The Heart Of CB',
+  shop: 'Shop — The Heart Of CB',
+  explore: 'Explore CB — The Heart Of CB',
+  consulting: 'STR Consulting — The Heart Of CB',
+  about: 'About — The Heart Of CB',
+  guidebook: 'Guest Guidebook — The Heart Of CB',
+  book: 'Book Now — The Heart Of CB',
+  prop1: '(FRONT) Home in The Heart Of CB',
+  prop2: '(LEFT) Private Guest Suite in The Heart Of CB',
+  prop3: '(RIGHT) Private Guest Suite in The Heart Of CB',
+  privacy: 'Privacy Policy — The Heart Of CB'
+};
+
+function _pageIdFromPath(path) {
+  return SLUG_PAGES[path] || 'home';
+}
+
+function showPage(id, _skipHistory) {
+  if (!document.getElementById('page-' + id)) id = 'home';
+
+  if (!_skipHistory) {
+    var path = PAGE_SLUGS[id] || '/';
+    if (location.pathname !== path) history.pushState({ page: id }, '', path);
+  }
+  if (PAGE_TITLES[id]) document.title = PAGE_TITLES[id];
+
   // Save scroll offset of any currently visible listing calendar for scroll sync
   const activePage = document.querySelector('.page.active');
   const activePropMatch = activePage?.id?.match(/^page-(prop\d+)$/);
@@ -1135,6 +1170,19 @@ function showPage(id) {
     _hideBookingBar();
   }
 }
+
+window.addEventListener('popstate', function (e) {
+  var id = (e.state && e.state.page) || _pageIdFromPath(location.pathname);
+  showPage(id, true);
+});
+
+// Route to whatever page the URL points at on initial load (deep link / refresh)
+(function () {
+  var id = _pageIdFromPath(location.pathname);
+  history.replaceState({ page: id }, '', PAGE_SLUGS[id] || '/');
+  if (id !== 'home') showPage(id, true);
+  else if (PAGE_TITLES.home) document.title = PAGE_TITLES.home;
+})();
 
 // ─── MOBILE MENU ───
 document.getElementById('hamburger').addEventListener('click', function () {
