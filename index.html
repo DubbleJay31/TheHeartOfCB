@@ -194,6 +194,21 @@
     </div>
   </div>
 
+  <!-- 3D VIRTUAL TOUR -->
+  <div class="section" style="padding-top:1rem">
+    <div class="section-header center">
+      <span class="section-label">Take A Look Around</span>
+      <h2 class="section-title">Explore Carolina Beach in 3D</h2>
+      <p class="section-sub">Walk the River Walk trail at Carolina Beach State Park before you ever set foot on it.</p>
+    </div>
+    <div class="tour-embed-wrap" style="max-width:900px;margin:0 auto;">
+      <iframe src="https://thocb-river-walk-tour.pages.dev/index.htm" title="State Park River Walk 3D Tour" loading="lazy" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen></iframe>
+    </div>
+    <div style="text-align:center;margin-top:1.25rem">
+      <a href="#" onclick="showPage('explore')" class="btn btn-navy btn-sm">More Virtual Tours →</a>
+    </div>
+  </div>
+
   <!-- REAL REVIEWS -->
   <div style="background:var(--sand)">
     <div class="section" style="padding-top:4rem;padding-bottom:4rem">
@@ -1426,10 +1441,13 @@
     <div class="guide-category" style="margin-bottom:2rem;">
       <div class="guide-cat-header">🎥 Virtual Tours</div>
       <div class="guide-items">
-        <div class="guide-item">
+        <div class="guide-item" style="max-width:none;">
           <div class="gi-name">Carolina Beach State Park — River Walk</div>
           <div class="gi-desc">Take a 3D walkthrough of the River Walk trail before you visit — filmed with a 360° camera.</div>
-          <a href="tour/river-walk/index.htm" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-block;margin-top:.75rem;text-decoration:none;">Launch 3D Tour →</a>
+          <div class="tour-embed-wrap">
+            <iframe src="https://thocb-river-walk-tour.pages.dev/index.htm" title="State Park River Walk 3D Tour" loading="lazy" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen></iframe>
+          </div>
+          <a href="https://thocb-river-walk-tour.pages.dev/index.htm" target="_blank" rel="noopener" class="btn btn-navy btn-sm" style="display:inline-block;margin-top:.75rem;text-decoration:none;">Open Fullscreen ↗</a>
         </div>
       </div>
     </div>

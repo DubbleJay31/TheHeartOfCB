@@ -1,0 +1,4 @@
+# 3D tours are deployed separately to Cloudflare Pages (see wrangler pages deploy),
+# not served from Netlify — kept locally only as the source for those deploys.
+tour/
+.wrangler/
