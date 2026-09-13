@@ -1724,26 +1724,38 @@ function _photoUrl(prop, file) {
   return folder + '/' + file;
 }
 
-function _renderGallery(prop, containerId) {
+function _renderGallery(prop, containerId, tourUrl) {
   if (!_photosData || !_photosData[prop]) return;
   var photos = _photosData[prop].photos;
   var el = document.getElementById(containerId);
   if (!el || !photos.length) return;
 
-  // Hero
-  var hero = photos[0];
-  var heroUrl = _photoUrl(prop, hero.file);
-  var html = '<div class="gallery-hero" onclick="_lbOpen(\'' + prop + '\',0)">';
-  html += '<img src="' + heroUrl + '" alt="' + (hero.caption || '') + '" loading="lazy" />';
-  if (hero.tag && hero.tag !== 'Cover') html += '<span class="gallery-tag-badge">' + hero.tag + '</span>';
-  if (hero.caption) html += '<div class="gallery-hero-caption">' + hero.caption + '</div>';
-  html += '<div class="gallery-hero-count">📸 ' + photos.length + ' photos</div>';
-  html += '</div>';
+  var html = '';
+  var gridStart = 0;
 
-  // Grid (remaining photos)
-  if (photos.length > 1) {
+  if (tourUrl) {
+    // 3D tour in the hero slot instead of a photo
+    html += '<div class="gallery-hero gallery-hero-tour">';
+    html += '<iframe src="' + tourUrl + '" title="' + prop + ' 3D Tour" loading="lazy" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen></iframe>';
+    html += '<span class="gallery-hero-tour-hint">🔍 Drag to explore · Double-click for fullscreen</span>';
+    html += '</div>';
+  } else {
+    // Photo hero
+    var hero = photos[0];
+    var heroUrl = _photoUrl(prop, hero.file);
+    html += '<div class="gallery-hero" onclick="_lbOpen(\'' + prop + '\',0)">';
+    html += '<img src="' + heroUrl + '" alt="' + (hero.caption || '') + '" loading="lazy" />';
+    if (hero.tag && hero.tag !== 'Cover') html += '<span class="gallery-tag-badge">' + hero.tag + '</span>';
+    if (hero.caption) html += '<div class="gallery-hero-caption">' + hero.caption + '</div>';
+    html += '<div class="gallery-hero-count">📸 ' + photos.length + ' photos</div>';
+    html += '</div>';
+    gridStart = 1;
+  }
+
+  // Grid (remaining photos — all of them when the hero is a tour, since no photo was "used" there)
+  if (photos.length > gridStart) {
     html += '<div class="gallery-grid">';
-    for (var i = 1; i < photos.length; i++) {
+    for (var i = gridStart; i < photos.length; i++) {
       var p = photos[i];
       var url = _photoUrl(prop, p.file);
       html += '<div class="gallery-grid-item" onclick="_lbOpen(\'' + prop + '\',' + i + ')">';
@@ -1818,7 +1830,7 @@ document.addEventListener('keydown', function(e) {
 // Load photos.json and render all galleries + property card cover photos
 fetch('photos.json').then(function(r) { return r.json(); }).then(function(data) {
   _photosData = data;
-  _renderGallery('front', 'gallery-prop1');
+  _renderGallery('front', 'gallery-prop1', 'https://thocb-front-tour.pages.dev/index.htm');
   _renderGallery('left',  'gallery-prop2');
   _renderGallery('right', 'gallery-prop3');
   // Populate cover photos on Stay page property cards
