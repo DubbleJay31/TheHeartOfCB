@@ -774,6 +774,17 @@ a { color: inherit; text-decoration: none; }
           <a id="pm-cc-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('square',event)">Pay Now →</a>
         </div>
 
+        <!-- PayPal -->
+        <div class="pay-method-card" id="pm-pp-card">
+          <div class="pm-icon">🅿️</div>
+          <div class="pm-info">
+            <div class="pm-name">PayPal</div>
+            <div class="pm-amount" id="pm-pp-amount"></div>
+            <div class="pm-note">Includes 3.5% processing fee — covers buyer/seller protection</div>
+          </div>
+          <a id="pm-pp-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('paypal',event)">Pay Now →</a>
+        </div>
+
         <!-- Venmo -->
         <div class="pay-method-card" id="pm-venmo-card">
           <div class="pm-icon">💙</div>
@@ -935,6 +946,10 @@ const cashDisc = parseFloat(get('cdsc') || '0') || 0;
 const cashDep  = parseFloat(get('cdep') || '0') || 0;
 const noFeeTotal = Math.max(0, total - ccFee);
 const cashTotal  = Math.max(0, (noFeeTotal > 0 ? noFeeTotal : total) - cashDisc);
+const PAYPAL_FEE_RATE = 0.035; // 3.5% — PayPal Goods & Services buyer/seller protection fee
+const paypalBase = noFeeTotal > 0 ? noFeeTotal : total;
+const paypalFee   = paypalBase * PAYPAL_FEE_RATE;
+const paypalTotal = paypalBase + paypalFee;
 const note    = get('note')    || '';
 const expRaw  = get('exp')     || '';
 
@@ -987,7 +1002,7 @@ const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divT
 const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
 addRow('<strong>Total</strong>', `<strong>${fmt(baseTotal)}</strong>`, 'pt-total');
 addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
-if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card — free with Venmo, Cash App, or Zelle</span>`, '', '');
+if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</span>`, '', '');
 if (dueRaw) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
 
 // ── GUEST INFO ──
@@ -1081,6 +1096,10 @@ function toggleCheck(e) {
     document.getElementById('pm-cc-btn').href = payUrl;
     document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
   }
+
+  // PayPal
+  document.getElementById('pm-pp-amount').textContent = `${fmtAmt(paypalTotal)} (incl. ${fmtAmt(paypalFee)} fee)`;
+  document.getElementById('pm-pp-btn').href = `https://paypal.me/jessejones430/${paypalTotal.toFixed(2)}`;
 
   // Venmo
   document.getElementById('pm-v-amount').textContent = noFeeLabel;
@@ -1523,14 +1542,15 @@ function _showPaymentSentSection(method) {
   const btn = document.getElementById('pm-sent-btn');
   if (!section || !btn) return;
   const fmtL = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const amt = fmtL(noFeeTotal > 0 ? noFeeTotal : (total > 0 ? total : 0));
-  const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash' };
+  const amtByMethod = { square: total, paypal: paypalTotal };
+  const amt = fmtL(amtByMethod[method] ?? (noFeeTotal > 0 ? noFeeTotal : (total > 0 ? total : 0)));
+  const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
   const methodLabel = names[method] || method;
   btn.textContent = `👉 CLICK HERE — I've sent ${amt} via ${methodLabel} — I agree to the rules & cancellation policy`;
   btn.dataset.method = method;
   section.style.display = '';
   // Move green box to directly after the selected payment method card
-  const cardMap = { venmo: 'pm-venmo-card', cashapp: 'pm-cashapp-card', square: 'pm-cc-card', Zelle: 'pm-zelle-card' };
+  const cardMap = { venmo: 'pm-venmo-card', cashapp: 'pm-cashapp-card', square: 'pm-cc-card', paypal: 'pm-pp-card', Zelle: 'pm-zelle-card' };
   const cardId = cardMap[method];
   const card = cardId ? document.getElementById(cardId) : null;
   if (card && card.parentNode) {
@@ -1553,7 +1573,7 @@ async function _notifyGuest(method) {
   if (!email) return;
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
     const methodLabel = names[method] || method;
     const r = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
@@ -1588,7 +1608,7 @@ async function _notifyGuest(method) {
 async function _notifyJesse(method) {
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
     const methodLabel = names[method] || method;
     // Build confirm link — use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
