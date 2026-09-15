@@ -79,6 +79,7 @@ Write-Host "Paste this where you want it embedded (Explore CB page and/or homepa
 Write-Host @"
 <div class="tour-embed-wrap">
   <iframe src="$url" title="$Title" loading="lazy" allow="xr-spatial-tracking; gyroscope; accelerometer" allowfullscreen></iframe>
+  <span class="tour-hint">&#128070; Click &amp; drag to explore</span>
 </div>
 <a href="$url" target="_blank" rel="noopener" class="btn btn-navy btn-sm">Open Fullscreen &#8599;</a>
 "@
