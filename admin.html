@@ -2731,7 +2731,30 @@ function switchAdmTab(tab) {
   if (tab === 'stats')     { _renderStats(); }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'confirmed') { loadConfirmed(); }
-  if (tab === 'quotes')    { renderRecent(); }
+  if (tab === 'quotes')    { _refreshQuotesConfirmedStatus(); }
+}
+
+// A quote confirmed via the one-click email link (not the "✓ Confirm" button here) never
+// touches thocb_quotes, so its confirmed flag can go stale. Cross-check against the real
+// reservations list whenever this tab opens and self-heal anything out of sync.
+async function _refreshQuotesConfirmedStatus() {
+  renderRecent();
+  try {
+    const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
+    if (!r.ok) return;
+    const reservations = await r.json();
+    const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
+    let changed = false;
+    saved.forEach(q => {
+      const isConfirmed = reservations.some(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
+      if (isConfirmed && !q.confirmed) { q.confirmed = true; changed = true; }
+    });
+    if (changed) {
+      localStorage.setItem('thocb_quotes', JSON.stringify(saved));
+      _cloudWrite();
+      renderRecent();
+    }
+  } catch (e) { console.error('Quote confirm-status sync failed:', e); }
 }
 
 // ══════════════════════════════════════════
