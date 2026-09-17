@@ -612,28 +612,40 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
 /* ── ADMIN PAGE TABS ── */
 .adm-tabs-nav {
-  display: flex; gap: 0; border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; gap: .4rem; border-bottom: 2px solid var(--border);
   background: var(--white); position: sticky; top: 90px; z-index: 90;
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  padding: 0 .5rem;
 }
+.adm-tabs-scroll {
+  display: flex; gap: 0; overflow-x: auto; flex: 1; min-width: 0;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.adm-tabs-scroll::-webkit-scrollbar { display: none; }
 .adm-tab-btn {
-  padding: .9rem 2rem; font-family: 'Inter', sans-serif;
-  font-weight: 700; font-size: .9rem; border: none; background: transparent;
+  padding: .9rem 1.4rem; font-family: 'Inter', sans-serif;
+  font-weight: 700; font-size: .88rem; border: none; background: transparent;
   color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
-  margin-bottom: -2px; transition: all .18s;
+  margin-bottom: -2px; transition: all .18s; white-space: nowrap; flex-shrink: 0;
 }
 .adm-tab-btn:hover { color: var(--navy); background: var(--sand); }
 .adm-tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); }
 .adm-back-link {
-  margin-left: auto; font-size: .78rem; color: var(--muted);
+  font-size: .78rem; color: var(--muted);
   text-decoration: none; padding: .35rem .6rem;
-  border-radius: 6px; transition: color .15s;
+  border-radius: 6px; transition: color .15s; flex-shrink: 0;
 }
 .adm-back-link:hover { color: var(--navy); }
 .adm-autosave-status {
   font-size: .72rem; font-weight: 600; padding: .2rem .55rem;
   border-radius: 5px; transition: opacity .3s;
-  white-space: nowrap;
+  white-space: nowrap; flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .adm-tab-btn { padding: .8rem .9rem; font-size: .78rem; }
+  .adm-autosave-status { display: none; }
+  .adm-back-link { font-size: 0; padding: .35rem .5rem; }
+  .adm-back-link::before { content: '←'; font-size: .95rem; }
 }
 #adm-panel-pricing { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
 #adm-panel-pricing .adm-card { max-width: none; }
@@ -728,11 +740,13 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
   <!-- Page tab nav -->
   <div class="adm-tabs-nav">
-    <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Booking</button>
-    <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
-    <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Statistics</button>
-    <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
-    <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
+    <div class="adm-tabs-scroll">
+      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Booking</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Stats</button>
+    </div>
     <span class="adm-autosave-status" id="adm-autosave-status"></span>
     <a href="index.html" class="adm-back-link">← Website</a>
   </div>
