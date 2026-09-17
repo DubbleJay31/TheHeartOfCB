@@ -960,6 +960,11 @@ function _fillFormDates(start, end) {
   const propMap = { prop1: 'Home in The Heart Of CB (Front)', prop2: 'Left Private Suite', prop3: 'Right Private Suite' };
   const propHid = document.getElementById('form-property-hidden');
   if (propHid) propHid.value = propMap[_calProp] || '';
+  // Snapshot the raw prop key too — _calProp is a shared global that any OTHER calendar on the
+  // page can overwrite before the guest actually hits submit, so submitBooking() must read the
+  // property from here, not from live _calProp, or a stray click elsewhere silently swaps it.
+  const propKeyHid = document.getElementById('form-prop-key');
+  if (propKeyHid) propKeyHid.value = _calProp || '';
   // Update locked display fields
   const fmt = d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   const dispProp = document.getElementById('form-locked-prop');
@@ -1223,13 +1228,17 @@ async function submitBooking(e) {
   try {
     const fd = new FormData(form);
     const propLabels = { prop1: 'Front Home', prop2: 'Left Suite', prop3: 'Right Suite' };
+    // Read the property from the hidden field snapshotted when dates were picked, not the live
+    // _calProp global — that can get overwritten by a stray click on any other calendar on the
+    // page before the guest actually submits.
+    const submittedProp = fd.get('propKey') || _calProp || '';
     const inquiry = {
       first: fd.get('first_name') || '',
       last:  fd.get('last_name')  || '',
       email: fd.get('email')      || '',
       phone: fd.get('phone')      || '',
-      prop:  _calProp             || '',
-      propLabel: propLabels[_calProp] || _calProp || '',
+      prop:  submittedProp,
+      propLabel: propLabels[submittedProp] || submittedProp || '',
       ci:    fd.get('checkin')    || '',
       co:    fd.get('checkout')   || '',
       guests: fd.get('guests')    || '',

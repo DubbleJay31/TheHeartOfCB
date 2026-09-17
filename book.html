@@ -504,7 +504,6 @@ a { color: inherit; text-decoration: none; }
     <div class="bk-hero-eyebrow">📋 Your Personal Quote</div>
     <h1 id="hero-greeting">Hey there!</h1>
     <p class="bk-hero-sub">Your reservation is ready to confirm. Review the details below, sign, and pay to lock in your dates.</p>
-    <div class="bk-hero-prop" id="hero-prop">—</div>
   </div>
 </section>
 
@@ -648,8 +647,9 @@ a { color: inherit; text-decoration: none; }
               `<strong>Cancel ${cd.halfStart} &ndash; ${cd.halfEnd}:</strong> 50% refund.<br/>` +
               `<strong>${cd.ciFormatted} (your check-in day): Cancellation not accepted &mdash; no refund.</strong>` +
               (cashMode && cashDep > 0 ? ` For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.` : '') + `<br/><br/>` +
-              `<strong>Only two exceptions apply:</strong> (1) Written approval from Jesse issued in advance, or ` +
-              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> ` +
+              `<strong>Only three exceptions apply:</strong> (1) Written approval from Jesse issued in advance, ` +
+              `(2) Jesse successfully re-books your dates with another guest &mdash; confirmed in writing by Jesse, or ` +
+              `(3) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> ` +
               `is officially activated for your specific dates and location. ` +
               `Personal reasons and weather in your area of origin are not covered &mdash; ` +
               `if it is safe to travel and the property is available, the policy applies in full.`;
@@ -659,8 +659,9 @@ a { color: inherit; text-decoration: none; }
               `<strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/>` +
               `<strong>Same-day cancellation: Not accepted &mdash; no refund.</strong>` +
               (cashMode && cashDep > 0 ? ` For cash guests: deposit is non-refundable and you owe the remaining unpaid balance.` : '') + `<br/><br/>` +
-              `<strong>Only two exceptions:</strong> (1) Written approval from Jesse, or ` +
-              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> applies. ` +
+              `<strong>Only three exceptions:</strong> (1) Written approval from Jesse, ` +
+              `(2) Jesse successfully re-books your dates &mdash; confirmed in writing by Jesse, or ` +
+              `(3) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> applies. ` +
               `Personal reasons and weather at your origin are not covered.`;
           }
         });
@@ -966,7 +967,7 @@ const expRaw  = get('exp')     || '';
 // ── POPULATE HERO ──
 const firstName = guest.split(' ')[0];
 document.getElementById('hero-greeting').textContent = 'Hey ' + firstName + '!';
-document.getElementById('hero-prop').innerHTML = `<span style="display:inline-flex;align-items:center;gap:.5rem;"><span style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:50%;width:28px;height:28px;flex-shrink:0;"><img src="THOCB Pin NO BACKGROUND.png" alt="" style="width:20px;height:20px;object-fit:contain;"></span>${prop} · Carolina Beach, NC</span>`;
+const propShort = prop.includes('Front') ? 'Front Home' : prop.includes('Left') ? 'Left Suite' : prop.includes('Right') ? 'Right Suite' : prop;
 
 // ── FORMAT DATES ──
 function fmtDate(str) {
@@ -994,7 +995,7 @@ document.getElementById('disp-ci').textContent     = fmtDate(ciRaw);
 document.getElementById('disp-ci-day').textContent = fmtDay(ciRaw);
 document.getElementById('disp-co').textContent     = fmtDate(coRaw);
 document.getElementById('disp-co-day').textContent = fmtDay(coRaw);
-document.getElementById('disp-nights').textContent = `${nights} night${nights !== 1 ? 's' : ''}`;
+document.getElementById('disp-nights').textContent = `${nights} night${nights !== 1 ? 's' : ''} — ${propShort}`;
 
 // ── PRICE TABLE ──
 const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1311,9 +1312,9 @@ function showBookingComplete() {
   // Deposit step (addresses Jesse's concern about incomplete payments)
   const depStep = document.getElementById('bco-dep-step');
   if (cashDep > 0) {
-    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will verify your <strong>${fmtAmt2(cashDep)} deposit</strong> and manually confirm your booking. <strong>Your dates are not blocked until Jesse approves.</strong></span>`;
+    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will verify your <strong>${fmtAmt2(cashDep)} deposit</strong> and manually confirm your booking — your dates aren't blocked until then.</span>`;
   } else {
-    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will review your request and manually confirm your booking. <strong>Your dates are not blocked until Jesse approves.</strong></span>`;
+    depStep.innerHTML = `<span class="bco-step-icon">⏳</span><span>Jesse will review your request and manually confirm your booking — your dates aren't blocked until then.</span>`;
   }
   // Agreement link
   document.getElementById('bco-agreement-link').href = _agreementUrl || window.location.href;
@@ -1441,7 +1442,7 @@ async function _sendAgreementCopy(sigData) {
         ${(() => { const cd = _cancelDates(sigData.ci); return cd
           ? `<strong>Cancel by ${cd.fullBy}:</strong> Full refund.<br/><strong>Cancel ${cd.halfStart}&ndash;${cd.halfEnd}:</strong> 50% refund.<br/><strong>${cd.ciFormatted} (check-in day): Cancellation not accepted &mdash; no refund, no exceptions.</strong>`
           : `<strong>5+ days before check-in:</strong> Full refund.<br/><strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/><strong>Same-day cancellation: Not accepted &mdash; no refund, no exceptions.</strong>`; })()}${sigData.cashMode ? ' For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.' : ''}<br/><br/>
-        <strong>Only two exceptions:</strong> (1) Written approval from Jesse issued in advance, or (2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" style="color:#7c1d1d;">Major Disruptive Events Policy</a> is officially activated for your dates and location.<br/><br/>
+        <strong>Only three exceptions:</strong> (1) Written approval from Jesse issued in advance, (2) Jesse successfully re-books your dates with another guest &mdash; confirmed in writing by Jesse, or (3) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" style="color:#7c1d1d;">Major Disruptive Events Policy</a> is officially activated for your dates and location.<br/><br/>
         Personal reasons and weather in your origin area are <strong>not</strong> covered. If it is safe to travel and the property is available, the policy applies in full.
       </span>
     </td></tr>
@@ -1818,7 +1819,7 @@ async function _notifyJesse(method) {
         `<strong>Cancel ${cd.halfStart}–${cd.halfEnd}:</strong> 50% refund. ` +
         `<strong>${cd.ciFormatted} (check-in day): Not accepted — no refund.</strong> ` +
         `For cash guests: deposit is non-refundable and you owe the remaining unpaid balance. ` +
-        `Only two exceptions: (1) Written approval from Jesse, or (2) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location.`;
+        `Only three exceptions: (1) Written approval from Jesse, (2) Jesse successfully re-books your dates — confirmed in writing by Jesse, or (3) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location.`;
     } else {
       cancelEl.innerHTML = `<strong>5+ days before check-in:</strong> Full refund. <strong>1–4 days:</strong> 50% refund. <strong>Same day:</strong> Not accepted — no refund.`;
     }
