@@ -75,11 +75,21 @@ function propName(prop) {
   return prop || 'Your Stay';
 }
 
+// Full-refund window closes 5 days before check-in (same cutoff used in book.html's
+// _cancelDates) — at the 7-day mark that always leaves exactly 2 days to still qualify.
+function _fullRefundCutoff(ci) {
+  const checkIn = new Date(ci + 'T12:00:00');
+  const cutoff = new Date(checkIn);
+  cutoff.setDate(cutoff.getDate() - 5);
+  return cutoff;
+}
+
 function buildReminderHtml(res) {
   const fmtD = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
   });
   const fmt$ = n => '$' + parseFloat(n || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const cutoffStr = fmtD(_fullRefundCutoff(res.check_in).toISOString().split('T')[0]);
 
   return `<!DOCTYPE html>
 <html>
@@ -98,7 +108,7 @@ function buildReminderHtml(res) {
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
       <p>Hi ${res.guest},</p>
-      <p>We're so excited to host you soon! Here's a reminder of your upcoming stay:</p>
+      <p>Just a quick reminder — your stay is one week away! Your full check-in details, door code, and house rules are all in your confirmation email, so we'll keep this one short.</p>
       <div style="background:#f8f6f0;border-radius:8px;padding:18px 20px;margin:16px 0;font-size:.93rem;">
         <div style="margin-bottom:8px;"><strong>Property:</strong> ${propName(res.prop)}</div>
         <div style="margin-bottom:8px;"><strong>Check-in:</strong> ${fmtD(res.check_in)}</div>
@@ -106,9 +116,12 @@ function buildReminderHtml(res) {
         ${res.nights ? `<div style="margin-bottom:8px;"><strong>Nights:</strong> ${res.nights}</div>` : ''}
         ${res.total  ? `<div><strong>Total:</strong> ${fmt$(res.total)}</div>` : ''}
       </div>
-      <p>Check-in details and door access instructions will be sent before your arrival. If you have any questions in the meantime, don't hesitate to reach out:</p>
+      <div style="background:#fbf0da;border-left:3px solid #b8882a;border-radius:6px;padding:14px 18px;margin:16px 0;font-size:.88rem;">
+        <strong>Plans changed?</strong> You have until <strong>${cutoffStr}</strong> — 2 days from now — to cancel for a full refund. After that it's a 50% refund up until check-in day, when cancellations are no longer accepted. Full policy details are in your confirmation email.
+      </div>
+      <p>Any questions before you arrive, reach out to Jesse directly:</p>
       <p>
-        📞 <strong>Alison Baringer:</strong> <a href="tel:3303097037" style="color:#b8882a;text-decoration:none;">330-309-7037</a><br>
+        📞 <strong>Jesse:</strong> <a href="tel:9105998118" style="color:#b8882a;text-decoration:none;">(910) 599-8118</a> — text or call anytime<br>
         📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;text-decoration:none;">stay@theheartofcb.com</a>
       </p>
       <p>We can't wait to have you at The Heart Of CB. Safe travels!</p>
@@ -119,6 +132,7 @@ function buildReminderHtml(res) {
       </p>
     </div>
     <div style="background:#f8f6f0;padding:14px 32px;text-align:center;font-size:.72rem;color:#9ca3af;border-top:1px solid #e5e7eb;">
+      Emergency contact only (if Jesse is unreachable): Alison Baringer, 330-309-7037<br><br>
       The Heart Of CB · Carolina Beach, NC · <a href="https://theheartofcb.com" style="color:#9ca3af;">theheartofcb.com</a>
     </div>
   </div>
