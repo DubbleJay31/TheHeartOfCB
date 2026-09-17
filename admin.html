@@ -1869,7 +1869,7 @@ function sendEmail() {
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total</td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
         </tr>
-        ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card — free with Venmo, Cash App, or Zelle</td></tr>` : ''}
+        ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</td></tr>` : ''}
         ${dueRow}
         ${noteRow}
       </table>
