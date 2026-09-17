@@ -1254,7 +1254,9 @@ async function submitBooking(e) {
     await _sendGuestConfirmation(inquiry);
     await _notifyHost(inquiry);
     form.classList.add('hidden');
-    document.getElementById('booking-confirm').classList.remove('hidden');
+    const confirmEl = document.getElementById('booking-confirm');
+    confirmEl.classList.remove('hidden');
+    confirmEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     _selStart = null; _selEnd = null; _calProp = null;
     _refreshAllWrapStyles();
     _hideBookingBar();

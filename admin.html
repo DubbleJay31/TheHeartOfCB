@@ -797,22 +797,13 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <div class="adm-card">
         <div class="adm-card-header"><h3>🏠 Property</h3></div>
         <div class="adm-card-body">
-          <div class="prop-selector">
-            <div class="prop-card selected" id="prop-card-1" onclick="selectProp('prop1')">
-              <div class="pc-icon">🏠</div>
-              <div class="pc-name">Front Home</div>
-              <div class="pc-cap">6 guests · 3 bed</div>
-            </div>
-            <div class="prop-card" id="prop-card-2" onclick="selectProp('prop2')">
-              <div class="pc-icon">🛎️</div>
-              <div class="pc-name">Left Suite</div>
-              <div class="pc-cap">2 guests · 1 bed</div>
-            </div>
-            <div class="prop-card" id="prop-card-3" onclick="selectProp('prop3')">
-              <div class="pc-icon">🛎️</div>
-              <div class="pc-name">Right Suite</div>
-              <div class="pc-cap">2 guests · 1 bed</div>
-            </div>
+          <div class="field">
+            <label>Property</label>
+            <select id="prop-select" onchange="selectProp(this.value)">
+              <option value="prop1">🏠 Front Home — 6 guests · 3 bed</option>
+              <option value="prop2">🛎️ Left Suite — 2 guests · 1 bed</option>
+              <option value="prop3">🛎️ Right Suite — 2 guests · 1 bed</option>
+            </select>
           </div>
         </div>
       </div>
@@ -1538,9 +1529,8 @@ const PROPS = {
 let _prop = 'prop1';
 function selectProp(id) {
   _prop = id;
-  ['prop1','prop2','prop3'].forEach((p,i) => {
-    document.getElementById(`prop-card-${i+1}`).classList.toggle('selected', p === id);
-  });
+  const sel = document.getElementById('prop-select');
+  if (sel && sel.value !== id) sel.value = id;
   const sp = document.getElementById('summary-prop'); if (sp) sp.textContent = PROPS[id].icon + ' ' + PROPS[id].short;
   calcTotal();
   generate();
@@ -2451,16 +2441,21 @@ function _setConfFilter(filter) {
 // one-click confirm link — same link the "Payment Sent" email itself uses.
 function _reservationLinks(r) {
   const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
-  let confirmUrl = '', phone = '';
+  // confirmUrl (&action=confirm) opens Jesse's one-click "Send Confirmation" trigger — never
+  // give this to a guest. rawUrl itself already opens read-only (it carries signed=1 from
+  // signing time, which renders the signed-agreement view with no action buttons), so that's
+  // the one guests should get via Copy Link / Text Guest.
+  let confirmUrl = '', viewUrl = '', phone = '';
   if (rawUrl) {
     try {
       const u = new URL(rawUrl);
+      viewUrl = u.toString();
+      phone = u.searchParams.get('phone') || '';
       u.searchParams.set('action', 'confirm');
       confirmUrl = u.toString();
-      phone = u.searchParams.get('phone') || '';
     } catch { /* malformed/old url — leave blank, buttons hide themselves */ }
   }
-  return { confirmUrl, phone };
+  return { confirmUrl, viewUrl, phone };
 }
 
 function renderConfirmed() {
@@ -2502,8 +2497,8 @@ function openReservationDetail(id) {
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
-  const { confirmUrl, phone } = _reservationLinks(r);
-  const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${confirmUrl}`);
+  const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
+  const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${viewUrl}`);
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -2530,7 +2525,7 @@ function openReservationDetail(id) {
       <div class="conf-modal-actions">
         ${confirmUrl ? `
         <button class="conf-btn" onclick="window.open('${confirmUrl}','_blank')">📧 Send Full Confirmation</button>
-        <button class="conf-btn" onclick="navigator.clipboard.writeText('${confirmUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
+        <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link — this reservation predates this feature.</span>`}
         <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🗑️ Delete</button>

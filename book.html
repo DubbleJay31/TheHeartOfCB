@@ -964,15 +964,20 @@ function _amountForMethod(method) {
 
 // For Cash, "received" and "owed at check-in" are two different numbers whenever a deposit
 // is involved — _amountForMethod() alone conflates them into the full cash price, which is
-// wrong the moment a deposit-only guest is involved. These split them out; every other method
-// is paid in full right now, so received = _amountForMethod() and nothing is owed later.
+// wrong the moment a deposit-only guest is involved. Every other method is paid in full right
+// now, so received = _amountForMethod() and nothing is owed later.
+//
+// The deposit is NOT a partial payment — it's a fully-refundable hold sent electronically to
+// lock the dates. The guest still brings the FULL cash price at check-in; Jesse refunds the
+// deposit back to them the moment that cash is in hand. So "due at check-in" is always the
+// full cash total, never total-minus-deposit.
 function _receivedNowForMethod(method) {
   if (method === 'Cash') return cashDep > 0 ? cashDep : 0;
   return _amountForMethod(method);
 }
 function _dueAtCheckinForMethod(method) {
   if (method !== 'Cash') return 0;
-  return Math.max(0, cashTotal - (cashDep > 0 ? cashDep : 0));
+  return cashTotal;
 }
 const note    = get('note')    || '';
 const expRaw  = get('exp')     || '';
@@ -1348,7 +1353,9 @@ async function _sendAgreementCopy(sigData) {
     // involved, so these are split out for Cash specifically.
     const _confIsCash = sigData.paymentMethod === 'Cash';
     const _confRecvNow = _confIsCash ? (sigData.cashDep || 0) : _amountForMethod(sigData.paymentMethod);
-    const _confDueAtCheckin = _confIsCash ? Math.max(0, (sigData.cashTotal || noFee) - (sigData.cashDep || 0)) : 0;
+    // The deposit is a fully-refundable hold, not a partial payment — the guest still brings
+    // the full cash price at check-in and Jesse refunds the deposit the moment it's in hand.
+    const _confDueAtCheckin = _confIsCash ? (sigData.cashTotal || noFee) : 0;
 
     const ROW = (label, val, bg) =>
       `<tr><td bgcolor="${bg}" style="padding:9px 14px;color:#666;width:150px;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:${bg};">${label}</td>` +
@@ -1443,7 +1450,7 @@ async function _sendAgreementCopy(sigData) {
       <td bgcolor="#fff5f5" style="padding:9px 14px;color:#7c1d1d;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#fff5f5;">${fmt2(_confDueAtCheckin)}</td>
     </tr>` : ''}
   </table>
-  ${_confDueAtCheckin > 0 ? `<p style="margin:0 0 20px;font-size:13px;color:#7c1d1d;font-weight:600;font-family:Arial,Helvetica,sans-serif;">💵 Please have ${fmt2(_confDueAtCheckin)} in cash, in hand, at check-in.</p>` : ''}
+  ${_confDueAtCheckin > 0 ? `<p style="margin:0 0 20px;font-size:13px;color:#7c1d1d;font-weight:600;font-family:Arial,Helvetica,sans-serif;">💵 Please have the full ${fmt2(_confDueAtCheckin)} in cash, in hand, at check-in.${_confRecvNow > 0 ? ` Jesse will refund your ${fmt2(_confRecvNow)} deposit the moment that cash is received.` : ''}</p>` : ''}
 
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d" style="margin-bottom:12px;">
     <tr><td bgcolor="#0f1e3d" style="padding:14px 18px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
@@ -1625,7 +1632,7 @@ async function _notifyGuest(method) {
   if (!email) return;
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
     const methodLabel = names[method] || method;
     const r = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
@@ -1649,7 +1656,7 @@ async function _notifyGuest(method) {
             ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Due at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:600;color:#166534;">${methodLabel}</td></tr>
           </table>
-          ${_dueAtCheckinForMethod(method) > 0 ? `<p style="margin:0 0 12px;font-size:13px;color:#7c1d1d;font-weight:600;">💵 Please have ${fmt(_dueAtCheckinForMethod(method))} in cash, in hand, at check-in.</p>` : ''}
+          ${_dueAtCheckinForMethod(method) > 0 ? `<p style="margin:0 0 12px;font-size:13px;color:#7c1d1d;font-weight:600;">💵 Please have the full ${fmt(_dueAtCheckinForMethod(method))} in cash, in hand, at check-in.${_receivedNowForMethod(method) > 0 ? ` Jesse will refund your ${fmt(_receivedNowForMethod(method))} deposit the moment that cash is received.` : ''}</p>` : ''}
           <p style="margin:0 0 8px;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
           <p style="margin:0;font-size:12px;color:#9ca3af;">📥 Don't see Jesse's confirmation soon? Check spam/junk just in case.</p>
         </div>
@@ -1663,7 +1670,7 @@ async function _notifyGuest(method) {
 async function _notifyJesse(method) {
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash (check-in)' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
     const methodLabel = names[method] || method;
     // Build confirm link — use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
@@ -1690,6 +1697,7 @@ async function _notifyJesse(method) {
             ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
           </table>
+          ${_receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
           <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
             ⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.
           </div>
@@ -1827,7 +1835,13 @@ async function _notifyJesse(method) {
   const sigTs   = get('ts') ? new Date(decodeURIComponent(get('ts'))).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }) : '';
   const fmtAmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  // Booking summary
+  // Booking summary. The headline Total is always the flat fare+tax price — the card fee is
+  // only an optional add-on if the guest ends up paying by card, so it never belongs in this
+  // number. If a payment method is already known (this page opened after payment), also show
+  // what's been received and, for Cash, what's still due at check-in.
+  const apMethod = decodeURIComponent(get('method') || '');
+  const apRecvNow = apMethod ? _receivedNowForMethod(apMethod) : 0;
+  const apDue = apMethod ? _dueAtCheckinForMethod(apMethod) : 0;
   const sumEl = document.getElementById('apr-summary');
   if (sumEl) sumEl.innerHTML = `
     <div class="apr-si"><span>Guest</span><strong>${guest}</strong></div>
@@ -1835,7 +1849,9 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
     <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
     <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
-    <div class="apr-si"><span>Total</span><strong>${fmtAmt2(total)}</strong></div>`;
+    <div class="apr-si"><span>Total</span><strong>${fmtAmt2(noFeeTotal > 0 ? noFeeTotal : total)}</strong></div>
+    ${apRecvNow > 0 ? `<div class="apr-si"><span>${apMethod === 'Cash' ? 'Deposit Received' : 'Received'}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}
+    ${apDue > 0 ? `<div class="apr-si"><span>Due at Check-In (Cash)</span><strong style="color:#7c1d1d;">${fmtAmt2(apDue)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)
   const cancelEl = document.getElementById('apr-cancel');
