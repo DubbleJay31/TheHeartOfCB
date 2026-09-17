@@ -961,6 +961,19 @@ function _amountForMethod(method) {
   if (method === 'Cash')   return cashTotal > 0 ? cashTotal : base;
   return base;
 }
+
+// For Cash, "received" and "owed at check-in" are two different numbers whenever a deposit
+// is involved — _amountForMethod() alone conflates them into the full cash price, which is
+// wrong the moment a deposit-only guest is involved. These split them out; every other method
+// is paid in full right now, so received = _amountForMethod() and nothing is owed later.
+function _receivedNowForMethod(method) {
+  if (method === 'Cash') return cashDep > 0 ? cashDep : 0;
+  return _amountForMethod(method);
+}
+function _dueAtCheckinForMethod(method) {
+  if (method !== 'Cash') return 0;
+  return Math.max(0, cashTotal - (cashDep > 0 ? cashDep : 0));
+}
 const note    = get('note')    || '';
 const expRaw  = get('exp')     || '';
 
@@ -1330,6 +1343,13 @@ async function _sendAgreementCopy(sigData) {
     const noFee = sigData.noFeeTotal || sigData.total;
     const bookUrl = sigData.bookUrl || '';
 
+    // Cash-with-deposit means "received" and "owed at check-in" are different numbers —
+    // showing only the full cash price as "Total Received" is wrong once a deposit is
+    // involved, so these are split out for Cash specifically.
+    const _confIsCash = sigData.paymentMethod === 'Cash';
+    const _confRecvNow = _confIsCash ? (sigData.cashDep || 0) : _amountForMethod(sigData.paymentMethod);
+    const _confDueAtCheckin = _confIsCash ? Math.max(0, (sigData.cashTotal || noFee) - (sigData.cashDep || 0)) : 0;
+
     const ROW = (label, val, bg) =>
       `<tr><td bgcolor="${bg}" style="padding:9px 14px;color:#666;width:150px;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:${bg};">${label}</td>` +
       `<td bgcolor="${bg}" style="padding:9px 14px;color:#0a1f3a;font-weight:600;font-family:Arial,Helvetica,sans-serif;font-size:14px;background-color:${bg};">${val}</td></tr>`;
@@ -1415,10 +1435,15 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Nights', String(sigData.nights), '#f9f6f0')}
     ${sigData.paymentMethod ? ROW('Payment via', sigData.paymentMethod, '#f2ede3') : ''}
     <tr>
-      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">Total Received</td>
-      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_amountForMethod(sigData.paymentMethod))}</td>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Deposit Received' : 'Total Received'}</td>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_confRecvNow)}</td>
     </tr>
+    ${_confDueAtCheckin > 0 ? `<tr>
+      <td bgcolor="#fff5f5" style="padding:9px 14px;color:#7c1d1d;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#fff5f5;">Due at Check-In (Cash)</td>
+      <td bgcolor="#fff5f5" style="padding:9px 14px;color:#7c1d1d;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#fff5f5;">${fmt2(_confDueAtCheckin)}</td>
+    </tr>` : ''}
   </table>
+  ${_confDueAtCheckin > 0 ? `<p style="margin:0 0 20px;font-size:13px;color:#7c1d1d;font-weight:600;font-family:Arial,Helvetica,sans-serif;">💵 Please have ${fmt2(_confDueAtCheckin)} in cash, in hand, at check-in.</p>` : ''}
 
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d" style="margin-bottom:12px;">
     <tr><td bgcolor="#0f1e3d" style="padding:14px 18px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
@@ -1620,9 +1645,11 @@ async function _notifyGuest(method) {
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Total</td><td style="padding:5px 0;font-weight:700;">${fmt(_amountForMethod(method))}</td></tr>
+            ${_receivedNowForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Deposit Sent' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${fmt(_receivedNowForMethod(method))}</td></tr>` : ''}
+            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Due at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:600;color:#166534;">${methodLabel}</td></tr>
           </table>
+          ${_dueAtCheckinForMethod(method) > 0 ? `<p style="margin:0 0 12px;font-size:13px;color:#7c1d1d;font-weight:600;">💵 Please have ${fmt(_dueAtCheckinForMethod(method))} in cash, in hand, at check-in.</p>` : ''}
           <p style="margin:0 0 8px;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
           <p style="margin:0;font-size:12px;color:#9ca3af;">📥 Don't see Jesse's confirmation soon? Check spam/junk just in case.</p>
         </div>
@@ -1659,7 +1686,8 @@ async function _notifyJesse(method) {
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Total</td><td style="padding:5px 0;font-weight:700;">${fmt(_amountForMethod(method))}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Verify in Venmo/Cash App/Zelle' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${_receivedNowForMethod(method) > 0 ? fmt(_receivedNowForMethod(method)) : 'Nothing sent yet — full cash at check-in'}</td></tr>
+            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
           </table>
           <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">

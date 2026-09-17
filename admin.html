@@ -1693,8 +1693,10 @@ function calcFromGuestTotal() {
   if (!gtEl || !rateEl) return;
   const guestTotal = parseFloat(gtEl.value) || 0;
   if (guestTotal <= 0) { rateEl.value = ''; calcTotal(); generate(); updateRateHint(); return; }
-  // Reverse: guestTotal = subtotal * (1 + TAX_OCC + TAX_SALES) * (1 + CC_FEE)
-  const subtotal = guestTotal / ((1 + TAX_OCC + TAX_SALES) * (1 + CC_FEE));
+  // Reverse: guestTotal = subtotal * (1 + TAX_OCC + TAX_SALES). The credit card fee is never
+  // baked into this — it's only an optional add-on if the guest chooses to pay by card, so the
+  // entered Guest Total is treated as the fare+tax base, not a card-inclusive price.
+  const subtotal = guestTotal / (1 + TAX_OCC + TAX_SALES);
   rateEl.value = subtotal.toFixed(2);
   calcTotal();
   generate();
@@ -2746,8 +2748,15 @@ async function _refreshQuotesConfirmedStatus() {
     const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
     let changed = false;
     saved.forEach(q => {
-      const isConfirmed = reservations.some(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
-      if (isConfirmed && !q.confirmed) { q.confirmed = true; changed = true; }
+      const match = reservations.find(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
+      // Sync both directions: mark confirmed (and pull the real total) when a matching
+      // reservation exists, but also un-mark it if that reservation is gone — e.g. deleted —
+      // so a stale "Confirmed" badge doesn't linger and disagree with the real total.
+      if (match) {
+        if (!q.confirmed || q.total !== match.total) { q.confirmed = true; q.total = match.total; changed = true; }
+      } else if (q.confirmed) {
+        q.confirmed = false; changed = true;
+      }
     });
     if (changed) {
       localStorage.setItem('thocb_quotes', JSON.stringify(saved));
