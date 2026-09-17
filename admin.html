@@ -742,6 +742,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <div class="adm-tabs-nav">
     <div class="adm-tabs-scroll">
       <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Booking</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-quotes" onclick="switchAdmTab('quotes')">🕐 Quotes</button>
       <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
       <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
       <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
@@ -1031,29 +1032,31 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
-      <!-- RECENT QUOTES -->
-      <div class="adm-card">
-        <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;">
-          <h3>🕐 Recent Quotes</h3>
-          <div style="display:flex;gap:.5rem;">
-            <button id="export-btn" onclick="exportQuotes()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Copy a sync link — open it on any device to load your quotes">📤 Sync to Phone</button>
-            <button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Pull latest from cloud">☁️ Refresh</button>
-            <span id="cloud-sync-status" style="font-size:.7rem;color:var(--gold);"></span>
-            <button onclick="showImport()" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Paste a sync link or code from another device">📥 Import</button>
-          </div>
-        </div>
-        <div class="adm-card-body">
-          <div id="import-box" style="display:none;margin-bottom:.75rem;">
-            <textarea id="import-text" rows="3" placeholder="Paste export code here…" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:.6rem;font-size:.8rem;box-sizing:border-box;font-family:monospace;"></textarea>
-            <button onclick="importQuotes()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:.4rem;width:100%;">Apply Import</button>
-          </div>
-          <div id="recent-quotes"><div class="no-bookings">No quotes sent yet.</div></div>
-        </div>
-      </div>
-
     </div>
   </div>
   </div><!-- /#adm-panel-booking -->
+
+  <!-- ── QUOTES PANEL ── -->
+  <div id="adm-panel-quotes" style="display:none;padding:1.5rem;max-width:860px;margin:0 auto;">
+    <div class="adm-card">
+      <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3>🕐 Recent Quotes</h3>
+        <div style="display:flex;gap:.5rem;">
+          <button id="export-btn" onclick="exportQuotes()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Copy a sync link — open it on any device to load your quotes">📤 Sync to Phone</button>
+          <button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Pull latest from cloud">☁️ Refresh</button>
+          <span id="cloud-sync-status" style="font-size:.7rem;color:var(--gold);"></span>
+          <button onclick="showImport()" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Paste a sync link or code from another device">📥 Import</button>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div id="import-box" style="display:none;margin-bottom:.75rem;">
+          <textarea id="import-text" rows="3" placeholder="Paste export code here…" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:.6rem;font-size:.8rem;box-sizing:border-box;font-family:monospace;"></textarea>
+          <button onclick="importQuotes()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:.4rem;width:100%;">Apply Import</button>
+        </div>
+        <div id="recent-quotes"><div class="no-bookings">No quotes sent yet.</div></div>
+      </div>
+    </div>
+  </div><!-- /#adm-panel-quotes -->
 
   <!-- ── PRICING PANEL ── -->
   <div id="adm-panel-pricing" style="display:none;">
@@ -2481,11 +2484,13 @@ renderRecent();
 // ── ADMIN TAB SWITCHING ──
 function switchAdmTab(tab) {
   document.getElementById('adm-panel-booking').style.display   = tab === 'booking'   ? '' : 'none';
+  document.getElementById('adm-panel-quotes').style.display    = tab === 'quotes'    ? '' : 'none';
   document.getElementById('adm-panel-pricing').style.display   = tab === 'pricing'   ? '' : 'none';
   document.getElementById('adm-panel-stats').style.display     = tab === 'stats'     ? '' : 'none';
   document.getElementById('adm-panel-photos').style.display    = tab === 'photos'    ? '' : 'none';
   document.getElementById('adm-panel-confirmed').style.display = tab === 'confirmed' ? '' : 'none';
   document.getElementById('adm-tab-btn-booking').classList.toggle('active',   tab === 'booking');
+  document.getElementById('adm-tab-btn-quotes').classList.toggle('active',    tab === 'quotes');
   document.getElementById('adm-tab-btn-pricing').classList.toggle('active',   tab === 'pricing');
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
@@ -2494,6 +2499,7 @@ function switchAdmTab(tab) {
   if (tab === 'stats')     { _renderStats(); }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'confirmed') { loadConfirmed(); }
+  if (tab === 'quotes')    { renderRecent(); }
 }
 
 // ══════════════════════════════════════════
