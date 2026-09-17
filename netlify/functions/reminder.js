@@ -124,6 +124,7 @@ function buildReminderHtml(res) {
         📞 <strong>Jesse:</strong> <a href="tel:9105998118" style="color:#b8882a;text-decoration:none;">(910) 599-8118</a> — text or call anytime<br>
         📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;text-decoration:none;">stay@theheartofcb.com</a>
       </p>
+      <p style="font-size:.85rem;color:#6b7280;">Emergency only, if Jesse's unreachable: Alison Baringer, <a href="tel:3303097037" style="color:#6b7280;">330-309-7037</a>.</p>
       <p>We can't wait to have you at The Heart Of CB. Safe travels!</p>
       <p style="margin-top:1.5rem;">
         Warm regards,<br>
@@ -132,7 +133,6 @@ function buildReminderHtml(res) {
       </p>
     </div>
     <div style="background:#f8f6f0;padding:14px 32px;text-align:center;font-size:.72rem;color:#9ca3af;border-top:1px solid #e5e7eb;">
-      Emergency contact only (if Jesse is unreachable): Alison Baringer, 330-309-7037<br><br>
       The Heart Of CB · Carolina Beach, NC · <a href="https://theheartofcb.com" style="color:#9ca3af;">theheartofcb.com</a>
     </div>
   </div>
