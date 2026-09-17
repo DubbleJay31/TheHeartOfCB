@@ -314,6 +314,40 @@ a { color: inherit; text-decoration: none; }
 .conf-btn:hover { background: var(--border); }
 .conf-btn.del { color: #dc2626; border-color: rgba(220,38,38,.25); background: rgba(220,38,38,.06); }
 .conf-btn.del:hover { background: rgba(220,38,38,.14); }
+.conf-filter-pills { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.conf-filter-pill {
+  font-size: .78rem; font-weight: 700; padding: .4rem 1rem; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--white); color: var(--muted); cursor: pointer;
+}
+.conf-filter-pill.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.conf-row {
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+  margin-bottom: .6rem; padding: .8rem 1rem; display: flex; align-items: center; gap: .85rem;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s;
+}
+.conf-row:hover { border-color: var(--gold); box-shadow: 0 1px 6px rgba(184,136,42,.15); }
+.conf-row-icon { font-size: 1.4rem; flex-shrink: 0; }
+.conf-row-info { flex: 1; min-width: 0; }
+.conf-row-guest { font-size: .93rem; font-weight: 700; color: var(--navy); }
+.conf-row-detail { font-size: .78rem; color: var(--muted); margin-top: .12rem; }
+.conf-row-booked { font-size: .72rem; color: var(--muted2); flex-shrink: 0; text-align: right; white-space: nowrap; }
+.conf-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15,30,61,.55); z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.conf-modal {
+  background: var(--white); border-radius: 12px; max-width: 480px; width: 100%;
+  max-height: 88vh; overflow-y: auto; padding: 1.4rem;
+}
+.conf-modal-close { float: right; background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; line-height: 1; }
+.conf-modal h3 { margin: 0 0 .3rem; color: var(--navy); font-size: 1.15rem; }
+.conf-modal-sub { font-size: .82rem; color: var(--muted); margin-bottom: 1rem; }
+.conf-modal-rows { background: var(--sand); border-radius: 8px; padding: .8rem 1rem; margin-bottom: 1rem; font-size: .85rem; line-height: 1.9; }
+.conf-modal-rows b { color: var(--navy); }
+.conf-modal label { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: .35rem; }
+.conf-notes-box { width: 100%; box-sizing: border-box; border: 1.5px solid var(--border); border-radius: 8px; padding: .6rem .8rem; font-size: .85rem; font-family: inherit; resize: vertical; min-height: 70px; }
+.conf-notes-status { font-size: .72rem; color: var(--muted); margin-top: .3rem; height: 1em; }
+.conf-modal-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
 .conf-resend-panel {
   border-top: 1px solid var(--border); background: var(--sand2); padding: .85rem 1rem;
 }
@@ -1241,6 +1275,10 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <h3>✅ Confirmed Reservations</h3>
       <button class="btn btn-sm" onclick="loadConfirmed(this)" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;">⟳ Refresh</button>
     </div>
+    <div class="conf-filter-pills">
+      <button class="conf-filter-pill active" id="conf-filter-upcoming" onclick="_setConfFilter('upcoming')">Upcoming</button>
+      <button class="conf-filter-pill" id="conf-filter-past" onclick="_setConfFilter('past')">Past</button>
+    </div>
     <div id="confirmed-res-list" class="conf-loading">Loading…</div>
   </div><!-- /#adm-panel-confirmed -->
 
@@ -2151,10 +2189,11 @@ function saveRecent() {
   if (!guest || !ci) return;
   const email = document.getElementById('f-email')?.value?.trim() || '';
   const exp   = document.getElementById('f-exp')?.value || '';
+  const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
   saved.unshift({
     guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts: Date.now(), email,
-    nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp
+    nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp, privateNote
   });
   localStorage.setItem('thocb_quotes', JSON.stringify(saved.slice(0, 10)));
   renderRecent();
@@ -2333,6 +2372,9 @@ function _sbNights(ci, co) {
   return Math.round((new Date(co+'T12:00:00') - new Date(ci+'T12:00:00')) / 86400000);
 }
 
+let _confirmedCache = [];
+let _confFilter = 'upcoming';
+
 async function loadConfirmed(btn) {
   const el = document.getElementById('confirmed-res-list');
   el.className = 'conf-loading';
@@ -2342,8 +2384,9 @@ async function loadConfirmed(btn) {
     const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
     if (!r.ok) throw new Error(await r.text());
     const list = await r.json();
+    _confirmedCache = list;
     el.className = '';
-    renderConfirmed(list);
+    renderConfirmed();
   } catch(e) {
     el.className = 'conf-error';
     el.textContent = '⚠️ Could not load reservations. Check Supabase connection.';
@@ -2352,54 +2395,122 @@ async function loadConfirmed(btn) {
   if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
 }
 
-function renderConfirmed(list) {
+function _setConfFilter(filter) {
+  _confFilter = filter;
+  document.getElementById('conf-filter-upcoming').classList.toggle('active', filter === 'upcoming');
+  document.getElementById('conf-filter-past').classList.toggle('active', filter === 'past');
+  renderConfirmed();
+}
+
+// Pulls the original booking URL out of notes ("url:https://...") and turns it into the
+// one-click confirm link — same link the "Payment Sent" email itself uses.
+function _reservationLinks(r) {
+  const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
+  let confirmUrl = '', phone = '';
+  if (rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      u.searchParams.set('action', 'confirm');
+      confirmUrl = u.toString();
+      phone = u.searchParams.get('phone') || '';
+    } catch { /* malformed/old url — leave blank, buttons hide themselves */ }
+  }
+  return { confirmUrl, phone };
+}
+
+function renderConfirmed() {
   const el = document.getElementById('confirmed-res-list');
+  const today = new Date().toISOString().split('T')[0];
+  const list = _confirmedCache
+    .filter(r => _confFilter === 'upcoming' ? r.check_out >= today : r.check_out < today)
+    .sort((a, b) => _confFilter === 'upcoming' ? a.check_in.localeCompare(b.check_in) : b.check_in.localeCompare(a.check_in));
+
   if (!list.length) {
-    el.innerHTML = '<div class="no-bookings">No confirmed reservations yet. Use "✓ Confirm" on any recent quote above to add one.</div>';
+    el.innerHTML = _confFilter === 'upcoming'
+      ? '<div class="no-bookings">No upcoming reservations. Use "✓ Confirm" on any recent quote to add one.</div>'
+      : '<div class="no-bookings">No past reservations on file.</div>';
     return;
   }
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  const propName = p => PROPS[p]?.name || p || '—';
+  const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
-  el.innerHTML = list.map(r => {
-    // Pull the original booking URL out of notes ("url:https://...") — it already
-    // carries every param the confirmation page needs (guest, email, phone, dates, etc.)
-    const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
-    let confirmUrl = '', phone = '';
-    if (rawUrl) {
-      try {
-        const u = new URL(rawUrl);
-        u.searchParams.set('action', 'confirm');
-        confirmUrl = u.toString();
-        phone = u.searchParams.get('phone') || '';
-      } catch { /* malformed/old url — leave blank, buttons below hide themselves */ }
-    }
-    const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${confirmUrl}`);
-
-    return `
-    <div class="conf-card" id="conf-${r.id}">
-      <div class="conf-card-main">
-        <div class="conf-prop-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
-        <div class="conf-info">
-          <div class="conf-guest">${r.guest}</div>
-          <div class="conf-detail">${propName(r.prop)} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${r.nights||_sbNights(r.check_in,r.check_out)} nights · ${fmt$(r.total)}</div>
-          ${r.payment_method ? `<div class="conf-payment">${r.payment_method}</div>` : ''}
-          <div class="conf-email-display">${r.email || '<em>no email</em>'}</div>
-        </div>
-        <div class="conf-actions">
-          <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🗑️</button>
-        </div>
+  el.innerHTML = list.map(r => `
+    <div class="conf-row" onclick="openReservationDetail('${r.id}')">
+      <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
+      <div class="conf-row-info">
+        <div class="conf-row-guest">${r.guest}</div>
+        <div class="conf-row-detail">${PROPS[r.prop]?.name || r.prop || '—'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
       </div>
-      ${confirmUrl ? `
-      <div class="conf-resend-panel" style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
+    </div>`).join('');
+}
+
+function _closeReservationDetail() {
+  const el = document.getElementById('conf-modal-backdrop');
+  if (el) el.remove();
+}
+
+function openReservationDetail(id) {
+  const r = _confirmedCache.find(x => x.id === id);
+  if (!r) return;
+  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+  const { confirmUrl, phone } = _reservationLinks(r);
+  const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${confirmUrl}`);
+
+  _closeReservationDetail();
+  const backdrop = document.createElement('div');
+  backdrop.id = 'conf-modal-backdrop';
+  backdrop.className = 'conf-modal-backdrop';
+  backdrop.onclick = (e) => { if (e.target === backdrop) _closeReservationDetail(); };
+  backdrop.innerHTML = `
+    <div class="conf-modal">
+      <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
+      <h3>${r.guest}</h3>
+      <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)}</div>
+      <div class="conf-modal-rows">
+        <div><b>Property:</b> ${PROPS[r.prop]?.name || r.prop || '—'}</div>
+        <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
+        <div><b>Total:</b> ${fmt$(r.total)}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        ${r.payment_method ? `<div><b>Paid via:</b> ${r.payment_method}</div>` : ''}
+        <div><b>Email:</b> ${r.email || '—'}</div>
+        ${phone ? `<div><b>Phone:</b> ${phone}</div>` : ''}
+        ${r.signed_ip ? `<div><b>Signed from IP:</b> ${r.signed_ip}</div>` : ''}
+      </div>
+      <label>Private Note — only visible to you</label>
+      <textarea class="conf-notes-box" id="conf-notes-${r.id}" placeholder="Internal notes about this guest or booking…">${r.host_notes || ''}</textarea>
+      <div class="conf-notes-status" id="conf-notes-status-${r.id}"></div>
+      <div class="conf-modal-actions">
+        ${confirmUrl ? `
         <button class="conf-btn" onclick="window.open('${confirmUrl}','_blank')">📧 Send Full Confirmation</button>
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${confirmUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
-      </div>` : `
-      <div class="conf-resend-panel"><span style="font-size:.78rem;color:var(--muted);">No saved link for this reservation — it was likely added before this feature existed.</span></div>`}
+        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link — this reservation predates this feature.</span>`}
+        <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🗑️ Delete</button>
+      </div>
     </div>`;
-  }).join('');
+  document.body.appendChild(backdrop);
+
+  let notesTimer = null;
+  document.getElementById(`conf-notes-${r.id}`).addEventListener('input', (e) => {
+    const status = document.getElementById(`conf-notes-status-${r.id}`);
+    status.textContent = 'Saving…';
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/.netlify/functions/reservations-update?id=${r.id}`, {
+          method: 'PATCH',
+          headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host_notes: e.target.value })
+        });
+        status.textContent = resp.ok ? 'Saved' : 'Save failed';
+        r.host_notes = e.target.value;
+        if (resp.ok) setTimeout(() => { if (status.textContent === 'Saved') status.textContent = ''; }, 1800);
+      } catch { status.textContent = 'Save failed'; }
+    }, 500);
+  });
 }
 
 // Resend/Copy Link/Text buttons for confirmed reservations now just reopen the
@@ -2421,6 +2532,7 @@ async function confirmFromQuote(q, btn) {
     rate: q.rate != null ? parseFloat(q.rate) || 0 : null,
     tax_occ: q.taxOcc != null ? parseFloat(q.taxOcc) || 0 : null,
     tax_sales: q.taxSales != null ? parseFloat(q.taxSales) || 0 : null,
+    host_notes: q.privateNote || '',
     notes: q.url ? `url:${q.url}` : ''
   };
   try {
@@ -2467,12 +2579,9 @@ async function deleteConfirmed(id) {
       headers: _adminAuthHeader()
     });
     if (r.ok) {
-      const card = document.getElementById(`conf-${id}`);
-      if (card) card.remove();
-      const el = document.getElementById('confirmed-res-list');
-      if (!el.querySelector('.conf-card')) {
-        el.innerHTML = '<div class="no-bookings">No confirmed reservations yet. Use "✓ Confirm" on any recent quote above to add one.</div>';
-      }
+      _confirmedCache = _confirmedCache.filter(x => x.id !== id);
+      _closeReservationDetail();
+      renderConfirmed();
     } else {
       alert('Delete failed — check console.');
       console.error(await r.text());

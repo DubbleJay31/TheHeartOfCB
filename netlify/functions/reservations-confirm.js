@@ -18,7 +18,7 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { guest, email, prop, check_in, check_out, nights, total, rate, tax_occ, tax_sales, signed_ip, notes } = body;
+  const { guest, email, prop, check_in, check_out, nights, total, rate, tax_occ, tax_sales, signed_ip, notes, host_notes } = body;
   if (!guest || !check_in || !check_out) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, check_in, or check_out' }) };
   }
@@ -52,6 +52,7 @@ exports.handler = async function(event) {
         tax_occ: tax_occ != null ? parseFloat(tax_occ) || 0 : null,
         tax_sales: tax_sales != null ? parseFloat(tax_sales) || 0 : null,
         signed_ip: signed_ip || null,
+        host_notes: host_notes || null,
         notes: notes || ''
       })
     });
