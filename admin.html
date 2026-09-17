@@ -2403,8 +2403,9 @@ async function loadConfirmed(btn) {
 // from _checkDateConflict() in the quote-builder, which only guards NEW quotes going forward.
 function _detectReservationConflicts() {
   const conflicts = [];
+  const today = new Date().toISOString().split('T')[0];
   const byProp = {};
-  _confirmedCache.forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
+  _confirmedCache.filter(r => r.check_out >= today).forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
   Object.values(byProp).forEach(group => {
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
