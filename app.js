@@ -63,6 +63,7 @@ async function _sendGuestConfirmation(inquiry) {
     <p>Feel free to browse the property at <a href="https://theheartofcb.com" style="color:#b8882a;">theheartofcb.com</a>.</p>
     <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
+    <p style="font-size:.85rem;color:#9ca3af;">📥 Don't see my next email in your inbox? Check spam/junk — worth marking it "not spam" so nothing gets missed.</p>
     <p>Talk soon!<br><strong>Jesse</strong><br><em>The Heart Of CB</em></p>
   </div>
 </div></body></html>`;

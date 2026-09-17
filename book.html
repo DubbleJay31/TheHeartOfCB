@@ -1498,7 +1498,8 @@ async function _sendAgreementCopy(sigData) {
   <p style="font-size:14px;font-weight:700;color:#0a1f3a;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;">Jesse &amp; Family</p>
   <p style="font-size:13px;color:#666;margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;">(910) 599-8118 &middot; Text or call anytime</p>
   <p style="font-size:13px;color:#666;margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;">213 Harper Ave &middot; Carolina Beach, NC 28428</p>
-  <p style="font-size:11px;color:#999;margin:0;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
+  <p style="font-size:11px;color:#999;margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
+  <p style="font-size:11px;color:#bbb;margin:0;font-family:Arial,Helvetica,sans-serif;">📥 Save this email somewhere handy — worth checking spam/junk if future messages from us go missing.</p>
 </td></tr>
 
 </table></td></tr></table>
@@ -1596,7 +1597,8 @@ async function _notifyGuest(method) {
             <tr><td style="padding:5px 0;color:#666;">Total</td><td style="padding:5px 0;font-weight:700;">${fmt(total)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:600;color:#166534;">${methodLabel}</td></tr>
           </table>
-          <p style="margin:0;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
+          <p style="margin:0 0 8px;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">📥 Don't see Jesse's confirmation soon? Check spam/junk just in case.</p>
         </div>
       </div>`
       })
@@ -1669,6 +1671,36 @@ async function _notifyJesse(method) {
   const methodName = decodeURIComponent(get('method') || '');
   const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+  // Supabase (same publishable key admin.html uses — safe for client-side, RLS-protected)
+  const SB_URL = 'https://jxglwermrfdpjygluolw.supabase.co';
+  const SB_KEY = 'sb_publishable_fKja2VThE8qC1UlsWn7ruw_WXocAzTM';
+  const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+  async function _confirmReservation() {
+    try {
+      // Skip if this guest+check-in is already saved (avoids duplicates if this ever runs twice,
+      // or if "✓ Confirm" also gets clicked manually in admin for the same booking)
+      const checkUrl = `${SB_URL}/rest/v1/reservations?email=eq.${encodeURIComponent(email)}&check_in=eq.${ciRaw}&select=id`;
+      const checkResp = await fetch(checkUrl, { headers: SB_H });
+      const existing = checkResp.ok ? await checkResp.json() : [];
+      if (existing.length > 0) return { ok: true, skipped: true };
+
+      const r = await fetch(`${SB_URL}/rest/v1/reservations`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          guest, email, prop, check_in: ciRaw, check_out: coRaw, nights,
+          total: parseFloat(total) || 0,
+          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`
+        })
+      });
+      return { ok: r.ok };
+    } catch (e) {
+      console.error('Reservation save failed:', e);
+      return { ok: false };
+    }
+  }
+
   const div = document.createElement('div');
   div.style.cssText = 'max-width:520px;margin:2.5rem auto;padding:0 1.25rem 3rem;font-family:Inter,sans-serif;';
   div.innerHTML = `
@@ -1714,7 +1746,14 @@ async function _notifyJesse(method) {
       });
       btn.textContent = '✅ Confirmation Sent!';
       btn.style.background = '#16a34a'; btn.style.opacity = '';
-      if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}</span>`;
+
+      const resv = await _confirmReservation();
+      if (resv.ok) {
+        const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}${note}</span>`;
+      } else {
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed — confirm manually in Admin</span>`;
+      }
     } catch(err) {
       btn.textContent = '✅ Send Confirmation to ' + guest.split(' ')[0];
       btn.disabled = false; btn.style.opacity = '';
