@@ -1570,7 +1570,13 @@ function _checkDateConflict() {
       ]);
       const start = new Date(ci + 'T12:00:00');
       const end   = new Date(co + 'T12:00:00');
-      const overlapsIcal = icalRanges.some(r => start < r.e && end > r.s);
+      // _fetchAdmIcal builds its ranges at local midnight, not noon — comparing noon against
+      // midnight tips exact same-day boundaries the wrong way (e.g. a checkout day that's also
+      // another block's start day). Use midnight here too so back-to-back turnovers don't
+      // falsely trigger.
+      const startMid = new Date(ci + 'T00:00:00');
+      const endMid   = new Date(co + 'T00:00:00');
+      const overlapsIcal = icalRanges.some(r => startMid < r.e && endMid > r.s);
       const conflictingRes = (reservations || []).find(r =>
         r.prop === prop && start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
       );
