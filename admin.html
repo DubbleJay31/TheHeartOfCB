@@ -1275,6 +1275,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <h3>✅ Confirmed Reservations</h3>
       <button class="btn btn-sm" onclick="loadConfirmed(this)" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;">⟳ Refresh</button>
     </div>
+    <div id="conf-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
     <div class="conf-filter-pills">
       <button class="conf-filter-pill active" id="conf-filter-upcoming" onclick="_setConfFilter('upcoming')">Upcoming</button>
       <button class="conf-filter-pill" id="conf-filter-past" onclick="_setConfFilter('past')">Past</button>
@@ -2387,12 +2388,47 @@ async function loadConfirmed(btn) {
     _confirmedCache = list;
     el.className = '';
     renderConfirmed();
+    _renderConflictBanner();
   } catch(e) {
     el.className = 'conf-error';
     el.textContent = '⚠️ Could not load reservations. Check Supabase connection.';
     console.error('Supabase load error:', e);
   }
   if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
+}
+
+// Retroactive self-audit: scans reservations ALREADY in Supabase against each other, for the
+// same property, looking for any pair whose date ranges overlap. Catches the case where the
+// calendar-block step got missed and two guests ended up confirmed for the same dates — separate
+// from _checkDateConflict() in the quote-builder, which only guards NEW quotes going forward.
+function _detectReservationConflicts() {
+  const conflicts = [];
+  const byProp = {};
+  _confirmedCache.forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
+  Object.values(byProp).forEach(group => {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = group[i], b = group[j];
+        const aStart = new Date(a.check_in + 'T12:00:00'), aEnd = new Date(a.check_out + 'T12:00:00');
+        const bStart = new Date(b.check_in + 'T12:00:00'), bEnd = new Date(b.check_out + 'T12:00:00');
+        if (aStart < bEnd && aEnd > bStart) conflicts.push([a, b]);
+      }
+    }
+  });
+  return conflicts;
+}
+
+function _renderConflictBanner() {
+  const banner = document.getElementById('conf-conflict-banner');
+  if (!banner) return;
+  const conflicts = _detectReservationConflicts();
+  if (!conflicts.length) { banner.style.display = 'none'; return; }
+  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  banner.innerHTML = '⚠️ <strong>' + conflicts.length + ' overlapping reservation' + (conflicts.length > 1 ? 's' : '') + ' found</strong> — you may have missed blocking a date:<br>' +
+    conflicts.map(([a, b]) =>
+      `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) — ${PROPS[a.prop]?.short || a.prop}`
+    ).join('<br>');
+  banner.style.display = 'block';
 }
 
 function _setConfFilter(filter) {
