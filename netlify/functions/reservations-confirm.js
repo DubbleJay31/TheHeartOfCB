@@ -35,11 +35,17 @@ exports.handler = async function(event) {
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   try {
-    const checkUrl = `${SB_URL}/rest/v1/reservations?email=eq.${encodeURIComponent(email || '')}&check_in=eq.${encodeURIComponent(check_in)}&select=id`;
-    const checkResp = await fetch(checkUrl, { headers: SB_H });
-    const existing = checkResp.ok ? await checkResp.json() : [];
-    if (existing.length > 0) {
-      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
+    // Dedupe on the exact booking link (unique per quote — it carries the signature timestamp),
+    // not just email+check_in. The same guest can legitimately book the same dates twice across
+    // separate quotes (re-tests, rebookings), and email+check_in alone would wrongly treat that
+    // second one as "already confirmed" and silently skip saving it.
+    if (notes) {
+      const checkUrl = `${SB_URL}/rest/v1/reservations?notes=eq.${encodeURIComponent(notes)}&select=id`;
+      const checkResp = await fetch(checkUrl, { headers: SB_H });
+      const existing = checkResp.ok ? await checkResp.json() : [];
+      if (existing.length > 0) {
+        return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
+      }
     }
 
     const r = await fetch(`${SB_URL}/rest/v1/reservations`, {

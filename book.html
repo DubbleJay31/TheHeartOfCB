@@ -1029,7 +1029,7 @@ if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
 const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
-addRow('<strong>Total</strong>', `<strong>${fmt(baseTotal)}</strong>`, 'pt-total');
+addRow('<strong id="pt-total-label">Total</strong>', `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
 addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
 if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</span>`, '', '');
 if (dueRaw) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
@@ -1256,6 +1256,13 @@ function chooseCash() {
   const cashDiscPct = noFee > 0 && cashDisc > 0 ? (cashDisc / noFee * 100).toFixed(1) : 0;
   const depSection = document.getElementById('pm-cash-dep-section');
   const inner = document.getElementById('pm-cash-dep-inner');
+
+  // Reflect the cash price at the top of the Booking Summary now that Cash is selected — only
+  // Cash changes the headline total (a discount), so this only fires here, never by default.
+  const totalLabelEl = document.getElementById('pt-total-label');
+  const totalValEl = document.getElementById('pt-total-val');
+  if (totalLabelEl) totalLabelEl.textContent = 'Total (Cash Price)';
+  if (totalValEl) totalValEl.textContent = fmtAmt(cashTotal);
 
   let html = '';
   if (cashDep > 0) {
@@ -1646,17 +1653,13 @@ async function _notifyGuest(method) {
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
           <p style="margin:0 0 12px;font-size:14px;">Hi ${firstName || guest},</p>
-          <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing your payment and will send you an official confirmation shortly.</p>
+          <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
           <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
             <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
-            ${_receivedNowForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Deposit Sent' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${fmt(_receivedNowForMethod(method))}</td></tr>` : ''}
-            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Due at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
-            <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:600;color:#166534;">${methodLabel}</td></tr>
           </table>
-          ${_dueAtCheckinForMethod(method) > 0 ? `<p style="margin:0 0 12px;font-size:13px;color:#7c1d1d;font-weight:600;">💵 Please have the full ${fmt(_dueAtCheckinForMethod(method))} in cash, in hand, at check-in.${_receivedNowForMethod(method) > 0 ? ` Jesse will refund your ${fmt(_receivedNowForMethod(method))} deposit the moment that cash is received.` : ''}</p>` : ''}
           <p style="margin:0 0 8px;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
           <p style="margin:0;font-size:12px;color:#9ca3af;">📥 Don't see Jesse's confirmation soon? Check spam/junk just in case.</p>
         </div>

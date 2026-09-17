@@ -16,3 +16,7 @@
 [[scheduled-functions]]
   name     = "checkout-reminder"
   schedule = "0 12 * * *"
+
+[[scheduled-functions]]
+  name     = "arrival-reminder"
+  schedule = "0 12 * * *"

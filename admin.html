@@ -2223,11 +2223,35 @@ function renderRecent() {
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
+        <button class="bi-btn" onclick="_editQuote(_recentQuotesCache[${i}])">✏️ Edit</button>
         <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}], this)">Resend</button>
         <button class="bi-btn confirm-res${q.confirmed ? ' is-confirmed' : ''}" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">${q.confirmed ? '✓ Confirmed' : '✓ Confirm'}</button>
       </div>
     </div>
   `).join('');
+}
+
+// Loads a saved quote back into the Booking tab form for editing — tweak anything and
+// re-send; a fresh entry gets saved rather than overwriting the original.
+function _editQuote(q) {
+  if (!q) return;
+  switchAdmTab('booking');
+  const parts = (q.guest || '').split(' ');
+  document.getElementById('f-first').value = parts[0] || '';
+  document.getElementById('f-last').value = parts.slice(1).join(' ') || '';
+  document.getElementById('f-email').value = q.email || '';
+  if (q.prop && PROPS[q.prop]) selectProp(q.prop);
+  document.getElementById('f-ci').value = q.ci || '';
+  document.getElementById('f-co').value = q.co || '';
+  calcNights();
+  document.getElementById('f-rate').value = q.rate || '';
+  if (q.exp) document.getElementById('f-exp').value = q.exp;
+  const noteEl = document.getElementById('f-private-note');
+  if (noteEl) noteEl.value = q.privateNote || '';
+  calcTotal();
+  generate();
+  _checkDateConflict();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function resendQuote(q, btn) {
@@ -2314,17 +2338,20 @@ async function _cloudWrite() {
 
 function _mergeCloudData(cloudData) {
   if (!cloudData) return;
+  // Dedupe by ts (unique per save), not guest+dates — the same guest can legitimately have
+  // multiple quotes or inquiries for the same dates (re-tests, revised quotes), and matching
+  // on identity alone silently dropped every one but the first.
   const localQ  = JSON.parse(localStorage.getItem('thocb_quotes')    || '[]');
   const cloudQ  = cloudData.quotes    || [];
   const mergedQ = [...localQ, ...cloudQ]
-    .filter((q, i, arr) => arr.findIndex(x => x.guest === q.guest && x.ci === q.ci && x.prop === q.prop) === i)
+    .filter((q, i, arr) => arr.findIndex(x => x.ts === q.ts) === i)
     .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 10);
   localStorage.setItem('thocb_quotes', JSON.stringify(mergedQ));
 
   const localI  = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
   const cloudI  = cloudData.inquiries || [];
   const mergedI = [...localI, ...cloudI]
-    .filter((inq, i, arr) => arr.findIndex(x => x.email === inq.email && x.ci === inq.ci) === i)
+    .filter((inq, i, arr) => arr.findIndex(x => x.ts === inq.ts) === i)
     .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 50);
   localStorage.setItem('thocb_inquiries', JSON.stringify(mergedI));
 
