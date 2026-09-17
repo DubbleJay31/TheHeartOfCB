@@ -1567,8 +1567,13 @@ function _checkDateConflict() {
       const startMid = new Date(ci + 'T00:00:00');
       const endMid   = new Date(co + 'T00:00:00');
       const overlapsIcal = icalRanges.some(r => startMid < r.e && endMid > r.s);
+      // Reservations store prop as the full label book.html sends ("Home in The Heart Of CB
+      // (Front Home)"), not the short key ("prop1") used here — compare against both so this
+      // actually matches instead of silently never firing.
+      const propName = PROPS[prop]?.name;
       const conflictingRes = (reservations || []).find(r =>
-        r.prop === prop && start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
+        (r.prop === prop || (propName && r.prop === propName)) &&
+        start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
       );
       if (conflictingRes) {
         warnEl.textContent = `⚠️ These dates overlap an existing confirmed reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) — double check before sending this quote.`;
