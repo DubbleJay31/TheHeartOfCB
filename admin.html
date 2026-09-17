@@ -1344,6 +1344,7 @@ function loadInquiries() {
     list.innerHTML = '<div class="no-bookings">No inquiries yet. When guests submit a booking request on your site, they\'ll appear here.</div>';
     return;
   }
+  const quotes = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
   const propLabel = { prop1: '🏠 Front Home', prop2: '🛎️ Left Suite', prop3: '🛎️ Right Suite' };
   const fmtD = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '?';
   list.innerHTML = data.map((inq, i) => {
@@ -1351,7 +1352,18 @@ function loadInquiries() {
     const prop = propLabel[inq.prop] || inq.prop || '?';
     const dates = inq.ci && inq.co ? `${fmtD(inq.ci)} → ${fmtD(inq.co)}` : 'No dates';
     const ago = _timeAgo(inq.ts);
-    return `<div class="recent-item inquiry-item" id="inq-item-${i}" style="cursor:pointer;border-left:3px solid var(--gold);padding-left:.8rem;transition:background .25s,border-color .25s;" onclick="fillFromInquiry(${i}, this)">
+
+    // Flag inquiries sitting 48h+ with no quote generated yet for this guest/dates
+    const hasQuote = quotes.some(q => q.email && inq.email &&
+      q.email.toLowerCase() === inq.email.toLowerCase() && q.ci === inq.ci);
+    const hoursOld = inq.ts ? (Date.now() - inq.ts) / 3600000 : 0;
+    const needsFollowUp = !hasQuote && hoursOld >= 48;
+
+    const badge = needsFollowUp
+      ? `<span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.68rem;color:#b91c1c;background:#fef2f2;border:1px solid rgba(185,28,28,.25);padding:.15rem .5rem;border-radius:20px;white-space:nowrap;margin-left:.5rem;font-weight:700;">⚠️ No quote · ${ago}</span>`
+      : `<span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.7rem;color:var(--muted);white-space:nowrap;margin-left:.5rem">${ago}</span>`;
+
+    return `<div class="recent-item inquiry-item" id="inq-item-${i}" style="cursor:pointer;border-left:3px solid ${needsFollowUp ? '#b91c1c' : 'var(--gold)'};padding-left:.8rem;transition:background .25s,border-color .25s;" onclick="fillFromInquiry(${i}, this)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div style="font-weight:600;color:var(--navy)">${name}</div>
@@ -1360,7 +1372,7 @@ function loadInquiries() {
           ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${inq.guests}${inq.pets && inq.pets !== 'No pets' ? ' · ' + inq.pets : ''}</div>` : ''}
           ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${inq.message.slice(0,80)}${inq.message.length>80?'…':''}"</div>` : ''}
         </div>
-        <span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.7rem;color:var(--muted);white-space:nowrap;margin-left:.5rem">${ago}</span>
+        ${badge}
       </div>
     </div>`;
   }).join('');
