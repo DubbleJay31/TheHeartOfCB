@@ -1141,9 +1141,11 @@ function toggleCheck(e) {
   // Zelle
   document.getElementById('pm-z-amount').textContent = noFeeLabel;
 
-  // Cash
+  // Cash — lead with it when it's an available option, instead of leaving it last
   if (cashMode) {
-    document.getElementById('pm-cash-section').style.display = '';
+    const cashSection = document.getElementById('pm-cash-section');
+    cashSection.style.display = '';
+    cashSection.parentElement.insertBefore(cashSection, cashSection.parentElement.firstChild);
     const cashDiscPct = noFee > 0 ? (cashDisc / noFee * 100) : 0;
     // Discount badge — show both $ and %
     if (cashDisc > 0) {
@@ -1282,7 +1284,7 @@ function chooseCash() {
         <button class="pm-btn pm-btn-outline" style="font-size:.8rem;padding:.5rem .9rem;" onclick="copyZelleNum(this);enableCashConfirm()">🏦 Copy Zelle #</button>
       </div>
       <div style="font-size:.78rem;color:#6b7280;">Zelle: send to 910-599-8118 in your bank app</div>
-      <div style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid #d1fae5;">
+      <div id="pm-cash-already-sent-wrap" style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid #d1fae5;">
         <button onclick="enableCashConfirm()" style="background:none;border:1.5px solid #15803d;color:#15803d;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:600;cursor:pointer;width:100%;">✅ I've already sent my ${fmtAmt(cashDep)} deposit — confirm my spot</button>
       </div>`;
   } else {
@@ -1310,6 +1312,11 @@ function enableCashConfirm() {
   btn.disabled = false;
   btn.style.opacity = '';
   btn.style.cursor = '';
+  // The "I've already sent" pill's only job was unlocking the button above — once that's
+  // done, showing both is redundant, so it goes away.
+  const wrap = document.getElementById('pm-cash-already-sent-wrap');
+  if (wrap) wrap.style.display = 'none';
+  btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ── CASH CONFIRM ──
