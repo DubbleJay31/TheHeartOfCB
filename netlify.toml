@@ -12,3 +12,7 @@
 [[scheduled-functions]]
   name     = "quote-followup"
   schedule = "0 12 * * *"
+
+[[scheduled-functions]]
+  name     = "checkout-reminder"
+  schedule = "0 12 * * *"
