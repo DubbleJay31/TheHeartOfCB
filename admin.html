@@ -2271,12 +2271,19 @@ function renderConfirmed(list) {
   const propName = p => PROPS[p]?.name || p || '—';
 
   el.innerHTML = list.map(r => {
-    const contacts = r.additional_contacts || [];
-    const emailRows = [r.email||'', ...contacts].map((e,i) => `
-      <div class="rp-email-row">
-        <input type="email" class="conf-email-inp rp-inp-${r.id}" value="${e}" placeholder="${i===0?'guest@email.com':'additional@email.com'}" />
-        ${i > 0 ? `<button onclick="this.closest('.rp-email-row').remove()" class="rp-rm">×</button>` : ''}
-      </div>`).join('');
+    // Pull the original booking URL out of notes ("url:https://...") — it already
+    // carries every param the confirmation page needs (guest, email, phone, dates, etc.)
+    const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
+    let confirmUrl = '', phone = '';
+    if (rawUrl) {
+      try {
+        const u = new URL(rawUrl);
+        u.searchParams.set('action', 'confirm');
+        confirmUrl = u.toString();
+        phone = u.searchParams.get('phone') || '';
+      } catch { /* malformed/old url — leave blank, buttons below hide themselves */ }
+    }
+    const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${confirmUrl}`);
 
     return `
     <div class="conf-card" id="conf-${r.id}">
@@ -2289,107 +2296,23 @@ function renderConfirmed(list) {
           <div class="conf-email-display">${r.email || '<em>no email</em>'}</div>
         </div>
         <div class="conf-actions">
-          <button class="conf-btn" onclick="toggleResendPanel('${r.id}')">📧 Resend</button>
           <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🗑️</button>
         </div>
       </div>
-      <div class="conf-resend-panel" id="rp-${r.id}" style="display:none;">
-        <div class="conf-resend-label">Send booking info to:</div>
-        <div id="rp-emails-${r.id}">${emailRows}</div>
-        <div class="rp-footer">
-          <button class="rp-add-btn" onclick="addResendEmail('${r.id}')">+ Add recipient</button>
-          <button class="rp-send-btn" onclick="doResend('${r.id}','${(r.guest||'').replace(/'/g,"\\'")}','${r.check_in}','${r.check_out}','${r.prop}','${fmt$(r.total)}')">📤 Send</button>
-        </div>
-      </div>
+      ${confirmUrl ? `
+      <div class="conf-resend-panel" style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button class="conf-btn" onclick="window.open('${confirmUrl}','_blank')">📧 Send Full Confirmation</button>
+        <button class="conf-btn" onclick="navigator.clipboard.writeText('${confirmUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
+        ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
+      </div>` : `
+      <div class="conf-resend-panel"><span style="font-size:.78rem;color:var(--muted);">No saved link for this reservation — it was likely added before this feature existed.</span></div>`}
     </div>`;
   }).join('');
 }
 
-function toggleResendPanel(id) {
-  const p = document.getElementById(`rp-${id}`);
-  p.style.display = p.style.display === 'none' ? '' : 'none';
-}
-
-function addResendEmail(id) {
-  const container = document.getElementById(`rp-emails-${id}`);
-  const row = document.createElement('div');
-  row.className = 'rp-email-row';
-  row.innerHTML = `<input type="email" class="conf-email-inp rp-inp-${id}" placeholder="additional@email.com" /><button onclick="this.closest('.rp-email-row').remove()" class="rp-rm">×</button>`;
-  container.appendChild(row);
-  row.querySelector('input').focus();
-}
-
-async function doResend(id, guest, ci, co, prop, total) {
-  const inputs = document.querySelectorAll(`.rp-inp-${id}`);
-  const recipients = [...inputs].map(i => i.value.trim()).filter(Boolean);
-  if (!recipients.length) { alert('Please enter at least one email address.'); return; }
-
-  const propName = PROPS[prop]?.name || prop || 'your stay';
-  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-
-  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
-  <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-    <div style="background:#0a1f3a;padding:24px;text-align:center;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="48" height="48" alt="" style="display:block;border-radius:50%;" />
-      </td></tr></table>
-      <div style="height:10px;"></div>
-      <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Booking Confirmed</h1>
-      <p style="color:#c9a84c;margin:.3rem 0 0;font-size:.85rem;">The Heart Of CB</p>
-    </div>
-    <div style="padding:28px 32px;color:#374151;">
-      <p>Hi ${guest},</p>
-      <p>Here are your confirmed stay details:</p>
-      <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
-        <div style="margin-bottom:7px;"><strong>Property:</strong> ${propName}</div>
-        <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(ci)}</div>
-        <div style="margin-bottom:7px;"><strong>Check-out:</strong> ${fmtD(co)}</div>
-        <div><strong>Total:</strong> ${total}</div>
-      </div>
-      <p>Check-in instructions will be provided before your arrival. Questions? Reach out anytime!</p>
-      <p>📞 Alison: <a href="tel:3303097037" style="color:#b8882a;">330-309-7037</a><br>
-      📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
-      <p style="font-size:11px;color:#999;">📥 Don't see future emails from us? Check spam/junk just in case.</p>
-      <p>We look forward to hosting you!<br><strong>Jesse</strong><br>The Heart Of CB</p>
-    </div>
-  </div></body></html>`;
-
-  const btn = event.target;
-  btn.textContent = '⏳ Sending…';
-  btn.disabled = true;
-
-  try {
-    const resp = await fetch('/.netlify/functions/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: recipients, subject: `Your stay is confirmed — ${propName}`, html })
-    });
-    if (resp.ok) {
-      btn.textContent = '✅ Sent!';
-      const extras = recipients.slice(1);
-      if (extras.length) await _saveAdditionalContacts(id, extras);
-    } else {
-      const err = await resp.json().catch(() => ({}));
-      btn.textContent = '⚠️ Failed';
-      alert(`Send failed: ${err.message || resp.status}. Is domain verified in Resend?`);
-    }
-  } catch(e) {
-    btn.textContent = '⚠️ Error';
-    alert('Network error — check console.');
-    console.error(e);
-  }
-  setTimeout(() => { btn.textContent = '📤 Send'; btn.disabled = false; }, 3000);
-}
-
-async function _saveAdditionalContacts(id, contacts) {
-  try {
-    await fetch(`${SB_URL}/rest/v1/reservations?id=eq.${id}`, {
-      method: 'PATCH',
-      headers: SB_H,
-      body: JSON.stringify({ additional_contacts: contacts })
-    });
-  } catch(e) { console.warn('Could not save additional contacts:', e); }
-}
+// Resend/Copy Link/Text buttons for confirmed reservations now just reopen the
+// saved booking URL with &action=confirm — same full "You're Confirmed" email,
+// no separate stripped-down template to maintain. See renderConfirmed().
 
 async function confirmFromQuote(q, btn) {
   if (!q) { alert('Could not find that quote — try refreshing.'); return; }
