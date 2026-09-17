@@ -717,7 +717,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <p>The Heart Of CB · Jesse Jones</p>
     <input type="password" class="login-input" id="login-pin" placeholder="••••••" maxlength="12"
       onkeydown="if(event.key==='Enter') tryLogin()" />
-    <button class="login-btn" onclick="tryLogin()">Sign In</button>
+    <button class="login-btn" id="login-btn" onclick="tryLogin()">Sign In</button>
     <div class="login-err" id="login-err">Incorrect PIN. Try again.</div>
   </div>
 </div>
@@ -828,14 +828,15 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <div class="field-row">
             <div class="field">
               <label>Check-In *</label>
-              <input type="date" id="f-ci" oninput="calcNights(); generate()" />
+              <input type="date" id="f-ci" oninput="calcNights(); generate(); _checkDateConflict()" />
             </div>
             <div class="field">
               <label>Check-Out *</label>
-              <input type="date" id="f-co" oninput="calcNights(); generate()" />
+              <input type="date" id="f-co" oninput="calcNights(); generate(); _checkDateConflict()" />
             </div>
           </div>
           <div class="calc-nights" id="nights-display">Select dates to calculate nights</div>
+          <div id="date-conflict-warning" style="display:none;margin-top:.6rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#7a1f1f;font-weight:600;line-height:1.5;"></div>
         </div>
       </div>
 
@@ -1312,28 +1313,49 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 <script>
 
 // ── PIN LOGIN ──
-const PIN = '1412';
-function tryLogin() {
+// The PIN itself is checked server-side now (netlify/functions/admin-login.js) — nothing
+// secret lives in this page's JS anymore. A valid login returns a signed session token that
+// every admin-only function call (reservations list/delete/confirm) requires.
+function _enterAdminApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  // Default due date and quote expiry to tomorrow
+  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+  const tmrStr = tmr.toISOString().slice(0, 10);
+  document.getElementById('f-due').value = tmrStr;
+  document.getElementById('f-exp').value = tmrStr;
+  // Default personal note
+  document.getElementById('f-note').value = 'Let me know if you have any questions. Thank you!';
+  calcTotal();
+  renderCalc();
+  loadInquiries();
+  _cloudRead().then(_mergeCloudData);
+  _checkSyncHash();
+  _initPricingSection();
+}
+
+async function tryLogin() {
   const val = document.getElementById('login-pin').value;
-  if (val === PIN) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').classList.add('show');
-    // Default due date and quote expiry to tomorrow
-    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
-    const tmrStr = tmr.toISOString().slice(0, 10);
-    document.getElementById('f-due').value = tmrStr;
-    document.getElementById('f-exp').value = tmrStr;
-    // Default personal note
-    document.getElementById('f-note').value = 'Let me know if you have any questions. Thank you!';
-    calcTotal();
-    renderCalc();
-    loadInquiries();
-    _cloudRead().then(_mergeCloudData);
-    _checkSyncHash();
-    _initPricingSection();
-  } else {
+  const btn = document.getElementById('login-btn');
+  if (btn) { btn.disabled = true; }
+  try {
+    const r = await fetch('/.netlify/functions/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: val })
+    });
+    if (r.ok) {
+      const { token } = await r.json();
+      sessionStorage.setItem('thocb_admin_token', token);
+      _enterAdminApp();
+    } else {
+      document.getElementById('login-err').classList.add('show');
+      document.getElementById('login-pin').value = '';
+    }
+  } catch (e) {
     document.getElementById('login-err').classList.add('show');
-    document.getElementById('login-pin').value = '';
+  } finally {
+    if (btn) { btn.disabled = false; }
   }
 }
 
@@ -1483,6 +1505,47 @@ function selectProp(id) {
   const sp = document.getElementById('summary-prop'); if (sp) sp.textContent = PROPS[id].icon + ' ' + PROPS[id].short;
   calcTotal();
   generate();
+  _checkDateConflict();
+}
+
+// ── DOUBLE-BOOKING CHECK ──
+// Cross-checks the requested dates against the property's Airbnb iCal feed AND your own
+// confirmed reservations, so a quote never goes out for dates that are already taken.
+let _conflictCheckTimer = null;
+function _checkDateConflict() {
+  const warnEl = document.getElementById('date-conflict-warning');
+  if (!warnEl) return;
+  const ci = document.getElementById('f-ci').value;
+  const co = document.getElementById('f-co').value;
+  if (!ci || !co) { warnEl.style.display = 'none'; return; }
+  const prop = _prop;
+
+  if (_conflictCheckTimer) clearTimeout(_conflictCheckTimer);
+  _conflictCheckTimer = setTimeout(async () => {
+    // Bail if the form moved on while we were debouncing.
+    if (prop !== _prop || ci !== document.getElementById('f-ci').value || co !== document.getElementById('f-co').value) return;
+    try {
+      const [icalRanges, reservations] = await Promise.all([
+        _fetchAdmIcal(prop),
+        fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() }).then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      const start = new Date(ci + 'T12:00:00');
+      const end   = new Date(co + 'T12:00:00');
+      const overlapsIcal = icalRanges.some(r => start < r.e && end > r.s);
+      const conflictingRes = (reservations || []).find(r =>
+        r.prop === prop && start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
+      );
+      if (conflictingRes) {
+        warnEl.textContent = `⚠️ These dates overlap an existing confirmed reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) — double check before sending this quote.`;
+        warnEl.style.display = 'block';
+      } else if (overlapsIcal) {
+        warnEl.textContent = `⚠️ These dates overlap a blocked date on your Airbnb calendar for ${PROPS[prop]?.short || prop} — double check before sending this quote.`;
+        warnEl.style.display = 'block';
+      } else {
+        warnEl.style.display = 'none';
+      }
+    } catch (e) { console.error('Conflict check failed:', e); }
+  }, 350);
 }
 
 // ── NIGHTS ──
@@ -1521,6 +1584,9 @@ function _autoFillRate(ci, co) {
 
 // ── TOTAL ──
 let _total = 0;
+let _rate = 0;
+let _taxOcc = 0;
+let _taxSales = 0;
 const TAX_OCC   = 0.06; // Room Occupancy Tax
 const TAX_SALES = 0.07; // Sales Tax
 
@@ -1533,6 +1599,9 @@ function calcTotal() {
   const preTax   = subtotal + taxOcc + taxSales;
   const ccFee    = preTax * CC_FEE;
   _total = preTax + ccFee;
+  _rate = subtotal;
+  _taxOcc = taxOcc;
+  _taxSales = taxSales;
   renderCalc();
   renderGuestBreakdown();
   generate();
@@ -2081,8 +2150,12 @@ function saveRecent() {
   const co    = document.getElementById('f-co').value;
   if (!guest || !ci) return;
   const email = document.getElementById('f-email')?.value?.trim() || '';
+  const exp   = document.getElementById('f-exp')?.value || '';
   const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-  saved.unshift({ guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts: Date.now(), email, nights: _nights || 0 });
+  saved.unshift({
+    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts: Date.now(), email,
+    nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp
+  });
   localStorage.setItem('thocb_quotes', JSON.stringify(saved.slice(0, 10)));
   renderRecent();
   _cloudWrite();
@@ -2245,11 +2318,15 @@ async function refreshFromCloud() {
 }
 
 // ══════════════════════════════════════════
-// CONFIRMED RESERVATIONS (Supabase)
+// CONFIRMED RESERVATIONS — via server-side functions (admin-session gated).
+// The browser never holds a key capable of reading/writing the reservations
+// table directly anymore; these all call Netlify Functions that check the
+// session token from adminLogin() and use the service key server-side.
 // ══════════════════════════════════════════
-const SB_URL = 'https://jxglwermrfdpjygluolw.supabase.co';
-const SB_KEY = 'sb_publishable_fKja2VThE8qC1UlsWn7ruw_WXocAzTM';
-const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+function _adminAuthHeader() {
+  const token = sessionStorage.getItem('thocb_admin_token') || '';
+  return { 'Authorization': `Bearer ${token}` };
+}
 
 function _sbNights(ci, co) {
   if (!ci || !co) return 0;
@@ -2262,7 +2339,7 @@ async function loadConfirmed(btn) {
   el.textContent = 'Loading…';
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/reservations?order=check_in.asc&select=*`, { headers: SB_H });
+    const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
     if (!r.ok) throw new Error(await r.text());
     const list = await r.json();
     el.className = '';
@@ -2341,12 +2418,15 @@ async function confirmFromQuote(q, btn) {
     check_out: q.co,
     nights,
     total: parseFloat(q.total) || 0,
+    rate: q.rate != null ? parseFloat(q.rate) || 0 : null,
+    tax_occ: q.taxOcc != null ? parseFloat(q.taxOcc) || 0 : null,
+    tax_sales: q.taxSales != null ? parseFloat(q.taxSales) || 0 : null,
     notes: q.url ? `url:${q.url}` : ''
   };
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/reservations`, {
+    const r = await fetch('/.netlify/functions/reservations-confirm', {
       method: 'POST',
-      headers: { ...SB_H, 'Prefer': 'return=minimal' },
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (r.ok) {
@@ -2382,9 +2462,9 @@ async function confirmFromQuote(q, btn) {
 async function deleteConfirmed(id) {
   if (!confirm('Remove this confirmed reservation? This cannot be undone.')) return;
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/reservations?id=eq.${id}`, {
+    const r = await fetch(`/.netlify/functions/reservations-delete?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
-      headers: SB_H
+      headers: _adminAuthHeader()
     });
     if (r.ok) {
       const card = document.getElementById(`conf-${id}`);

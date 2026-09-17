@@ -1167,7 +1167,7 @@ function checkReady() {
 }
 
 // ── SUBMIT AGREEMENT → SHOW POPUP ──
-function submitAgreement() {
+async function submitAgreement() {
   if (_agreementSent) return;
   const sigFirst = document.getElementById('sig-first').value.trim();
   const sigLast  = document.getElementById('sig-last').value.trim();
@@ -1178,10 +1178,25 @@ function submitAgreement() {
     signedName: (sigFirst + ' ' + sigLast).trim(),
     signedAt: new Date().toISOString()
   };
+
+  // Mint a capability token (+ capture signing IP) so the later one-click confirm link can
+  // write the reservation without a bare, unauthenticated POST anyone could forge.
+  let tok = '', sip = '';
+  try {
+    const r = await fetch('/.netlify/functions/sign-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw })
+    });
+    if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
+  } catch (e) { console.error('sign-link failed:', e); }
+
   _agreementUrl = window.location.href
     + '&signed=1'
     + '&signame=' + encodeURIComponent(sigData.signedName)
-    + '&ts=' + encodeURIComponent(sigData.signedAt);
+    + '&ts=' + encodeURIComponent(sigData.signedAt)
+    + (tok ? '&tok=' + encodeURIComponent(tok) : '')
+    + (sip ? '&sip=' + encodeURIComponent(sip) : '');
   _agreementSent = true;
 
   // Lock sig fields
@@ -1678,33 +1693,27 @@ async function _notifyJesse(method) {
 
   const sigName    = decodeURIComponent(get('signame') || '');
   const sigTs      = get('ts') ? decodeURIComponent(get('ts')) : '';
+  const sigTok     = get('tok') ? decodeURIComponent(get('tok')) : '';
+  const sigIp      = get('sip') ? decodeURIComponent(get('sip')) : '';
   const methodName = decodeURIComponent(get('method') || '');
   const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  // Supabase (same publishable key admin.html uses — safe for client-side, RLS-protected)
-  const SB_URL = 'https://jxglwermrfdpjygluolw.supabase.co';
-  const SB_KEY = 'sb_publishable_fKja2VThE8qC1UlsWn7ruw_WXocAzTM';
-  const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
-
   async function _confirmReservation() {
     try {
-      // Skip if this guest+check-in is already saved (avoids duplicates if this ever runs twice,
-      // or if "✓ Confirm" also gets clicked manually in admin for the same booking)
-      const checkUrl = `${SB_URL}/rest/v1/reservations?email=eq.${encodeURIComponent(email)}&check_in=eq.${ciRaw}&select=id`;
-      const checkResp = await fetch(checkUrl, { headers: SB_H });
-      const existing = checkResp.ok ? await checkResp.json() : [];
-      if (existing.length > 0) return { ok: true, skipped: true };
-
-      const r = await fetch(`${SB_URL}/rest/v1/reservations`, {
+      const r = await fetch('/.netlify/functions/reservations-confirm', {
         method: 'POST',
-        headers: { ...SB_H, 'Prefer': 'return=minimal' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           guest, email, prop, check_in: ciRaw, check_out: coRaw, nights,
           total: parseFloat(total) || 0,
+          rate, tax_occ: taxOcc, tax_sales: taxSales,
+          signed_ip: sigIp,
+          tok: sigTok,
           notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`
         })
       });
-      return { ok: r.ok };
+      const j = await r.json().catch(() => ({}));
+      return { ok: r.ok && j.ok !== false, skipped: !!j.skipped };
     } catch (e) {
       console.error('Reservation save failed:', e);
       return { ok: false };
