@@ -1261,6 +1261,15 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <p style="margin-top:.6rem;color:#666;"><strong>Note:</strong> The first photo in each list is your cover photo shown on the main Stay page.</p>
     </div>
 
+    <div class="photos-save-bar" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;">
+      <span class="photos-save-status" id="photos-save-status-top">Drag rows to reorder · Type captions · Then save.</span>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub — Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
+        <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosGroupByRoom()" title="Group photos by room in a logical order">🗂️ Group by Room</button>
+        <button class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:.76rem;" onclick="_photosSave()" title="Save photos.json to your local THOCB folder">💾 Save Local Copy</button>
+      </div>
+    </div>
+
     <div class="photos-prop-tabs">
       <button class="photos-prop-tab active" onclick="_photosSwitchProp('front',this)">🏠 Front Home</button>
       <button class="photos-prop-tab" onclick="_photosSwitchProp('left',this)">🛎️ Left Suite</button>
@@ -4123,8 +4132,7 @@ function _photosRender() {
   }).join('');
 
   _photosInitDrag(list);
-  document.getElementById('photos-save-status').textContent =
-    n + ' photos · Use ▲▼ or drag to reorder · Tag photos for bedroom cards';
+  _photosSetStatus(n + ' photos · Use ▲▼ or drag to reorder · Tag photos for bedroom cards');
 }
 
 function _photosMove(i, dir) {
@@ -4252,13 +4260,21 @@ async function _idbSetHandle(key, val) {
 
 let _photosFileHandle = null;
 
+// Keeps the top and bottom status lines in sync — same status bar exists twice on the page
+// (top and bottom of a potentially long photo list) so the buttons are always in reach.
+function _photosSetStatus(text) {
+  const top = document.getElementById('photos-save-status-top');
+  const bottom = document.getElementById('photos-save-status');
+  if (top) top.textContent = text;
+  if (bottom) bottom.textContent = text;
+}
+
 async function _photosSave() {
   // Sync any caption edits from DOM before saving
   document.querySelectorAll('.photo-row-caption').forEach(function(inp) {
     _photosJson[_photosProp].photos[+inp.dataset.i].caption = inp.value;
   });
   var json = JSON.stringify(_photosJson, null, 2);
-  const statusEl = document.getElementById('photos-save-status');
 
   if ('showSaveFilePicker' in window) {
     try {
@@ -4284,7 +4300,7 @@ async function _photosSave() {
       await writable.close();
       _photosFileHandle = handle;
       _photosDirty = false;
-      statusEl.textContent = `✅ Saved directly to ${handle.name} — redeploy to Netlify when ready.`;
+      _photosSetStatus(`✅ Saved directly to ${handle.name} — redeploy to Netlify when ready.`);
       return;
     } catch (e) {
       if (e && e.name === 'AbortError') return; // user closed the picker — do nothing
@@ -4299,7 +4315,7 @@ async function _photosSave() {
   a.download = 'photos.json';
   a.click();
   _photosDirty = false;
-  statusEl.textContent = '✅ Downloaded! Replace the photos.json in your THOCB folder, then redeploy to Netlify.';
+  _photosSetStatus('✅ Downloaded! Replace the photos.json in your THOCB folder, then redeploy to Netlify.');
 }
 
 async function _photosPublish() {
@@ -4307,8 +4323,7 @@ async function _photosPublish() {
     _photosJson[_photosProp].photos[+inp.dataset.i].caption = inp.value;
   });
   const json = JSON.stringify(_photosJson, null, 2);
-  const statusEl = document.getElementById('photos-save-status');
-  statusEl.textContent = '⏳ Publishing…';
+  _photosSetStatus('⏳ Publishing…');
   try {
     const r = await fetch('/.netlify/functions/publish-photos', {
       method: 'POST',
@@ -4317,15 +4332,15 @@ async function _photosPublish() {
     });
     if (r.ok) {
       _photosDirty = false;
-      statusEl.textContent = '✅ Published — Netlify is rebuilding, live in about 1-2 minutes.';
+      _photosSetStatus('✅ Published — Netlify is rebuilding, live in about 1-2 minutes.');
     } else {
       const msg = await r.text();
       console.error('Publish failed:', msg);
-      statusEl.textContent = '⚠️ Publish failed — check console, or use Save Local Copy instead.';
+      _photosSetStatus('⚠️ Publish failed — check console, or use Save Local Copy instead.');
     }
   } catch (e) {
     console.error(e);
-    statusEl.textContent = '⚠️ Network error publishing — check console, or use Save Local Copy instead.';
+    _photosSetStatus('⚠️ Network error publishing — check console, or use Save Local Copy instead.');
   }
 }
 
