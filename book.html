@@ -929,6 +929,13 @@ a { color: inherit; text-decoration: none; }
 const p = new URLSearchParams(window.location.search);
 const get = k => p.get(k) || '';
 
+// Guest/signature name ultimately traces back to admin.html's quote builder, which can be
+// auto-filled from a guest-submitted inquiry - so it's indirectly guest-controlled. This page
+// shares localStorage/sessionStorage with admin.html (same origin), and Jesse opens this exact
+// page (via ?action=confirm) with his admin session active, so any unescaped guest text
+// rendered here could run with that session's access. Escape before interpolating into innerHTML.
+const _esc = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 // ── PARSE PARAMS ──
 const prop    = get('prop')    || 'Property';
 const guest   = get('guest')   || 'Guest';
@@ -1250,7 +1257,7 @@ async function submitAgreement() {
   // Show confirmed block
   const conf = document.getElementById('sig-confirmed');
   const confText = document.getElementById('sig-confirmed-text');
-  if (confText) confText.innerHTML = `<strong>${sigFirst} ${sigLast}</strong><br/><span style="font-size:.8rem;color:#4b5563;">Signed ${new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'})}</span>`;
+  if (confText) confText.innerHTML = `<strong>${_esc(sigFirst)} ${_esc(sigLast)}</strong><br/><span style="font-size:.8rem;color:#4b5563;">Signed ${new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'})}</span>`;
   if (conf) conf.classList.add('show');
   const printBtn = document.getElementById('print-agreement-btn');
   if (printBtn) printBtn.style.display = '';
@@ -1816,7 +1823,7 @@ async function _notifyJesse(method) {
     <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2rem;text-align:center;">
       <div style="font-size:3rem;margin-bottom:.5rem;">📬</div>
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
-      <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${guest} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
+      <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
       ${methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
@@ -1824,13 +1831,13 @@ async function _notifyJesse(method) {
         📅 <strong>Remember:</strong> Block these dates on your Airbnb calendar once payment is confirmed.
       </div>
       <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
-        <strong>This will send a full confirmation email to:</strong><br/>${email || '(no email on file)'}<br/><br/>
+        <strong>This will send a full confirmation email to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
         Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.
       </div>
-      ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${sigName}</strong></div>` : ''}
+      ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
       <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
         style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;">
-        ✅ Send Confirmation to ${guest.split(' ')[0]}
+        ✅ Send Confirmation to ${_esc(guest.split(' ')[0])}
       </button>
       <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
     </div>`;
@@ -1859,9 +1866,9 @@ async function _notifyJesse(method) {
       const resv = await _confirmReservation();
       if (resv.ok) {
         const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
-        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}${note}</span>`;
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}${note}</span>`;
       } else {
-        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${email || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
       }
     } catch(err) {
       btn.textContent = '✅ Send Confirmation to ' + guest.split(' ')[0];
@@ -1900,8 +1907,8 @@ async function _notifyJesse(method) {
   const apTotal = apIsCash ? cashTotal : (noFeeTotal > 0 ? noFeeTotal : total);
   const sumEl = document.getElementById('apr-summary');
   if (sumEl) sumEl.innerHTML = `
-    <div class="apr-si"><span>Guest</span><strong>${guest}</strong></div>
-    <div class="apr-si"><span>Property</span><strong>${prop}</strong></div>
+    <div class="apr-si"><span>Guest</span><strong>${_esc(guest)}</strong></div>
+    <div class="apr-si"><span>Property</span><strong>${_esc(prop)}</strong></div>
     <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
     <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
     <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
@@ -1932,7 +1939,7 @@ async function _notifyJesse(method) {
   const sigEl = document.getElementById('apr-sig');
   if (sigEl) sigEl.innerHTML = `
     <div class="sig-lbl">Electronic Signature</div>
-    <div class="sig-name">${sigName}</div>
+    <div class="sig-name">${_esc(sigName)}</div>
     <div class="sig-ts">Signed: ${sigTs} · Agreement becomes binding upon receipt of payment</div>`;
 })();
 </script>

@@ -1371,6 +1371,21 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
 <script>
 
+// ── HTML-ESCAPE HELPER ──
+// Guest-typed text (inquiry name/message/pets, signature name, etc.) flows into this
+// dashboard's innerHTML in several places. Without escaping, a guest could submit a
+// script payload as their "name" and have it execute inside this logged-in admin page.
+// Wrap any guest-controlled value with this before interpolating it into an innerHTML template.
+function _esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── PIN LOGIN ──
 // The PIN itself is checked server-side now (netlify/functions/admin-login.js) - nothing
 // secret lives in this page's JS anymore. A valid login returns a signed session token that
@@ -1432,8 +1447,8 @@ function loadInquiries() {
   const propLabel = { prop1: '🏠 Front Home', prop2: '🛎️ Left Suite', prop3: '🛎️ Right Suite' };
   const fmtD = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '?';
   list.innerHTML = data.map((inq, i) => {
-    const name = [inq.first, inq.last].filter(Boolean).join(' ') || '(no name)';
-    const prop = propLabel[inq.prop] || inq.prop || '?';
+    const name = _esc([inq.first, inq.last].filter(Boolean).join(' ') || '(no name)');
+    const prop = propLabel[inq.prop] || _esc(inq.prop) || '?';
     const dates = inq.ci && inq.co ? `${fmtD(inq.ci)} → ${fmtD(inq.co)}` : 'No dates';
     const ago = _timeAgo(inq.ts);
 
@@ -1452,9 +1467,9 @@ function loadInquiries() {
         <div>
           <div style="font-weight:600;color:var(--navy)">${name}</div>
           <div style="font-size:.8rem;color:var(--muted)">${prop} · ${dates}</div>
-          <div style="font-size:.75rem;color:var(--muted)">${inq.email}${inq.phone ? ' · ' + inq.phone : ''}</div>
-          ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${inq.guests}${inq.pets && inq.pets !== 'No pets' ? ' · ' + inq.pets : ''}</div>` : ''}
-          ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${inq.message.slice(0,80)}${inq.message.length>80?'…':''}"</div>` : ''}
+          <div style="font-size:.75rem;color:var(--muted)">${_esc(inq.email)}${inq.phone ? ' · ' + _esc(inq.phone) : ''}</div>
+          ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${_esc(inq.guests)}${inq.pets && inq.pets !== 'No pets' ? ' · ' + _esc(inq.pets) : ''}</div>` : ''}
+          ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${_esc(inq.message.slice(0,80))}${inq.message.length>80?'…':''}"</div>` : ''}
         </div>
         ${badge}
       </div>
@@ -2349,7 +2364,7 @@ function renderRecent() {
     <div class="booking-item">
       <div class="bi-prop">${PROPS[q.prop]?.icon || '🏠'}</div>
       <div class="bi-info">
-        <div class="bi-guest">${q.guest}</div>
+        <div class="bi-guest">${_esc(q.guest)}</div>
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
@@ -2634,8 +2649,8 @@ function renderConfirmed() {
     <div class="conf-row" onclick="openReservationDetail('${r.id}')">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
-        <div class="conf-row-guest">${r.guest}</div>
-        <div class="conf-row-detail">${PROPS[r.prop]?.name || r.prop || '-'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
+        <div class="conf-row-guest">${_esc(r.guest)}</div>
+        <div class="conf-row-detail">${PROPS[r.prop]?.name || _esc(r.prop) || '-'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
       </div>
       <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
     </div>`).join('');
@@ -2663,19 +2678,19 @@ function openReservationDetail(id) {
   backdrop.innerHTML = `
     <div class="conf-modal">
       <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
-      <h3>${r.guest}</h3>
+      <h3>${_esc(r.guest)}</h3>
       <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)}</div>
       <div class="conf-modal-rows">
-        <div><b>Property:</b> ${PROPS[r.prop]?.name || r.prop || '-'}</div>
+        <div><b>Property:</b> ${PROPS[r.prop]?.name || _esc(r.prop) || '-'}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div><b>Total:</b> ${fmt$(r.total)}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
-        ${r.payment_method ? `<div><b>Paid via:</b> ${r.payment_method}</div>` : ''}
-        <div><b>Email:</b> ${r.email || '-'}</div>
-        ${phone ? `<div><b>Phone:</b> ${phone}</div>` : ''}
-        ${r.signed_ip ? `<div><b>Signed from IP:</b> ${r.signed_ip}</div>` : ''}
+        ${r.payment_method ? `<div><b>Paid via:</b> ${_esc(r.payment_method)}</div>` : ''}
+        <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
+        ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
+        ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
       </div>
       <label>Private Note - only visible to you</label>
-      <textarea class="conf-notes-box" id="conf-notes-${r.id}" placeholder="Internal notes about this guest or booking…">${r.host_notes || ''}</textarea>
+      <textarea class="conf-notes-box" id="conf-notes-${r.id}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
       <div class="conf-notes-status" id="conf-notes-status-${r.id}"></div>
       <div class="conf-modal-actions">
         ${confirmUrl ? `
