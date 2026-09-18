@@ -1481,6 +1481,7 @@ function fillFromInquiry(i, el) {
   const data = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
   const inq = data[i];
   if (!inq) return;
+  _clearSupersede();
   document.querySelectorAll('.inquiry-item.is-loaded').forEach(node => {
     node.classList.remove('is-loaded');
     node.style.background = '';
@@ -2380,6 +2381,23 @@ function renderRecent() {
 // re-send; a fresh entry gets saved rather than overwriting the original.
 function _editQuote(q) {
   if (!q) return;
+  // Restore (or clear) the "replacing an existing reservation" link so it always matches
+  // the quote actually being edited - otherwise a stale _supersedesId from a previous,
+  // unrelated Change Reservation could delete the wrong guest's reservation once this one
+  // gets confirmed.
+  if (q.supersedes) {
+    _supersedesId = q.supersedes;
+    const r = _confirmedCache.find(x => x.id === q.supersedes);
+    const badge = document.getElementById('supersede-badge');
+    if (badge) {
+      badge.style.display = 'flex';
+      document.getElementById('supersede-badge-text').textContent = r
+        ? `🔁 Replacing ${r.guest}'s reservation (${r.check_in} → ${r.check_out}) - once this new contract is signed, the old one is automatically canceled.`
+        : `🔁 This will replace an existing reservation once signed.`;
+    }
+  } else {
+    _clearSupersede();
+  }
   switchAdmTab('booking');
   const parts = (q.guest || '').split(' ');
   document.getElementById('f-first').value = parts[0] || '';
