@@ -13,27 +13,14 @@ async function _sendEmail(to, subject, html) {
   } catch(e) { console.error('Email send failed:', e); }
 }
 
-// ── CLOUD SYNC ──
-const _JBIN_KEY = '$2a$10$44pjBF4oAPLF1c9iSHD9SefHfQqHCxErviZcxGGUokZmecqZqX7sq';
-const _JBIN_BIN = '6a421d5af5f4af5e29401948';
-
+// ── CLOUD SYNC ── proxied server-side via cloud-sync.js, which holds the real key.
 async function _pushInquiryToCloud(inquiry) {
   try {
-    // Read current cloud data
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${_JBIN_BIN}/latest`, {
-      headers: { 'X-Master-Key': _JBIN_KEY, 'X-Bin-Meta': 'false' }
+    await fetch('/.netlify/functions/cloud-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inquiry })
     });
-    const data = r.ok ? await r.json() : { quotes: [], inquiries: [] };
-    const inquiries = data.inquiries || [];
-    const isDup = inquiries.some(e => e.email === inquiry.email && e.ci === inquiry.ci);
-    if (!isDup) {
-      inquiries.unshift(inquiry);
-      await fetch(`https://api.jsonbin.io/v3/b/${_JBIN_BIN}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-Master-Key': _JBIN_KEY },
-        body: JSON.stringify({ quotes: data.quotes || [], inquiries: inquiries.slice(0, 50), pricing: data.pricing })
-      });
-    }
   } catch(e) { console.warn('Cloud inquiry push failed:', e); }
 }
 
@@ -180,9 +167,7 @@ let _restrictions  = { prop1:{}, prop2:{}, prop3:{} }; // {minNights,noCheckIn,n
 // Fetch pricing from cloud and apply - called once at page load
 (async function _loadPricing() {
   try {
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${_JBIN_BIN}/latest`, {
-      headers: { 'X-Master-Key': _JBIN_KEY, 'X-Bin-Meta': 'false' }
-    });
+    const r = await fetch('/.netlify/functions/cloud-sync?scope=pricing');
     if (!r.ok) return;
     const data = await r.json();
     if (!data || !data.pricing) return;

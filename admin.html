@@ -2375,32 +2375,23 @@ async function resendQuote(q, btn) {
   }
 }
 
-// ── CLOUD SYNC (JSONBin.io) ──
-// 1. Go to jsonbin.io → sign up free
-// 2. Create a bin with content: {"quotes":[],"inquiries":[]}
-// 3. Paste your X-Master-Key and bin ID below
-const JSONBIN_KEY = '$2a$10$44pjBF4oAPLF1c9iSHD9SefHfQqHCxErviZcxGGUokZmecqZqX7sq';
-const JSONBIN_BIN = '6a421d5af5f4af5e29401948';
-
+// ── CLOUD SYNC (JSONBin.io) ── proxied server-side via cloud-sync.js, admin-session gated.
+// The real key lives only in that function's environment now, never in this page's source.
 async function _cloudRead() {
-  if (!JSONBIN_KEY || !JSONBIN_BIN) return null;
   try {
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
-    });
+    const r = await fetch('/.netlify/functions/cloud-sync', { headers: _adminAuthHeader() });
     if (!r.ok) return null;
     return await r.json();
   } catch { return null; }
 }
 
 async function _cloudWrite() {
-  if (!JSONBIN_KEY || !JSONBIN_BIN) return;
   const quotes    = JSON.parse(localStorage.getItem('thocb_quotes')    || '[]');
   const inquiries = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
   try {
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`, {
+    await fetch('/.netlify/functions/cloud-sync', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ quotes, inquiries, pricing: { baseRates: _pricingData.baseRates, overrides: _pricingData.overrides, restrictions: _pricingData.restrictions, actuals: _pricingData.actuals } })
     });
   } catch(e) { console.warn('Cloud sync write failed:', e); }
@@ -2454,7 +2445,7 @@ async function refreshFromCloud() {
   _updateSyncStatus('⏳ Syncing…');
   const data = await _cloudRead();
   if (data) { _mergeCloudData(data); }
-  else { _updateSyncStatus(JSONBIN_KEY ? '⚠️ Sync failed' : '⚠️ Cloud not configured'); }
+  else { _updateSyncStatus('⚠️ Sync failed'); }
 }
 
 // ══════════════════════════════════════════
