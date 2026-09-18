@@ -590,6 +590,9 @@ main { padding-top: 150px; }
 .pin-accent { height: 44px; width: 44px; display: inline-block; vertical-align: middle; margin-right: .6rem; }
 .pin-accent-sm { height: 32px; width: auto; display: inline-block; vertical-align: middle; margin-right: .4rem; }
 
+.host-stats-row { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.4rem; }
+.host-stats-row .host-stats-card { margin-bottom: 0; flex: 1; }
+.hsc-photo { width: 84px; height: 84px; border-radius: 50%; flex-shrink: 0; object-fit: cover; box-shadow: 0 0 0 3px rgba(201,146,42,.35); }
 .host-stats-card { display: flex; gap: 1.5rem; background: var(--sand); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem 1.6rem; margin-bottom: 1.4rem; }
 .hsc-stat { text-align: center; flex: 1; }
 .hsc-num { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--navy); }
@@ -1241,6 +1244,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
   .about-layout { grid-template-columns: 1fr; }
   .contact-grid { grid-template-columns: 1fr; }
   .values-grid { grid-template-columns: 1fr; }
+  .host-stats-row { flex-direction: column; align-items: stretch; }
 }
 @media (max-width: 640px) {
   .section { padding: 4rem 1.25rem; }
