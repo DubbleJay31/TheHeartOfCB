@@ -18,7 +18,7 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { guest, email, prop, check_in, check_out, nights, total, rate, tax_occ, tax_sales, signed_ip, notes, host_notes } = body;
+  const { guest, email, prop, check_in, check_out, nights, total, rate, tax_occ, tax_sales, signed_ip, notes, host_notes, supersedes } = body;
   if (!guest || !check_in || !check_out) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, check_in, or check_out' }) };
   }
@@ -66,6 +66,18 @@ exports.handler = async function(event) {
       const err = await r.text();
       return { statusCode: 500, body: JSON.stringify({ ok: false, message: err }) };
     }
+
+    // This new signed contract replaces an older reservation (guest changed dates/terms and
+    // re-signed) — remove the old one now that the new one is safely saved, so there's never a
+    // window where both exist, and never a case where the old one gets removed if the new
+    // insert above had failed.
+    if (supersedes) {
+      await fetch(`${SB_URL}/rest/v1/reservations?id=eq.${encodeURIComponent(supersedes)}`, {
+        method: 'DELETE',
+        headers: SB_H
+      }).catch(() => {});
+    }
+
     return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true }) };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, message: String(e) }) };

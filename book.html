@@ -940,6 +940,13 @@ const taxOcc   = parseFloat(get('tax_occ'))   || 0;
 const taxSales = parseFloat(get('tax_sales')) || 0;
 const ccFee    = parseFloat(get('cc_fee'))    || 0;
 const total   = parseFloat(get('total')) || 0;
+// When this contract replaces an old one (see admin's "Change Reservation"), `total` above is
+// already the BALANCE DUE (full stay value minus what was already paid) — every fee/payment
+// calculation below can keep using `total` unchanged. `priorCredit`/`fullTotal` are only for
+// showing the guest the full contract value and what's being credited toward it.
+const priorCredit = parseFloat(get('credit')) || 0;
+const fullTotal   = parseFloat(get('full_total')) || 0;
+const supersedesId = get('supersedes') || '';
 const dueRaw  = get('due')     || '';
 const payUrl  = get('pay')     || '';
 const cashMode = get('cash') === '1';
@@ -1028,8 +1035,12 @@ addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(Math.round(rate/n
 if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
+if (priorCredit > 0) {
+  addRow('Full Stay Total', fmt(fullTotal || (rate + taxOcc + taxSales)));
+  addRow('<span style="color:#166534;">Previous Payment Credit</span>', `<span style="color:#166534;">&minus;${fmt(priorCredit)}</span>`);
+}
 const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
-addRow('<strong id="pt-total-label">Total</strong>', `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
+addRow(`<strong id="pt-total-label">${priorCredit > 0 ? 'Balance Due' : 'Total'}</strong>`, `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
 addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
 if (cashMode) addRow('<span style="font-size:.72rem;color:#166534;font-weight:600;">or ' + fmt(cashTotal) + ' if paying 100% cash — see Cash option below</span>', '', '');
 if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</span>`, '', '');
@@ -1464,9 +1475,10 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Check-In', fmtDate(sigData.ci) + ' at 3:00 PM', '#f9f6f0')}
     ${ROW('Check-Out', fmtDate(sigData.co) + ' at 11:00 AM', '#f2ede3')}
     ${ROW('Nights', String(sigData.nights), '#f9f6f0')}
+    ${priorCredit > 0 ? ROW('Full Stay Total', fmt2(fullTotal || (total + priorCredit)), '#f9f6f0') + ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f2ede3') : ''}
     ${sigData.paymentMethod ? ROW('Payment via', sigData.paymentMethod, '#f2ede3') : ''}
     ${_confRecvNow > 0 ? `<tr>
-      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : 'Total Received'}</td>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</td>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_confRecvNow)}</td>
     </tr>${_confIsCash ? `<tr><td colspan="2" bgcolor="#f2ede3" style="padding:0 14px 9px;font-size:11px;font-weight:400;color:#6b7280;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">Refunded in full the moment your cash payment is received at check-in.</td></tr>` : ''}` : ''}
     ${_confDueAtCheckin > 0 ? `<tr>
@@ -1774,11 +1786,15 @@ async function _notifyJesse(method) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           guest, email, prop, check_in: ciRaw, check_out: coRaw, nights,
-          total: parseFloat(total) || 0,
+          // Record the full stay value here, not just today's balance — rate/tax_occ/tax_sales
+          // below are always full-stay figures, so total needs to match them for the numbers to
+          // add up in the admin dashboard and any tax reporting.
+          total: (fullTotal > 0 ? fullTotal : parseFloat(total)) || 0,
           rate, tax_occ: taxOcc, tax_sales: taxSales,
           signed_ip: sigIp,
           tok: sigTok,
-          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`
+          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`,
+          supersedes: supersedesId || undefined
         })
       });
       const j = await r.json().catch(() => ({}));
@@ -1884,7 +1900,11 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
     <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
     <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
-    <div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>
+    ${priorCredit > 0 ? `
+    <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(fullTotal || (apTotal + priorCredit))}</strong></div>
+    <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
+    <div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>
+    ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ${apRecvNow > 0 ? `<div class="apr-si"><span>Deposit Received</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)
