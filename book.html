@@ -742,7 +742,7 @@ a { color: inherit; text-decoration: none; }
         <span style="font-size:1.5rem;">✅</span>
         <div id="sig-confirmed-text"></div>
       </div>
-      <button id="print-agreement-btn" onclick="window.print()" style="display:none;margin-top:.85rem;width:100%;padding:.75rem 1rem;background:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;">🖨️ Print / Save Agreement</button>
+      <button id="print-agreement-btn" onclick="window.open(_agreementUrl, '_blank')" style="display:none;margin-top:.85rem;width:100%;padding:.75rem 1rem;background:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;">🖨️ Print / Save Agreement</button>
 
     </div>
   </div>
@@ -1031,6 +1031,7 @@ const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divT
 const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
 addRow('<strong id="pt-total-label">Total</strong>', `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
 addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
+if (cashMode) addRow('<span style="font-size:.72rem;color:#166534;font-weight:600;">or ' + fmt(cashTotal) + ' if paying 100% cash — see Cash option below</span>', '', '');
 if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</span>`, '', '');
 if (dueRaw) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
 
@@ -1253,6 +1254,10 @@ function unlockAndPay() {
 
 // ── CHOOSE CASH → reveal deposit/no-deposit flow ──
 function chooseCash() {
+  // Defensive guard: the whole payment section is only supposed to be reachable after signing
+  // (the .locked CSS disables pay-method-card clicks until then), but pm-cash-dep-section isn't
+  // one of those cards, so it needs its own check rather than relying on that alone.
+  if (!_agreementSent) return;
   const fmtAmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const noFee = noFeeTotal > 0 ? noFeeTotal : total;
   const cashDiscPct = noFee > 0 && cashDisc > 0 ? (cashDisc / noFee * 100).toFixed(1) : 0;
@@ -1321,12 +1326,16 @@ function enableCashConfirm() {
 
 // ── CASH CONFIRM ──
 async function handleCashConfirm() {
-  document.getElementById('pm-cash-dep-section').innerHTML = `<div style="padding:.5rem 0;color:#16a34a;font-weight:700;font-size:.95rem;">✅ Confirmed — notifying Jesse…</div>`;
+  if (!_agreementSent) return;
+  // Match the solid dark-green disabled-button look the other payment methods use after
+  // confirming, instead of a plain text line — same visual language either way.
+  const btnStyle = 'width:100%;padding:.9rem;background:#166534;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;line-height:1.4;';
+  document.getElementById('pm-cash-dep-section').innerHTML = `<button disabled style="${btnStyle}">⏳ Confirming — notifying Jesse…</button>`;
   document.getElementById('pm-cash-card').style.display = 'none';
   await _notifyJesse('Cash');
   await _notifyGuest('Cash');
   const inner = document.getElementById('pm-cash-dep-section');
-  if (inner) inner.innerHTML = `<div style="padding:.5rem 0;color:#16a34a;font-weight:700;font-size:.95rem;">✅ Jesse notified — use the button below to save or print your signed agreement.</div>`;
+  if (inner) inner.innerHTML = `<button disabled style="${btnStyle}">✅ Jesse notified — you'll hear back shortly</button>`;
   showBookingComplete();
 }
 
@@ -1845,13 +1854,16 @@ async function _notifyJesse(method) {
   const sigTs   = get('ts') ? new Date(decodeURIComponent(get('ts'))).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }) : '';
   const fmtAmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  // Booking summary. The headline Total is always the flat fare+tax price — the card fee is
-  // only an optional add-on if the guest ends up paying by card, so it never belongs in this
-  // number. If a payment method is already known (this page opened after payment), also show
-  // what's been received and, for Cash, what's still due at check-in.
+  // Booking summary. Once a payment method is known (this page opened after payment), the
+  // headline Total reflects exactly what that guest actually pays — the cash price for Cash,
+  // otherwise the flat fare+tax price (card fee is only ever an add-on the guest sees when
+  // they click that specific payment button, never baked into this number). Showing both a
+  // card-ish number AND a cash number here was confusing once the method is settled — one
+  // number, matching how they're actually paying.
   const apMethod = decodeURIComponent(get('method') || '');
+  const apIsCash = apMethod === 'Cash';
   const apRecvNow = apMethod ? _receivedNowForMethod(apMethod) : 0;
-  const apDue = apMethod ? _dueAtCheckinForMethod(apMethod) : 0;
+  const apTotal = apIsCash ? cashTotal : (noFeeTotal > 0 ? noFeeTotal : total);
   const sumEl = document.getElementById('apr-summary');
   if (sumEl) sumEl.innerHTML = `
     <div class="apr-si"><span>Guest</span><strong>${guest}</strong></div>
@@ -1859,9 +1871,8 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
     <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
     <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
-    <div class="apr-si"><span>Total</span><strong>${fmtAmt2(noFeeTotal > 0 ? noFeeTotal : total)}</strong></div>
-    ${apRecvNow > 0 ? `<div class="apr-si"><span>${apMethod === 'Cash' ? 'Deposit Received' : 'Received'}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}
-    ${apDue > 0 ? `<div class="apr-si"><span>Due at Check-In (Cash)</span><strong style="color:#7c1d1d;">${fmtAmt2(apDue)}</strong></div>` : ''}`;
+    <div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>
+    ${apRecvNow > 0 ? `<div class="apr-si"><span>Deposit Received</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)
   const cancelEl = document.getElementById('apr-cancel');
