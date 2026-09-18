@@ -2022,10 +2022,13 @@ async function copyLink() {
   const orig = btn.textContent;
   btn.textContent = '⏳ Preparing…';
   const url = await _getShareableUrl();
+  // Save the quote as soon as we have the real URL, independent of whether the clipboard
+  // write itself succeeds - clipboard permissions/mobile quirks shouldn't be able to silently
+  // drop a quote from Recent Quotes.
+  saveRecent();
   navigator.clipboard.writeText(url).then(() => {
     btn.textContent = '✅ Copied!';
     btn.classList.add('copied');
-    saveRecent();
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2200);
   });
 }
@@ -2197,11 +2200,14 @@ function sendEmail() {
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
-  // Mint the link's quote signature in the background so it's ready by the time Jesse
-  // actually sends/copies - sendEmailFromModal() and copyEmailHtml() also finalize it
-  // themselves right before use as a safety net either way. saveRecent() waits for this so
-  // the quote saved for later Resend always has the finalized (signed) link, not the bare one.
-  _finalizeEmailPreviewLink().then(() => saveRecent());
+  // Save the quote immediately so it's never lost to a slow/failed network call or the phone
+  // backgrounding the tab right after sending - previously this waited on the qtok mint to
+  // finish first, which meant a real quote could vanish from Recent Quotes if that request
+  // didn't complete in time. The link itself still gets its qtok signature in the background
+  // (sendEmailFromModal()/copyEmailHtml() also finalize it themselves right before use as a
+  // safety net), and the saved record is patched with the finalized link once that's ready.
+  const savedTs = saveRecent();
+  _finalizeEmailPreviewLink().then(url => _patchSavedQuoteUrl(savedTs, url));
   return false;
 }
 
@@ -2276,13 +2282,13 @@ async function copyEmailHtml() {
 }
 
 // ── SEND SMS ──
-async function sendSMS() {
+function sendSMS() {
   if (!_generatedUrl) return false;
   const guest     = getGuestName();
   const firstName = guest.split(' ')[0];
   const phone     = document.getElementById('f-phone').value.trim();
-  const url = await _getShareableUrl();
-  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
+  const buildMsg = url => `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
+  const msg = buildMsg(_generatedUrl);
 
   // Build modal
   let modal = document.getElementById('sms-modal');
@@ -2315,7 +2321,20 @@ async function sendSMS() {
   const smsHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}` : `sms:?body=${encodeURIComponent(msg)}`;
   modal.querySelector('#sms-open-link').href = smsHref;
   modal.style.display = 'flex';
-  saveRecent();
+  // Save immediately (see sendEmail()'s note) rather than waiting on the qtok mint - patch the
+  // modal text and the saved record with the signed link once minting finishes in the background.
+  const savedTs = saveRecent();
+  _getShareableUrl().then(url => {
+    if (!url || url === _generatedUrl) return;
+    const liveMsg = buildMsg(url);
+    const liveModal = document.getElementById('sms-modal');
+    if (liveModal && liveModal.style.display !== 'none') {
+      liveModal.querySelector('#sms-text').value = liveMsg;
+      const liveHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(liveMsg)}` : `sms:?body=${encodeURIComponent(liveMsg)}`;
+      liveModal.querySelector('#sms-open-link').href = liveHref;
+    }
+    _patchSavedQuoteUrl(savedTs, url);
+  });
   return false;
 }
 
@@ -2340,14 +2359,31 @@ function saveRecent() {
   const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
   const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
+  const ts = Date.now();
   saved.unshift({
-    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts: Date.now(), email,
+    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts, email,
     nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp, privateNote,
     credit, supersedes: _supersedesId || ''
   });
   localStorage.setItem('thocb_quotes', JSON.stringify(saved.slice(0, 10)));
   renderRecent();
   _cloudWrite();
+  return ts;
+}
+
+// Updates an already-saved quote's link once the background qtok mint finishes - used by
+// send flows that save the record immediately (for reliability) but finalize the actual
+// signed link a moment later.
+function _patchSavedQuoteUrl(ts, url) {
+  if (!ts || !url) return;
+  const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
+  const idx = saved.findIndex(q => q.ts === ts);
+  if (idx !== -1 && saved[idx].url !== url) {
+    saved[idx].url = url;
+    localStorage.setItem('thocb_quotes', JSON.stringify(saved));
+    _recentQuotesCache = saved;
+    _cloudWrite();
+  }
 }
 
 let _recentQuotesCache = [];
