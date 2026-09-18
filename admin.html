@@ -907,15 +907,14 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             Taxes auto-applied: Room Occupancy Tax <strong style="color:var(--navy)">6%</strong> + Sales Tax <strong style="color:var(--navy)">7%</strong>
           </div>
           <!-- Prior payment credit (for a new/amended contract replacing an existing reservation) -->
-          <div class="field-row" style="margin-top:.5rem;">
+          <div class="field-row single" style="margin-top:.5rem;">
             <div class="field field-prefix">
-              <label>Already Paid / Credit <span style="font-weight:400;color:var(--muted);font-size:.75rem;">— optional, for a new contract replacing an old one</span></label>
+              <label>Already Paid / Credit <span style="font-weight:400;text-transform:none;letter-spacing:0;">— optional</span></label>
               <span>$</span>
               <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
+              <span class="field-hint">For a new contract replacing an old one — the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
             </div>
-            <button type="button" onclick="document.getElementById('f-credit').value='';generate();" title="Clear credit" style="align-self:end;padding:.55rem .8rem;border:1px solid var(--border);border-radius:6px;background:var(--sand);color:var(--muted);cursor:pointer;font-size:.8rem;">✕</button>
           </div>
-          <span class="field-hint">The contract still shows the full stay total — this amount is credited toward it, and the guest only owes the difference.</span>
         </div>
       </div>
 
@@ -1843,7 +1842,6 @@ let _supersedesId = null;
 function _clearSupersede() {
   _supersedesId = null;
   document.getElementById('supersede-badge').style.display = 'none';
-  document.getElementById('f-credit').value = '';
   generate();
 }
 function getGuestName() {
