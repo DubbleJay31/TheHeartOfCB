@@ -1272,7 +1272,8 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <div class="photos-save-bar">
       <span class="photos-save-status" id="photos-save-status">Drag rows to reorder · Type captions · Then save.</span>
       <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosGroupByRoom()" title="Group photos by room in a logical order">🗂️ Group by Room</button>
-      <button class="btn btn-navy btn-sm" onclick="_photosSave()">💾 Save photos.json</button>
+      <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosSave()" title="Save photos.json to your local THOCB folder">💾 Save Local Copy</button>
+      <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub — Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
     </div>
   </div><!-- /#adm-panel-photos -->
 
@@ -4299,6 +4300,33 @@ async function _photosSave() {
   a.click();
   _photosDirty = false;
   statusEl.textContent = '✅ Downloaded! Replace the photos.json in your THOCB folder, then redeploy to Netlify.';
+}
+
+async function _photosPublish() {
+  document.querySelectorAll('.photo-row-caption').forEach(function(inp) {
+    _photosJson[_photosProp].photos[+inp.dataset.i].caption = inp.value;
+  });
+  const json = JSON.stringify(_photosJson, null, 2);
+  const statusEl = document.getElementById('photos-save-status');
+  statusEl.textContent = '⏳ Publishing…';
+  try {
+    const r = await fetch('/.netlify/functions/publish-photos', {
+      method: 'POST',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: json })
+    });
+    if (r.ok) {
+      _photosDirty = false;
+      statusEl.textContent = '✅ Published — Netlify is rebuilding, live in about 1-2 minutes.';
+    } else {
+      const msg = await r.text();
+      console.error('Publish failed:', msg);
+      statusEl.textContent = '⚠️ Publish failed — check console, or use Save Local Copy instead.';
+    }
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = '⚠️ Network error publishing — check console, or use Save Local Copy instead.';
+  }
 }
 
 </script>
