@@ -1272,7 +1272,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <div class="photos-save-bar">
       <span class="photos-save-status" id="photos-save-status">Drag rows to reorder · Type captions · Then save.</span>
       <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosGroupByRoom()" title="Group photos by room in a logical order">🗂️ Group by Room</button>
-      <button class="btn btn-navy btn-sm" onclick="_photosSave()">💾 Save &amp; Download photos.json</button>
+      <button class="btn btn-navy btn-sm" onclick="_photosSave()">💾 Save photos.json</button>
     </div>
   </div><!-- /#adm-panel-photos -->
 
@@ -4219,20 +4219,86 @@ function _photosInitDrag(list) {
   });
 }
 
-function _photosSave() {
+// ── Persisted file handle for direct-to-disk saving (Chrome/Edge only — File System Access API) ──
+// Lets "Save photos.json" write straight into the THOCB folder on repeat saves instead of
+// dropping a new copy in Downloads every time that has to be manually moved over.
+function _photosHandleDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('thocb-admin', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbGetHandle(key) {
+  const db = await _photosHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbSetHandle(key, val) {
+  const db = await _photosHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+let _photosFileHandle = null;
+
+async function _photosSave() {
   // Sync any caption edits from DOM before saving
   document.querySelectorAll('.photo-row-caption').forEach(function(inp) {
     _photosJson[_photosProp].photos[+inp.dataset.i].caption = inp.value;
   });
   var json = JSON.stringify(_photosJson, null, 2);
+  const statusEl = document.getElementById('photos-save-status');
+
+  if ('showSaveFilePicker' in window) {
+    try {
+      let handle = _photosFileHandle || await _idbGetHandle('photosFileHandle').catch(() => null);
+      if (handle) {
+        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted' && (await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+          handle = null;
+        }
+      }
+      if (!handle) {
+        // First time (or handle no longer valid) — ask once where photos.json lives. Point it at
+        // the file inside the THOCB folder; every save after this reuses that same location with
+        // no dialog.
+        handle = await window.showSaveFilePicker({
+          suggestedName: 'photos.json',
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+        });
+        await _idbSetHandle('photosFileHandle', handle).catch(() => {});
+      }
+      const writable = await handle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      _photosFileHandle = handle;
+      _photosDirty = false;
+      statusEl.textContent = `✅ Saved directly to ${handle.name} — redeploy to Netlify when ready.`;
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user closed the picker — do nothing
+      console.error('Direct save failed, falling back to download:', e);
+    }
+  }
+
+  // Fallback for browsers without the File System Access API (e.g. Firefox, Safari)
   var blob = new Blob([json], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'photos.json';
   a.click();
   _photosDirty = false;
-  document.getElementById('photos-save-status').textContent =
-    '✅ Downloaded! Replace the photos.json in your THOCB folder, then redeploy to Netlify.';
+  statusEl.textContent = '✅ Downloaded! Replace the photos.json in your THOCB folder, then redeploy to Netlify.';
 }
 
 </script>
