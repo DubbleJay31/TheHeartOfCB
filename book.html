@@ -941,7 +941,9 @@ const rate    = parseFloat(get('rate'))  || 0;
 const taxOcc   = parseFloat(get('tax_occ'))   || 0;
 const taxSales = parseFloat(get('tax_sales')) || 0;
 const ccFee    = parseFloat(get('cc_fee'))    || 0;
-const total   = parseFloat(get('total')) || 0;
+const totalRaw = get('total');
+const total   = parseFloat(totalRaw) || 0;
+const qtok    = get('qtok') || '';
 // When this contract replaces an old one (see admin's "Change Reservation"), `total` above is
 // already the BALANCE DUE (full stay value minus what was already paid) - every fee/payment
 // calculation below can keep using `total` unchanged. `priorCredit`/`fullTotal` are only for
@@ -1221,9 +1223,10 @@ async function submitAgreement() {
     const r = await fetch('/.netlify/functions/sign-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw })
+      body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw, prop, total: totalRaw, qtok })
     });
     if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
+    else { console.error('sign-link rejected:', await r.text()); }
   } catch (e) { console.error('sign-link failed:', e); }
 
   _agreementUrl = window.location.href

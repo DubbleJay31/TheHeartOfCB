@@ -1053,7 +1053,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
                 <div class="so-sub">Preview branded email · copy &amp; paste to Gmail</div>
               </div>
             </a>
-            <a class="send-opt" id="send-sms" href="#" onclick="return sendSMS()">
+            <a class="send-opt" id="send-sms" href="#" onclick="sendSMS(); return false;">
               <div class="so-icon">💬</div>
               <div>
                 <div class="so-label">Send via Text</div>
@@ -1840,7 +1840,55 @@ function cashDepPctInput() {
 
 // ── GENERATE LINK ──
 let _generatedUrl = '';
+let _qtok = '';
 let _supersedesId = null;
+
+// The booking link's `total`/`prop`/dates need a server-minted signature (qtok) before
+// sign-link.js will let the guest actually sign - otherwise anyone could hand sign-link.js
+// made-up guest/dates and get a valid reservation-confirm token with no real quote behind it.
+// This mints (or reuses an already-minted) signature for the CURRENT _generatedUrl and
+// appends it, called lazily right before a link is actually copied/sent rather than on every
+// keystroke in generate().
+async function _getShareableUrl() {
+  if (!_generatedUrl) return '';
+  if (_qtok && _generatedUrl.includes('qtok=')) return _generatedUrl;
+  try {
+    const urlObj = new URL(_generatedUrl);
+    const sp = urlObj.searchParams;
+    const r = await fetch('/.netlify/functions/mint-quote-token', {
+      method: 'POST',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        guest: sp.get('guest'), email: sp.get('email'), ci: sp.get('ci'), co: sp.get('co'),
+        prop: sp.get('prop'), total: sp.get('total')
+      })
+    });
+    if (r.ok) {
+      const j = await r.json();
+      if (j.qtok) {
+        _qtok = j.qtok;
+        _generatedUrl += '&qtok=' + encodeURIComponent(_qtok);
+        const linkEl = document.getElementById('link-display');
+        if (linkEl && linkEl.className !== 'link-url empty') linkEl.textContent = _generatedUrl;
+      }
+    } else {
+      console.error('Quote token mint failed:', await r.text());
+    }
+  } catch (e) { console.error('Quote token mint failed:', e); }
+  return _generatedUrl;
+}
+
+// Patches the finalized (qtok-bearing) link into any booking-link anchor already rendered in
+// the email preview modal, so Copy/Send/Gmail all end up using the real signed link even if
+// the mint finished after the preview was first shown.
+async function _finalizeEmailPreviewLink() {
+  const url = await _getShareableUrl();
+  const bodyEl = document.getElementById('email-preview-body');
+  if (bodyEl && url) {
+    bodyEl.querySelectorAll('a').forEach(a => { if (a.href && a.href.includes('book.html')) a.href = url; });
+  }
+  return url;
+}
 function _clearSupersede() {
   _supersedesId = null;
   document.getElementById('supersede-badge').style.display = 'none';
@@ -1888,6 +1936,7 @@ function generate() {
   const ready = guest && lastName && email && ci && co && _nights > 0 && subtotal > 0 && (pay || cash || overrideCc);
   if (!ready) {
     _generatedUrl = '';
+    _qtok = '';
     linkEl.className = 'link-url empty';
     linkEl.textContent = 'Fill in required fields (last name, email, dates, rate - plus Square link, check Cash, or check Override)…';
     copyBtn.disabled = true;
@@ -1932,6 +1981,7 @@ function generate() {
   if (_supersedesId) p.set('supersedes', _supersedesId);
 
   _generatedUrl = base + '?' + p.toString();
+  _qtok = '';
   linkEl.className = 'link-url';
   linkEl.textContent = _generatedUrl;
   copyBtn.disabled = false;
@@ -1950,20 +2000,25 @@ function copyInvoiceTitle() {
 }
 
 // ── COPY ──
-function copyLink() {
+async function copyLink() {
   if (!_generatedUrl) return;
-  navigator.clipboard.writeText(_generatedUrl).then(() => {
-    const btn = document.getElementById('copy-btn');
+  const btn = document.getElementById('copy-btn');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Preparing…';
+  const url = await _getShareableUrl();
+  navigator.clipboard.writeText(url).then(() => {
     btn.textContent = '✅ Copied!';
     btn.classList.add('copied');
     saveRecent();
-    setTimeout(() => { btn.textContent = '📋 Copy Link'; btn.classList.remove('copied'); }, 2200);
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2200);
   });
 }
 
 // ── PREVIEW ──
-function previewLink() {
-  if (_generatedUrl) window.open(_generatedUrl, '_blank');
+async function previewLink() {
+  if (!_generatedUrl) return;
+  const url = await _getShareableUrl();
+  window.open(url, '_blank');
 }
 
 // ── SEND EMAIL ──
@@ -2126,7 +2181,11 @@ function sendEmail() {
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
-  saveRecent();
+  // Mint the link's quote signature in the background so it's ready by the time Jesse
+  // actually sends/copies - sendEmailFromModal() and copyEmailHtml() also finalize it
+  // themselves right before use as a safety net either way. saveRecent() waits for this so
+  // the quote saved for later Resend always has the finalized (signed) link, not the bare one.
+  _finalizeEmailPreviewLink().then(() => saveRecent());
   return false;
 }
 
@@ -2137,9 +2196,10 @@ function closeEmailModal() {
 
 async function sendEmailFromModal() {
   const btn = document.getElementById('modal-send-direct-btn');
-  const html = document.getElementById('email-preview-body').innerHTML;
-  if (!_emailModalTo || !html) { alert('No recipient - fill in guest email first.'); return; }
+  if (!_emailModalTo) { alert('No recipient - fill in guest email first.'); return; }
   btn.textContent = '⏳ Sending…'; btn.disabled = true;
+  await _finalizeEmailPreviewLink();
+  const html = document.getElementById('email-preview-body').innerHTML;
   try {
     const r = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
@@ -2170,7 +2230,8 @@ function openGmail() {
   }
 }
 
-function copyEmailHtml() {
+async function copyEmailHtml() {
+  await _finalizeEmailPreviewLink();
   const html = document.getElementById('email-preview-body').innerHTML;
   // Use ClipboardItem to copy as HTML so Gmail preserves formatting on paste
   const blob = new Blob([html], { type: 'text/html' });
@@ -2199,12 +2260,13 @@ function copyEmailHtml() {
 }
 
 // ── SEND SMS ──
-function sendSMS() {
+async function sendSMS() {
   if (!_generatedUrl) return false;
   const guest     = getGuestName();
   const firstName = guest.split(' ')[0];
   const phone     = document.getElementById('f-phone').value.trim();
-  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${_generatedUrl}\n\nQuestions? Just reply or call me anytime.`;
+  const url = await _getShareableUrl();
+  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
 
   // Build modal
   let modal = document.getElementById('sms-modal');
