@@ -103,14 +103,14 @@ em { font-style: italic; color: var(--gold2); }
   align-items: center; height: 150px;
 }
 .logo { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
-.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; }
-.logo-pin  { height: 120px; width: auto; transition: transform var(--transition); }
+.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; overflow: hidden; }
+.logo-pin  { height: 154px; width: auto; transition: transform var(--transition); }
 .logo-pin:hover { transform: scale(1.06); }
 .logo-wordmark { height: 110px; width: auto; transition: transform var(--transition); }
 .logo-wordmark:hover { transform: scale(1.03); }
 @media (max-width: 900px) {
   .logo .pin-circle { width: 62px !important; height: 62px !important; }
-  .logo-pin { height: 48px; }
+  .logo-pin { height: 68px; }
   .logo-wordmark { height: 50px; }
   .nav-inner { height: 80px; }
   main { padding-top: 80px; }
@@ -267,7 +267,7 @@ main { padding-top: 150px; }
 .home-tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
 .home-tile-media { height: 200px; display: flex; align-items: center; justify-content: center; border-bottom: 3px solid var(--gold); }
 .ht-navy { background: var(--navy); }
-.ht-pin { width: 72px; height: auto; border-radius: 50%; }
+.ht-pin { height: 121px; width: auto; border-radius: 50%; }
 .home-tile-body { padding: 1.4rem 1.2rem; display: flex; flex-direction: column; gap: .5rem; flex: 1; }
 .ht-title { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; color: var(--navy); letter-spacing: .01em; }
 .ht-desc { font-size: .87rem; color: var(--muted); line-height: 1.6; flex: 1; }
@@ -353,7 +353,7 @@ main { padding-top: 150px; }
   width: 180px; height: 180px; margin-bottom: 1rem;
   box-shadow: 0 8px 32px rgba(0,0,0,.3);
 }
-.stay-hero-pin { height: 150px; width: auto; }
+.stay-hero-pin { height: 198px; width: auto; }
 .bb-rating { font-weight: 700; color: var(--gold); margin-right: .4rem; font-size: .9rem; }
 .stay-hero-address { font-size: .85rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold2) !important; margin-bottom: .5rem !important; }
 .stay-hero-tagline { font-family: 'Playfair Display', serif; font-size: 3.8rem; font-weight: 700; color: var(--white) !important; line-height: 1.1; margin: 0 !important; }
@@ -616,7 +616,7 @@ main { padding-top: 150px; }
   display: flex; align-items: center; gap: 1.4rem;
   border-bottom: 3px solid var(--gold);
 }
-.footer-logo { height: 90px; width: auto; flex-shrink: 0; }
+.footer-logo { height: 128px; width: auto; flex-shrink: 0; }
 .footer-brand-text { display: flex; flex-direction: column; gap: .18rem; }
 .fbb-line1 { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--navy); }
 .fbb-line2 { font-size: .88rem; font-weight: 600; color: var(--navy); }

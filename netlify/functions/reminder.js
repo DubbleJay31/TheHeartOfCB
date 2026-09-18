@@ -98,7 +98,7 @@ function buildReminderHtml(res) {
   <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
     <div style="background:#0a1f3a;padding:26px;text-align:center;">
       <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="58" height="58" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:29px;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="50" height="50" alt="The Heart of CB" style="display:block;border-radius:50%;" />
+        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="56" height="56" alt="The Heart of CB" style="display:block;border-radius:50%;" />
       </td></tr></table>
       <div style="height:10px;"></div>
       <h1 style="color:#c9a84c;font-size:1.25rem;margin:0;font-family:Georgia,serif;">
