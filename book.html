@@ -1263,6 +1263,7 @@ function chooseCash() {
   const cashDiscPct = noFee > 0 && cashDisc > 0 ? (cashDisc / noFee * 100).toFixed(1) : 0;
   const depSection = document.getElementById('pm-cash-dep-section');
   const inner = document.getElementById('pm-cash-dep-inner');
+  _setAgreementMethod('Cash');
 
   // Reflect the cash price at the top of the Booking Summary now that Cash is selected — only
   // Cash changes the headline total (a discount), so this only fires here, never by default.
@@ -1603,9 +1604,20 @@ async function _sendAgreementCopy(sigData) {
 // Agreement email is sent in submitAgreement() — this just guards against expired bookings
 let _agreementSent = false;
 let _agreementUrl = '';
+
+// _agreementUrl is fixed at signing time, before any payment method is chosen — without this,
+// the "Print/Save Agreement" view (and anything else reopening it) never learns which method
+// the guest actually paid with, so it falls back to showing the non-cash price even for cash
+// guests. Call this the moment the method becomes known.
+function _setAgreementMethod(method) {
+  if (!_agreementUrl) return;
+  _agreementUrl = _agreementUrl.replace(/&method=[^&]*/, '') + '&method=' + encodeURIComponent(method);
+}
+
 function handlePayClick(method, e) {
   const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
   if (expired) { if (e) e.preventDefault(); return false; }
+  _setAgreementMethod(method);
   _showPaymentSentSection(method);
   // Let the <a href target="_blank"> navigate naturally
 }
@@ -1615,6 +1627,7 @@ function copyZelleNum(btn) {
     const orig = btn.textContent;
     btn.textContent = '✅ Copied!';
     setTimeout(() => { btn.textContent = orig; }, 2000);
+    _setAgreementMethod('Zelle');
     _showPaymentSentSection('Zelle');
   });
 }
