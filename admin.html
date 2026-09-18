@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" href="THOCB Pin Square.png" />
 <link rel="apple-touch-icon" href="THOCB Pin Square.png" />
-<title>ADMIN — The Heart Of CB</title>
+<title>ADMIN - The Heart Of CB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
@@ -55,7 +55,7 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
   box-shadow: 0 32px 80px rgba(0,0,0,.35);
 }
-.login-logo { height: 64px; width: 64px; object-fit: contain; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2); margin-bottom: 1rem; }
+.login-logo { height: 64px; width: 64px; object-fit: contain; border-radius: 50%; background: #fff; margin-bottom: 1rem; }
 .login-box h2 { font-size: 1.5rem; color: var(--navy); margin-bottom: .25rem; }
 .login-box p { font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem; }
 .login-input {
@@ -542,7 +542,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 }
 .prc-rate-input:focus { outline: none; border-color: var(--gold); background: #fffdf7; }
 
-/* Edit-selected action bar — fixed at bottom of viewport */
+/* Edit-selected action bar - fixed at bottom of viewport */
 .prc-sel-bar {
   display: none; align-items: center; gap: .75rem;
   padding: .75rem 1.25rem;
@@ -806,9 +806,9 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <div class="field">
             <label>Property</label>
             <select id="prop-select" onchange="selectProp(this.value)">
-              <option value="prop1">🏠 Front Home — 6 guests · 3 bed</option>
-              <option value="prop2">🛎️ Left Suite — 2 guests · 1 bed</option>
-              <option value="prop3">🛎️ Right Suite — 2 guests · 1 bed</option>
+              <option value="prop1">🏠 Front Home - 6 guests · 3 bed</option>
+              <option value="prop2">🛎️ Left Suite - 2 guests · 1 bed</option>
+              <option value="prop3">🛎️ Right Suite - 2 guests · 1 bed</option>
             </select>
           </div>
         </div>
@@ -846,7 +846,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             </div>
           </div>
           <div class="field" style="margin-top:.6rem;">
-            <label>Private Note <em style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-style:italic;font-size:.75rem;">— only visible to you</em></label>
+            <label>Private Note <em style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-style:italic;font-size:.75rem;">- only visible to you</em></label>
             <textarea id="f-private-note" rows="2" placeholder="Internal notes about this guest or booking…" oninput="generate()" style="font-size:.85rem;resize:vertical;"></textarea>
           </div>
         </div>
@@ -882,7 +882,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
               <input type="number" id="f-rate" placeholder="auto-fills from inquiry" min="0" step="1" oninput="calcTotal(); generate()" />
             </div>
             <div class="field">
-              <label>Payment Due Date <span style="font-weight:400;color:var(--muted);font-size:.75rem;">— optional</span></label>
+              <label>Payment Due Date <span style="font-weight:400;color:var(--muted);font-size:.75rem;">- optional</span></label>
               <div style="display:flex;gap:.4rem;align-items:center;">
                 <input type="date" id="f-due" oninput="generate()" style="flex:1;" />
                 <button type="button" onclick="document.getElementById('f-due').value='';generate();" title="Clear date" style="padding:.45rem .65rem;border:1px solid var(--border);border-radius:6px;background:var(--sand);color:var(--muted);cursor:pointer;font-size:.8rem;">✕</button>
@@ -893,7 +893,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <!-- Guest Total (reverse calc) -->
           <div class="field-row" style="margin-top:.5rem;">
             <div class="field field-prefix">
-              <label>Guest Total <em style="font-weight:400;color:var(--muted);font-size:.75rem;text-transform:none;letter-spacing:0;font-style:italic;">— or enter to reverse-calculate room fare</em></label>
+              <label>Guest Total <em style="font-weight:400;color:var(--muted);font-size:.75rem;text-transform:none;letter-spacing:0;font-style:italic;">- or enter to reverse-calculate room fare</em></label>
               <span>$</span>
               <input type="number" id="f-guest-total" placeholder="e.g. 450.00" min="0" step="0.01" oninput="calcFromGuestTotal()" />
             </div>
@@ -909,12 +909,12 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <!-- Prior payment credit (for a new/amended contract replacing an existing reservation) -->
           <div class="field-row single" style="margin-top:.5rem;">
             <div class="field">
-              <label>Already Paid / Credit <span style="font-weight:400;text-transform:none;letter-spacing:0;">— optional</span></label>
+              <label>Already Paid / Credit <span style="font-weight:400;text-transform:none;letter-spacing:0;">- optional</span></label>
               <div class="field-prefix">
                 <span>$</span>
                 <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
               </div>
-              <span class="field-hint">For a new contract replacing an old one — the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
+              <span class="field-hint">For a new contract replacing an old one - the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
             </div>
           </div>
         </div>
@@ -928,7 +928,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <!-- Invoice Title generator -->
           <div class="field" style="margin-bottom:1rem;">
             <label style="display:flex;align-items:center;justify-content:space-between;">
-              <span>Invoice Title <span style="color:var(--muted);font-weight:400;font-size:.75rem;">— copy into Square</span></span>
+              <span>Invoice Title <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- copy into Square</span></span>
               <button type="button" id="copy-inv-btn" onclick="copyInvoiceTitle()" style="background:var(--gold);color:#fff;border:none;border-radius:6px;padding:.25rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer;">📋 Copy</button>
             </label>
             <input type="text" id="invoice-title-display" readonly
@@ -938,15 +938,15 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
           <!-- Payment link URL -->
           <div class="field" id="square-link-field">
-            <label>Square Payment Link URL <span style="color:var(--muted);font-weight:400;font-size:.75rem;">— from Square "Share" after creating invoice · not required if cash</span></label>
+            <label>Square Payment Link URL <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- from Square "Share" after creating invoice · not required if cash</span></label>
             <input type="url" id="f-pay" placeholder="https://squareup.com/pay/..." oninput="generate()" />
           </div>
 
-          <!-- Override CC — send without Square link and without checking Cash -->
+          <!-- Override CC - send without Square link and without checking Cash -->
           <div class="field" style="margin-top:.5rem;">
             <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:600;color:#b45309;">
               <input type="checkbox" id="f-override-cc" onchange="generate()" style="width:16px;height:16px;cursor:pointer;" />
-              ⚠️ Override — send without Square link
+              ⚠️ Override - send without Square link
             </label>
             <span class="field-hint" style="color:#92400e;">Guest pays Venmo / Cash App / Zelle only. Use if you intentionally want no card option.</span>
           </div>
@@ -984,7 +984,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
                     oninput="cashFlatInput()"
                     style="width:80px;padding:.4rem .45rem;border:1px solid #ddd;border-radius:6px;font-size:.9rem;" />
                 </div>
-                <span style="font-size:.72rem;color:var(--muted);display:block;margin-top:.25rem;">Enter discount $, discount %, or final cash total — the others calculate automatically</span>
+                <span style="font-size:.72rem;color:var(--muted);display:block;margin-top:.25rem;">Enter discount $, discount %, or final cash total - the others calculate automatically</span>
               </div>
 
               <!-- Deposit -->
@@ -1015,7 +1015,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         <div class="adm-card-body">
           <div class="field">
             <label>Note shown to guest on booking page</label>
-            <textarea id="f-note" placeholder="e.g. Looking forward to hosting you! Parking is in the driveway — code for the lockbox will be sent 24 hrs before check-in." oninput="generate()"></textarea>
+            <textarea id="f-note" placeholder="e.g. Looking forward to hosting you! Parking is in the driveway - code for the lockbox will be sent 24 hrs before check-in." oninput="generate()"></textarea>
           </div>
         </div>
       </div>
@@ -1071,7 +1071,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <button id="inq-refresh-btn" onclick="refreshInquiries(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--gold);font-weight:600;">Refresh</button>
         </div>
         <div class="adm-card-body" id="inquiry-list">
-          <div class="no-bookings">No inquiries yet. When guests submit a booking request on your site, they'll appear here — click one to auto-fill the form.</div>
+          <div class="no-bookings">No inquiries yet. When guests submit a booking request on your site, they'll appear here - click one to auto-fill the form.</div>
         </div>
       </div>
 
@@ -1085,7 +1085,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <h3>🕐 Recent Quotes</h3>
         <div style="display:flex;gap:.5rem;">
-          <button id="export-btn" onclick="exportQuotes()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Copy a sync link — open it on any device to load your quotes">📤 Sync to Phone</button>
+          <button id="export-btn" onclick="exportQuotes()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Copy a sync link - open it on any device to load your quotes">📤 Sync to Phone</button>
           <button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Pull latest from cloud">☁️ Refresh</button>
           <span id="cloud-sync-status" style="font-size:.7rem;color:var(--gold);"></span>
           <button onclick="showImport()" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Paste a sync link or code from another device">📥 Import</button>
@@ -1110,7 +1110,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
         <!-- Base rates (collapsible, 3-column) -->
         <details class="prc-base-details" id="prc-base-details">
-          <summary class="prc-base-summary">📊 Base Rates by Month <span class="prc-base-hint">— expand to edit</span></summary>
+          <summary class="prc-base-summary">📊 Base Rates by Month <span class="prc-base-hint">- expand to edit</span></summary>
           <div class="prc-base-inner">
             <div class="prc-3col" style="gap:8px;">
               <div>
@@ -1170,7 +1170,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         <div class="prc-bulk-grid">
           <div class="field"><label>From</label><input type="date" id="prc-bulk-from" /></div>
           <div class="field"><label>To</label><input type="date" id="prc-bulk-to" /></div>
-          <div class="field prc-bulk-price-field"><label>$/night</label><input type="number" id="prc-bulk-price" min="0" max="9999" placeholder="—" /></div>
+          <div class="field prc-bulk-price-field"><label>$/night</label><input type="number" id="prc-bulk-price" min="0" max="9999" placeholder="-" /></div>
           <div class="prc-bulk-apply-wrap"><button class="prc-bulk-apply" onclick="applyBulkRange()">Apply</button></div>
         </div>
 
@@ -1206,13 +1206,13 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
     <!-- Chart 1: Cumulative YoY -->
     <div class="stat-chart-wrap">
-      <div class="stat-chart-title">📈 Cumulative Income <span>running total by day — all years</span></div>
+      <div class="stat-chart-title">📈 Cumulative Income <span>running total by day - all years</span></div>
       <div class="stat-chart-canvas" style="height:280px;"><canvas id="stat-chart-cumul"></canvas></div>
     </div>
 
     <!-- Chart 2: Actual vs Potential by month -->
     <div class="stat-chart-wrap">
-      <div class="stat-chart-title">💰 Actual vs Potential Revenue <span>by month — vacant nights × base rate</span></div>
+      <div class="stat-chart-title">💰 Actual vs Potential Revenue <span>by month - vacant nights × base rate</span></div>
       <div class="stat-chart-canvas" style="height:260px;"><canvas id="stat-chart-potential"></canvas></div>
     </div>
 
@@ -1255,7 +1255,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <ol>
         <li>Add or remove image files from the <strong>Photos/Front Photos</strong>, <strong>Photos/Left Photos</strong>, or <strong>Photos/Right Photos</strong> folders on your computer.</li>
         <li>Come back here → arrange the order by dragging rows up/down → type captions.</li>
-        <li>Click <strong>Save &amp; Download photos.json</strong> — a file downloads automatically.</li>
+        <li>Click <strong>Save &amp; Download photos.json</strong> - a file downloads automatically.</li>
         <li>Move that file into your <strong>THOCB folder</strong> (replace the old one).</li>
         <li>Redeploy to Netlify by dragging the THOCB folder. Done!</li>
       </ol>
@@ -1265,7 +1265,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <div class="photos-save-bar" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;">
       <span class="photos-save-status" id="photos-save-status-top">Drag rows to reorder · Type captions · Then save.</span>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-        <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub — Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
+        <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub - Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
         <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosGroupByRoom()" title="Group photos by room in a logical order">🗂️ Group by Room</button>
         <button class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:.76rem;" onclick="_photosSave()" title="Save photos.json to your local THOCB folder">💾 Save Local Copy</button>
       </div>
@@ -1283,7 +1283,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <span class="photos-save-status" id="photos-save-status">Drag rows to reorder · Type captions · Then save.</span>
       <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosGroupByRoom()" title="Group photos by room in a logical order">🗂️ Group by Room</button>
       <button class="btn btn-sm" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;" onclick="_photosSave()" title="Save photos.json to your local THOCB folder">💾 Save Local Copy</button>
-      <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub — Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
+      <button class="btn btn-navy btn-sm" onclick="_photosPublish()" title="Commit photos.json to GitHub - Netlify auto-deploys it live in ~1-2 min">🚀 Publish Live</button>
     </div>
   </div><!-- /#adm-panel-photos -->
 
@@ -1372,7 +1372,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 <script>
 
 // ── PIN LOGIN ──
-// The PIN itself is checked server-side now (netlify/functions/admin-login.js) — nothing
+// The PIN itself is checked server-side now (netlify/functions/admin-login.js) - nothing
 // secret lives in this page's JS anymore. A valid login returns a signed session token that
 // every admin-only function call (reservations list/delete/confirm) requires.
 function _enterAdminApp() {
@@ -1493,9 +1493,9 @@ function fillFromInquiry(i, el) {
   if (inq.ci) document.getElementById('f-ci').value = inq.ci;
   if (inq.co) document.getElementById('f-co').value = inq.co;
   if (inq.ci && inq.co) calcNights();
-  // Property — use selectProp so cards, summary label, and all derived state stay in sync
+  // Property - use selectProp so cards, summary label, and all derived state stay in sync
   if (inq.prop && PROPS[inq.prop]) selectProp(inq.prop);
-  // Note stays as default — guest message is visible in the inquiry email
+  // Note stays as default - guest message is visible in the inquiry email
   // Auto-fill rate: use rate from inquiry (calculated from calendar pricing), else property default
   const rateEl = document.getElementById('f-rate');
   if (rateEl && inq.rate) {
@@ -1589,7 +1589,7 @@ function _checkDateConflict() {
       ]);
       const start = new Date(ci + 'T12:00:00');
       const end   = new Date(co + 'T12:00:00');
-      // _fetchAdmIcal builds its ranges at local midnight, not noon — comparing noon against
+      // _fetchAdmIcal builds its ranges at local midnight, not noon - comparing noon against
       // midnight tips exact same-day boundaries the wrong way (e.g. a checkout day that's also
       // another block's start day). Use midnight here too so back-to-back turnovers don't
       // falsely trigger.
@@ -1597,7 +1597,7 @@ function _checkDateConflict() {
       const endMid   = new Date(co + 'T00:00:00');
       const overlapsIcal = icalRanges.some(r => startMid < r.e && endMid > r.s);
       // Reservations store prop as the full label book.html sends ("Home in The Heart Of CB
-      // (Front Home)"), not the short key ("prop1") used here — compare against both so this
+      // (Front Home)"), not the short key ("prop1") used here - compare against both so this
       // actually matches instead of silently never firing.
       const propName = PROPS[prop]?.name;
       const conflictingRes = (reservations || []).find(r =>
@@ -1605,10 +1605,10 @@ function _checkDateConflict() {
         start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
       );
       if (conflictingRes) {
-        warnEl.textContent = `⚠️ These dates overlap an existing confirmed reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) — double check before sending this quote.`;
+        warnEl.textContent = `⚠️ These dates overlap an existing confirmed reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) - double check before sending this quote.`;
         warnEl.style.display = 'block';
       } else if (overlapsIcal) {
-        warnEl.textContent = `⚠️ These dates overlap a blocked date on your Airbnb calendar for ${PROPS[prop]?.short || prop} — double check before sending this quote.`;
+        warnEl.textContent = `⚠️ These dates overlap a blocked date on your Airbnb calendar for ${PROPS[prop]?.short || prop} - double check before sending this quote.`;
         warnEl.style.display = 'block';
       } else {
         warnEl.style.display = 'none';
@@ -1702,8 +1702,8 @@ function renderGuestBreakdown() {
   html += `<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem;color:var(--muted);"><span>Credit Card Fee (3%)</span><span>${fmt(ccFee)}</span></div>`;
   if (_nights > 0) {
     html += `<div style="height:.15rem;"></div>`;
-    html += r('Per night — room fare basis', fmt(subtotal / _nights) + '/night');
-    html += r('Per night — total basis', fmt(displayTotal / _nights) + '/night');
+    html += r('Per night - room fare basis', fmt(subtotal / _nights) + '/night');
+    html += r('Per night - total basis', fmt(displayTotal / _nights) + '/night');
   }
   rows.innerHTML = html;
   panel.style.display = '';
@@ -1718,7 +1718,7 @@ function calcFromGuestTotal() {
   const guestTotal = parseFloat(gtEl.value) || 0;
   if (guestTotal <= 0) { rateEl.value = ''; calcTotal(); generate(); updateRateHint(); return; }
   // Reverse: guestTotal = subtotal * (1 + TAX_OCC + TAX_SALES). The credit card fee is never
-  // baked into this — it's only an optional add-on if the guest chooses to pay by card, so the
+  // baked into this - it's only an optional add-on if the guest chooses to pay by card, so the
   // entered Guest Total is treated as the fare+tax base, not a card-inclusive price.
   const subtotal = guestTotal / (1 + TAX_OCC + TAX_SALES);
   rateEl.value = subtotal.toFixed(2);
@@ -1742,7 +1742,7 @@ function renderCalc() {
   const row = (label, val, cls='') =>
     `<div class="calc-row ${cls}"><span class="label">${label}</span><span class="val">${val}</span></div>`;
   if (subtotal > 0) {
-    const nightLabel = _nights > 0 ? `Room Fare — ${_nights} night${_nights!==1?'s':''}` : 'Room Fare';
+    const nightLabel = _nights > 0 ? `Room Fare - ${_nights} night${_nights!==1?'s':''}` : 'Room Fare';
     html += row(nightLabel, fmt(subtotal));
     html += row('Plus: Room Occupancy Tax (6%)', fmt(taxOcc));
     html += row('Plus: Sales Tax (7%)', fmt(taxSales));
@@ -1889,7 +1889,7 @@ function generate() {
   if (!ready) {
     _generatedUrl = '';
     linkEl.className = 'link-url empty';
-    linkEl.textContent = 'Fill in required fields (last name, email, dates, rate — plus Square link, check Cash, or check Override)…';
+    linkEl.textContent = 'Fill in required fields (last name, email, dates, rate - plus Square link, check Cash, or check Override)…';
     copyBtn.disabled = true;
     prevBtn.disabled = true;
     return;
@@ -1898,7 +1898,7 @@ function generate() {
   const taxSales = subtotal * TAX_SALES;
   const preTax   = subtotal + taxOcc + taxSales;
   // A prior credit (guest already paid toward this stay under an old contract) reduces the
-  // balance BEFORE the card fee is applied — Jesse shouldn't eat a card fee on money he already
+  // balance BEFORE the card fee is applied - Jesse shouldn't eat a card fee on money he already
   // has. The full stay value (preTax) is still shown to the guest as the contract total.
   const creditedBase = Math.max(0, preTax - credit);
   const ccFee    = creditedBase * CC_FEE;
@@ -1990,7 +1990,7 @@ function sendEmail() {
   const ccFee     = preTax * CC_FEE;
   const total     = preTax + ccFee;
 
-  // If cash is an option on this quote, lead with the cash price — a guest who's expecting a
+  // If cash is an option on this quote, lead with the cash price - a guest who's expecting a
   // cash deal shouldn't see a bigger card-inclusive number first. Other payment amounts still
   // show later on the actual payment screen, where they can knowingly choose one that costs more.
   const cashOn = document.getElementById('f-cash')?.checked;
@@ -2002,7 +2002,7 @@ function sendEmail() {
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total <span style="font-size:12px;font-weight:600;color:#166534;">(Cash Price)</span></td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(cashPrice)}</td>
         </tr>
-        <tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more — you'll see every option when you complete your booking.</td></tr>` : `
+        <tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
         <tr>
           <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #f0ebe0;">Room Fare (${_nights} night${_nights!==1?'s':''})</td>
           <td style="padding:8px 0;text-align:right;font-size:14px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(subtotal)}</td>
@@ -2019,7 +2019,7 @@ function sendEmail() {
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total</td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
         </tr>
-        ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal — free with Venmo, Cash App, or Zelle</td></tr>` : ''}`;
+        ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</td></tr>` : ''}`;
 
   const noteRow = note ? `
     <tr><td colspan="2" style="padding:12px 0 0;font-style:italic;color:#555;font-size:14px;border-top:1px solid #e8e0d0;">"${note}"</td></tr>` : '';
@@ -2057,7 +2057,7 @@ function sendEmail() {
     <div style="padding:36px 40px;">
       <p style="font-size:17px;color:#0a1f3a;margin:0 0 8px;font-weight:600;">Hey ${firstName}! 👋</p>
       <p style="font-size:15px;color:#444;margin:0 0 24px;line-height:1.6;">
-        Thanks for reaching out about staying at <strong>${prop}</strong>. I've put together your personal booking quote below — everything's in one place so I can get you booked quickly.
+        Thanks for reaching out about staying at <strong>${prop}</strong>. I've put together your personal booking quote below - everything's in one place so I can get you booked quickly.
       </p>
 
       <!-- Dates -->
@@ -2086,8 +2086,8 @@ function sendEmail() {
       </div>
 
       <p style="font-size:13px;color:#777;text-align:center;margin:0 0 24px;line-height:1.6;">
-        Review your quote, sign the rental agreement, and pay securely — all in one place.<br/>
-        This is a <strong>direct booking</strong> — no Airbnb fees, just you and me.
+        Review your quote, sign the rental agreement, and pay securely - all in one place.<br/>
+        This is a <strong>direct booking</strong> - no Airbnb fees, just you and me.
       </p>
 
       <hr style="border:none;border-top:1px solid #e8e0d0;margin:24px 0;" />
@@ -2097,7 +2097,7 @@ function sendEmail() {
         <strong style="color:#0a1f3a;">Jesse Jones</strong> · The Heart Of CB<br/>
         📱 (910) 599-8118 &nbsp;|&nbsp; ✉️ stay@theheartofcb.com
       </p>
-      <p style="font-size:11px;color:#bbb;margin:0;line-height:1.6;">📥 Don't see this land in your inbox next time? Check spam/junk — worth marking "not spam" so nothing gets missed.</p>
+      <p style="font-size:11px;color:#bbb;margin:0;line-height:1.6;">📥 Don't see this land in your inbox next time? Check spam/junk - worth marking "not spam" so nothing gets missed.</p>
     </div>
 
     <!-- Footer -->
@@ -2108,7 +2108,7 @@ function sendEmail() {
   </div>
 </div>`;
 
-  const subject = `Your Direct Booking Quote — The Heart Of CB`;
+  const subject = `Your Direct Booking Quote - The Heart Of CB`;
   _emailModalTo = email;
   _emailModalSubject = subject;
   _emailGmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}`;
@@ -2122,7 +2122,7 @@ function sendEmail() {
     _emailGmailAppUrl = _emailGmailUrl;
   }
 
-  // Always show preview modal — "Send Direct" inside the modal uses Resend
+  // Always show preview modal - "Send Direct" inside the modal uses Resend
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -2138,7 +2138,7 @@ function closeEmailModal() {
 async function sendEmailFromModal() {
   const btn = document.getElementById('modal-send-direct-btn');
   const html = document.getElementById('email-preview-body').innerHTML;
-  if (!_emailModalTo || !html) { alert('No recipient — fill in guest email first.'); return; }
+  if (!_emailModalTo || !html) { alert('No recipient - fill in guest email first.'); return; }
   btn.textContent = '⏳ Sending…'; btn.disabled = true;
   try {
     const r = await fetch('/.netlify/functions/send-email', {
@@ -2146,7 +2146,7 @@ async function sendEmailFromModal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: [_emailModalTo],
-        subject: _emailModalSubject || 'Your Direct Booking Quote — The Heart Of CB',
+        subject: _emailModalSubject || 'Your Direct Booking Quote - The Heart Of CB',
         html
       })
     });
@@ -2155,7 +2155,7 @@ async function sendEmailFromModal() {
     setTimeout(() => closeEmailModal(), 1800);
   } catch(e) {
     console.error(e);
-    btn.textContent = '⚠️ Failed — try Copy or Gmail';
+    btn.textContent = '⚠️ Failed - try Copy or Gmail';
     btn.style.background = '#b00';
     btn.disabled = false;
   }
@@ -2204,7 +2204,7 @@ function sendSMS() {
   const guest     = getGuestName();
   const firstName = guest.split(' ')[0];
   const phone     = document.getElementById('f-phone').value.trim();
-  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote — review, sign the agreement, and pay securely all in one place:\n\n${_generatedUrl}\n\nQuestions? Just reply or call me anytime.`;
+  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${_generatedUrl}\n\nQuestions? Just reply or call me anytime.`;
 
   // Build modal
   let modal = document.getElementById('sms-modal');
@@ -2232,7 +2232,7 @@ function sendSMS() {
     document.body.appendChild(modal);
   }
 
-  modal.querySelector('#sms-to').textContent = phone ? `To: ${phone}` : 'No phone number on file — copy and send manually';
+  modal.querySelector('#sms-to').textContent = phone ? `To: ${phone}` : 'No phone number on file - copy and send manually';
   modal.querySelector('#sms-text').value = msg;
   const smsHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}` : `sms:?body=${encodeURIComponent(msg)}`;
   modal.querySelector('#sms-open-link').href = smsHref;
@@ -2299,7 +2299,7 @@ function renderRecent() {
   `).join('');
 }
 
-// Loads a saved quote back into the Booking tab form for editing — tweak anything and
+// Loads a saved quote back into the Booking tab form for editing - tweak anything and
 // re-send; a fresh entry gets saved rather than overwriting the original.
 function _editQuote(q) {
   if (!q) return;
@@ -2323,8 +2323,8 @@ function _editQuote(q) {
 }
 
 async function resendQuote(q, btn) {
-  if (!q) { alert('Could not find that quote — try refreshing.'); return; }
-  if (!q.email) { alert('No email on file for this guest — opening link instead.'); if (q.url) window.open(q.url, '_blank'); return; }
+  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
+  if (!q.email) { alert('No email on file for this guest - opening link instead.'); if (q.url) window.open(q.url, '_blank'); return; }
   if (!q.url) { alert('No booking link saved for this quote.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
   const propName = PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
@@ -2360,7 +2360,7 @@ async function resendQuote(q, btn) {
     const r = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: [q.email], subject: `Your Booking Link — The Heart Of CB`, html })
+      body: JSON.stringify({ to: [q.email], subject: `Your Booking Link - The Heart Of CB`, html })
     });
     if (r.ok) {
       if (btn) { btn.textContent = '✅ Sent'; }
@@ -2370,7 +2370,7 @@ async function resendQuote(q, btn) {
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Resend'; }
-    alert('Send failed — check console.');
+    alert('Send failed - check console.');
     console.error(e);
   }
 }
@@ -2408,7 +2408,7 @@ async function _cloudWrite() {
 
 function _mergeCloudData(cloudData) {
   if (!cloudData) return;
-  // Dedupe by ts (unique per save), not guest+dates — the same guest can legitimately have
+  // Dedupe by ts (unique per save), not guest+dates - the same guest can legitimately have
   // multiple quotes or inquiries for the same dates (re-tests, revised quotes), and matching
   // on identity alone silently dropped every one but the first.
   const localQ  = JSON.parse(localStorage.getItem('thocb_quotes')    || '[]');
@@ -2458,7 +2458,7 @@ async function refreshFromCloud() {
 }
 
 // ══════════════════════════════════════════
-// CONFIRMED RESERVATIONS — via server-side functions (admin-session gated).
+// CONFIRMED RESERVATIONS - via server-side functions (admin-session gated).
 // The browser never holds a key capable of reading/writing the reservations
 // table directly anymore; these all call Netlify Functions that check the
 // session token from adminLogin() and use the service key server-side.
@@ -2499,7 +2499,7 @@ async function loadConfirmed(btn) {
 
 // Retroactive self-audit: scans reservations ALREADY in Supabase against each other, for the
 // same property, looking for any pair whose date ranges overlap. Catches the case where the
-// calendar-block step got missed and two guests ended up confirmed for the same dates — separate
+// calendar-block step got missed and two guests ended up confirmed for the same dates - separate
 // from _checkDateConflict() in the quote-builder, which only guards NEW quotes going forward.
 function _detectReservationConflicts() {
   const conflicts = [];
@@ -2525,9 +2525,9 @@ function _renderConflictBanner() {
   const conflicts = _detectReservationConflicts();
   if (!conflicts.length) { banner.style.display = 'none'; return; }
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  banner.innerHTML = '⚠️ <strong>' + conflicts.length + ' overlapping reservation' + (conflicts.length > 1 ? 's' : '') + ' found</strong> — you may have missed blocking a date:<br>' +
+  banner.innerHTML = '⚠️ <strong>' + conflicts.length + ' overlapping reservation' + (conflicts.length > 1 ? 's' : '') + ' found</strong> - you may have missed blocking a date:<br>' +
     conflicts.map(([a, b]) =>
-      `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) — ${PROPS[a.prop]?.short || a.prop}`
+      `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) - ${PROPS[a.prop]?.short || a.prop}`
     ).join('<br>');
   banner.style.display = 'block';
 }
@@ -2540,10 +2540,10 @@ function _setConfFilter(filter) {
 }
 
 // Pulls the original booking URL out of notes ("url:https://...") and turns it into the
-// one-click confirm link — same link the "Payment Sent" email itself uses.
+// one-click confirm link - same link the "Payment Sent" email itself uses.
 function _reservationLinks(r) {
   const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
-  // confirmUrl (&action=confirm) opens Jesse's one-click "Send Confirmation" trigger — never
+  // confirmUrl (&action=confirm) opens Jesse's one-click "Send Confirmation" trigger - never
   // give this to a guest. rawUrl itself already opens read-only (it carries signed=1 from
   // signing time, which renders the signed-agreement view with no action buttons), so that's
   // the one guests should get via Copy Link / Text Guest.
@@ -2555,7 +2555,7 @@ function _reservationLinks(r) {
       phone = u.searchParams.get('phone') || '';
       u.searchParams.set('action', 'confirm');
       confirmUrl = u.toString();
-    } catch { /* malformed/old url — leave blank, buttons hide themselves */ }
+    } catch { /* malformed/old url - leave blank, buttons hide themselves */ }
   }
   return { confirmUrl, viewUrl, phone };
 }
@@ -2582,7 +2582,7 @@ function renderConfirmed() {
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
         <div class="conf-row-guest">${r.guest}</div>
-        <div class="conf-row-detail">${PROPS[r.prop]?.name || r.prop || '—'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
+        <div class="conf-row-detail">${PROPS[r.prop]?.name || r.prop || '-'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
       </div>
       <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
     </div>`).join('');
@@ -2598,7 +2598,7 @@ function openReservationDetail(id) {
   if (!r) return;
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+  const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
   const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${viewUrl}`);
 
@@ -2613,15 +2613,15 @@ function openReservationDetail(id) {
       <h3>${r.guest}</h3>
       <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)}</div>
       <div class="conf-modal-rows">
-        <div><b>Property:</b> ${PROPS[r.prop]?.name || r.prop || '—'}</div>
+        <div><b>Property:</b> ${PROPS[r.prop]?.name || r.prop || '-'}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div><b>Total:</b> ${fmt$(r.total)}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
         ${r.payment_method ? `<div><b>Paid via:</b> ${r.payment_method}</div>` : ''}
-        <div><b>Email:</b> ${r.email || '—'}</div>
+        <div><b>Email:</b> ${r.email || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${phone}</div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${r.signed_ip}</div>` : ''}
       </div>
-      <label>Private Note — only visible to you</label>
+      <label>Private Note - only visible to you</label>
       <textarea class="conf-notes-box" id="conf-notes-${r.id}" placeholder="Internal notes about this guest or booking…">${r.host_notes || ''}</textarea>
       <div class="conf-notes-status" id="conf-notes-status-${r.id}"></div>
       <div class="conf-modal-actions">
@@ -2629,7 +2629,7 @@ function openReservationDetail(id) {
         <button class="conf-btn" onclick="window.open('${confirmUrl}','_blank')">📧 Send Full Confirmation</button>
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
-        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link — this reservation predates this feature.</span>`}
+        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link - this reservation predates this feature.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.id}')">✏️ Change Reservation</button>
         <button class="conf-btn" onclick="sendCancellationEmail('${r.id}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🚫 Cancel Reservation</button>
@@ -2658,11 +2658,11 @@ function openReservationDetail(id) {
 }
 
 // Resend/Copy Link/Text buttons for confirmed reservations now just reopen the
-// saved booking URL with &action=confirm — same full "You're Confirmed" email,
+// saved booking URL with &action=confirm - same full "You're Confirmed" email,
 // no separate stripped-down template to maintain. See renderConfirmed().
 
 async function confirmFromQuote(q, btn) {
-  if (!q) { alert('Could not find that quote — try refreshing.'); return; }
+  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
   const nights = q.nights || _sbNights(q.ci, q.co);
   const payload = {
@@ -2705,7 +2705,7 @@ async function confirmFromQuote(q, btn) {
       if (txt.includes('already exists') || txt.includes('duplicate')) {
         alert('This reservation may already be confirmed.');
       } else {
-        alert('Save failed — check console.');
+        alert('Save failed - check console.');
         console.error('Supabase error:', txt);
       }
     }
@@ -2728,7 +2728,7 @@ async function deleteConfirmed(id) {
       _closeReservationDetail();
       renderConfirmed();
     } else {
-      alert('Cancel failed — check console.');
+      alert('Cancel failed - check console.');
       console.error(await r.text());
     }
   } catch(e) {
@@ -2740,7 +2740,7 @@ async function deleteConfirmed(id) {
 // ── CANCELLATION EMAIL ──
 async function sendCancellationEmail(id, btn) {
   const r = _confirmedCache.find(x => x.id === id);
-  if (!r) { alert('Could not find that reservation — try refreshing.'); return; }
+  if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
   if (!confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
@@ -2774,20 +2774,20 @@ async function sendCancellationEmail(id, btn) {
     const resp = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: [r.email], subject: `Your Reservation Has Been Canceled — The Heart Of CB`, html })
+      body: JSON.stringify({ to: [r.email], subject: `Your Reservation Has Been Canceled - The Heart Of CB`, html })
     });
     if (!resp.ok) throw new Error(await resp.text());
     if (btn) { btn.textContent = '✅ Sent'; }
   } catch(e) {
     console.error(e);
-    if (btn) { btn.disabled = false; btn.textContent = '⚠️ Failed — try again'; }
+    if (btn) { btn.disabled = false; btn.textContent = '⚠️ Failed - try again'; }
   }
 }
 
 // ── CHANGE RESERVATION ──
 // Loads this reservation's info into the Booking-tab quote builder as a brand-new quote,
 // so Jesse can adjust dates/price and send the guest a fresh link to sign a new agreement.
-// The old reservation is left in place — cancel it separately once the new one is signed.
+// The old reservation is left in place - cancel it separately once the new one is signed.
 function _changeReservation(id) {
   const r = _confirmedCache.find(x => x.id === id);
   if (!r) return;
@@ -2807,13 +2807,13 @@ function _changeReservation(id) {
   const noteEl = document.getElementById('f-private-note');
   if (noteEl) {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
-    noteEl.value = `CHANGE to existing reservation — was ${fmtD(r.check_in)}–${fmtD(r.check_out)}, $${parseFloat(r.total||0).toFixed(2)} total.`;
+    noteEl.value = `CHANGE to existing reservation - was ${fmtD(r.check_in)}–${fmtD(r.check_out)}, $${parseFloat(r.total||0).toFixed(2)} total.`;
   }
   _supersedesId = id;
   const badge = document.getElementById('supersede-badge');
   badge.style.display = 'flex';
   document.getElementById('supersede-badge-text').textContent =
-    `🔁 Replacing ${r.guest}'s reservation (${document.getElementById('f-ci').value || r.check_in} → ${r.check_out}) — once this new contract is signed, the old one is automatically canceled. Credit pre-filled with what they already paid — adjust if needed.`;
+    `🔁 Replacing ${r.guest}'s reservation (${document.getElementById('f-ci').value || r.check_in} → ${r.check_out}) - once this new contract is signed, the old one is automatically canceled. Credit pre-filled with what they already paid - adjust if needed.`;
   calcTotal();
   generate();
   _checkDateConflict();
@@ -2891,7 +2891,7 @@ function importQuotes() {
     const btn = document.querySelector('[onclick="importQuotes()"]');
     if (btn) { btn.textContent = '✅ Imported!'; setTimeout(() => btn.textContent = 'Apply', 2000); }
   } catch(e) {
-    alert('❌ Invalid sync link or code — copy it again from the other device.');
+    alert('❌ Invalid sync link or code - copy it again from the other device.');
   }
 }
 
@@ -2933,7 +2933,7 @@ async function _refreshQuotesConfirmedStatus() {
     saved.forEach(q => {
       const match = reservations.find(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
       // Sync both directions: mark confirmed (and pull the real total) when a matching
-      // reservation exists, but also un-mark it if that reservation is gone — e.g. deleted —
+      // reservation exists, but also un-mark it if that reservation is gone - e.g. deleted -
       // so a stale "Confirmed" badge doesn't linger and disagree with the real total.
       if (match) {
         if (!q.confirmed || q.total !== match.total) { q.confirmed = true; q.total = match.total; changed = true; }
@@ -3410,7 +3410,7 @@ function prcMouseDown(e, prop, dk) {
   }
   _prcSelProp = prop;
 
-  // Plain click = toggle (no modifier needed — multi-select by default)
+  // Plain click = toggle (no modifier needed - multi-select by default)
   const was = _prcSelection[prop].has(dk);
   if (was) { _prcSelection[prop].delete(dk); _setCellSel(prop, dk, false); }
   else     { _prcSelection[prop].add(dk);    _setCellSel(prop, dk, true); }
@@ -3421,7 +3421,7 @@ function prcMouseMove(e, prop, dk) {
   if (!_prcDragging || prop !== _prcDragProp || dk === _prcDragLast) return;
   e.preventDefault();
   _prcDragLast = dk;
-  // Add the drag range to existing selection (additive — don't clear)
+  // Add the drag range to existing selection (additive - don't clear)
   const start = _prcDragStart < dk ? _prcDragStart : dk;
   const end   = _prcDragStart < dk ? dk : _prcDragStart;
   const cur = new Date(start + 'T12:00:00');
@@ -3496,7 +3496,7 @@ function _openDayEditorForKeys(keys, prop) {
     document.getElementById('prc-editor-min').value = r.minNights || 2;
     document.getElementById('prc-editor-no-ci').checked = !!r.noCheckIn;
     document.getElementById('prc-editor-no-co').checked = !!r.noCheckOut;
-    document.getElementById('prc-editor-auto-note').textContent = r.auto ? 'Auto-applied holiday rule — editing will convert to manual.' : '';
+    document.getElementById('prc-editor-auto-note').textContent = r.auto ? 'Auto-applied holiday rule - editing will convert to manual.' : '';
     const clearBtn = document.getElementById('prc-btn-clear');
     if (clearBtn) clearBtn.style.display = (ov[dk0] !== undefined || r.minNights || r.noCheckIn || r.noCheckOut) ? '' : 'none';
   } else {
@@ -3576,7 +3576,7 @@ function clearDayOverride() {
 function closeDayEditor() {
   document.getElementById('prc-day-editor').style.display = 'none';
   _editingKey = null;
-  // don't clear selection — user may want to edit again
+  // don't clear selection - user may want to edit again
 }
 
 function applyBulkRange() {
@@ -3766,7 +3766,7 @@ function _statMonthData(prop, year) {
     }
     const checkins = _statCheckIns(prop, year).filter(ci => ci.dk.startsWith(`${year}-${String(m+1).padStart(2,'0')}`));
     const totalCheckins = checkins.length;
-    const avgStay = totalCheckins ? (booked / totalCheckins).toFixed(1) : '—';
+    const avgStay = totalCheckins ? (booked / totalCheckins).toFixed(1) : '-';
     months.push({ m, days, booked, actual, potential, checkins: totalCheckins, avgStay });
   }
   return months;
@@ -3863,7 +3863,7 @@ function _renderStats() {
     <div class="stat-card accent">
       <div class="stat-card-label">YTD Revenue</div>
       <div class="stat-card-val">$${ytdActual.toLocaleString()}</div>
-      <div class="stat-card-sub">${year} — actuals entered</div>
+      <div class="stat-card-sub">${year} - actuals entered</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Occupancy Rate</div>
@@ -4009,7 +4009,7 @@ function _renderStats() {
       const occCls = occ >= 70 ? 'stat-pct-good' : occ >= 40 ? 'stat-pct-mid' : 'stat-pct-low';
       const achv = (md.actual + md.potential) > 0 ? Math.round(md.actual / (md.actual + md.potential) * 100) : 0;
       const achvCls = achv >= 60 ? 'stat-pct-good' : achv >= 30 ? 'stat-pct-mid' : 'stat-pct-low';
-      const avgNight = md.booked > 0 ? '$'+Math.round(md.actual / md.booked) : '—';
+      const avgNight = md.booked > 0 ? '$'+Math.round(md.actual / md.booked) : '-';
       totals.booked += md.booked; totals.days += md.days;
       totals.ci += md.checkins; totals.actual += md.actual; totals.potential += md.potential;
       rows += `<tr>
@@ -4020,7 +4020,7 @@ function _renderStats() {
         <td class="${occCls}">${occ}%</td>
         <td>${md.checkins}</td>
         <td>${md.avgStay}</td>
-        <td>${md.actual ? '$'+md.actual.toLocaleString() : '<span style="color:#bbb">—</span>'}</td>
+        <td>${md.actual ? '$'+md.actual.toLocaleString() : '<span style="color:#bbb">-</span>'}</td>
         <td>${avgNight}</td>
         <td>$${md.potential.toLocaleString()}</td>
         <td class="${achvCls}">${achv}%</td>
@@ -4031,11 +4031,11 @@ function _renderStats() {
   // Totals row
   const totOcc  = totals.days  > 0 ? Math.round(totals.booked / totals.days * 100) : 0;
   const totAchv = (totals.actual + totals.potential) > 0 ? Math.round(totals.actual / (totals.actual + totals.potential) * 100) : 0;
-  const totAvg  = totals.booked > 0 ? '$'+Math.round(totals.actual / totals.booked) : '—';
+  const totAvg  = totals.booked > 0 ? '$'+Math.round(totals.actual / totals.booked) : '-';
   rows += `<tr class="tot-row">
     <td>TOTAL</td><td>${props.length > 1 ? 'All' : PROP_LABELS[props[0]]}</td>
     <td>${totals.booked}</td><td>${totals.days}</td>
-    <td>${totOcc}%</td><td>${totals.ci}</td><td>—</td>
+    <td>${totOcc}%</td><td>${totals.ci}</td><td>-</td>
     <td>$${totals.actual.toLocaleString()}</td><td>${totAvg}</td>
     <td>$${totals.potential.toLocaleString()}</td><td>${totAchv}%</td>
   </tr>`;
@@ -4072,9 +4072,9 @@ function _photosSwitchProp(prop, btn) {
 }
 
 var _PHOTO_TAGS = {
-  front: ['—','Cover','Kitchen','Dining','Exterior','Living Room','Master Bedroom','Bed #2','Bed #3','Master Bath','Hall Bath'],
-  left:  ['—','Cover','Kitchenette','Bedroom','Hall/Closet','Bathroom','Exterior'],
-  right: ['—','Cover','Kitchenette','Bedroom','Hall/Closet','Bathroom','Exterior']
+  front: ['-','Cover','Kitchen','Dining','Exterior','Living Room','Master Bedroom','Bed #2','Bed #3','Master Bath','Hall Bath'],
+  left:  ['-','Cover','Kitchenette','Bedroom','Hall/Closet','Bathroom','Exterior'],
+  right: ['-','Cover','Kitchenette','Bedroom','Hall/Closet','Bathroom','Exterior']
 };
 // Only Cover is truly unique (one per property). Bedroom/bath tags allow multiples; hero flag picks the card photo.
 var _UNIQUE_TAGS = {
@@ -4118,11 +4118,11 @@ function _photosRender() {
   var n = photos.length;
   list.innerHTML = photos.map(function(p, i) {
     var imgSrc = '../' + folder + '/' + p.file;
-    var tag = p.tag || '—';
+    var tag = p.tag || '-';
     var tagOpts = _PHOTO_TAGS[_photosProp].map(function(t) {
       return '<option value="' + t + '"' + (t === tag ? ' selected' : '') + '>' + t + '</option>';
     }).join('');
-    var tagged = tag !== '—' ? ' tagged' : '';
+    var tagged = tag !== '-' ? ' tagged' : '';
     var heroable = _HERO_TAGS[_photosProp].indexOf(tag) !== -1;
     var isHero = !!p.hero;
     var heroClass = 'photo-row-hero' + (isHero ? ' hero-on' : '');
@@ -4165,10 +4165,10 @@ function _photosTag(select) {
   var val = select.value;
   var photos = _photosJson[_photosProp].photos;
   // If this is a unique tag (Cover), clear it off any other photo
-  if (val !== '—' && _UNIQUE_TAGS[_photosProp].indexOf(val) !== -1) {
+  if (val !== '-' && _UNIQUE_TAGS[_photosProp].indexOf(val) !== -1) {
     photos.forEach(function(p, j) { if (j !== i && p.tag === val) p.tag = ''; });
   }
-  photos[i].tag = val === '—' ? '' : val;
+  photos[i].tag = val === '-' ? '' : val;
   // If new tag isn't heroable, clear hero flag
   if (_HERO_TAGS[_photosProp].indexOf(val) === -1) {
     photos[i].hero = false;
@@ -4238,7 +4238,7 @@ function _photosInitDrag(list) {
   });
 }
 
-// ── Persisted file handle for direct-to-disk saving (Chrome/Edge only — File System Access API) ──
+// ── Persisted file handle for direct-to-disk saving (Chrome/Edge only - File System Access API) ──
 // Lets "Save photos.json" write straight into the THOCB folder on repeat saves instead of
 // dropping a new copy in Downloads every time that has to be manually moved over.
 function _photosHandleDb() {
@@ -4270,7 +4270,7 @@ async function _idbSetHandle(key, val) {
 
 let _photosFileHandle = null;
 
-// Keeps the top and bottom status lines in sync — same status bar exists twice on the page
+// Keeps the top and bottom status lines in sync - same status bar exists twice on the page
 // (top and bottom of a potentially long photo list) so the buttons are always in reach.
 function _photosSetStatus(text) {
   const top = document.getElementById('photos-save-status-top');
@@ -4296,7 +4296,7 @@ async function _photosSave() {
         }
       }
       if (!handle) {
-        // First time (or handle no longer valid) — ask once where photos.json lives. Point it at
+        // First time (or handle no longer valid) - ask once where photos.json lives. Point it at
         // the file inside the THOCB folder; every save after this reuses that same location with
         // no dialog.
         handle = await window.showSaveFilePicker({
@@ -4310,10 +4310,10 @@ async function _photosSave() {
       await writable.close();
       _photosFileHandle = handle;
       _photosDirty = false;
-      _photosSetStatus(`✅ Saved directly to ${handle.name} — redeploy to Netlify when ready.`);
+      _photosSetStatus(`✅ Saved directly to ${handle.name} - redeploy to Netlify when ready.`);
       return;
     } catch (e) {
-      if (e && e.name === 'AbortError') return; // user closed the picker — do nothing
+      if (e && e.name === 'AbortError') return; // user closed the picker - do nothing
       console.error('Direct save failed, falling back to download:', e);
     }
   }
@@ -4342,15 +4342,15 @@ async function _photosPublish() {
     });
     if (r.ok) {
       _photosDirty = false;
-      _photosSetStatus('✅ Published — Netlify is rebuilding, live in about 1-2 minutes.');
+      _photosSetStatus('✅ Published - Netlify is rebuilding, live in about 1-2 minutes.');
     } else {
       const msg = await r.text();
       console.error('Publish failed:', msg);
-      _photosSetStatus('⚠️ Publish failed — check console, or use Save Local Copy instead.');
+      _photosSetStatus('⚠️ Publish failed - check console, or use Save Local Copy instead.');
     }
   } catch (e) {
     console.error(e);
-    _photosSetStatus('⚠️ Network error publishing — check console, or use Save Local Copy instead.');
+    _photosSetStatus('⚠️ Network error publishing - check console, or use Save Local Copy instead.');
   }
 }
 

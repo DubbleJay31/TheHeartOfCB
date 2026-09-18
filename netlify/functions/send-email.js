@@ -14,7 +14,7 @@ exports.handler = async function(event) {
 
   // This endpoint has to stay reachable without a login (guests trigger it just by submitting
   // the inquiry form), so it can't be PIN-gated like the admin functions. An Origin check is a
-  // real but partial mitigation — it stops casual scanning/browser-based abuse, not a determined
+  // real but partial mitigation - it stops casual scanning/browser-based abuse, not a determined
   // attacker scripting requests directly, since Origin is just a header they could also fake.
   const origin = event.headers.origin || event.headers.Origin || '';
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {

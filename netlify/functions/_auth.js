@@ -2,7 +2,7 @@ const crypto = require('crypto');
 
 // Shared session-token helpers for admin-gated functions.
 // Token shape: base64url(JSON payload) + '.' + hex HMAC-SHA256 of that payload, using ADMIN_SESSION_SECRET.
-// Stateless on purpose — no server-side session store to manage for a solo-admin dashboard.
+// Stateless on purpose - no server-side session store to manage for a solo-admin dashboard.
 
 function sign(payload) {
   const secret = process.env.ADMIN_SESSION_SECRET;

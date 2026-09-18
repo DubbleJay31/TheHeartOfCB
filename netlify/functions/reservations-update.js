@@ -1,6 +1,6 @@
 const { requireAdmin } = require('./_auth');
 
-// Admin-only field update — currently just the private host_notes field, kept separate from
+// Admin-only field update - currently just the private host_notes field, kept separate from
 // reservations-confirm.js since this is an edit to an existing row, not a new booking.
 exports.handler = async function(event) {
   if (event.httpMethod !== 'PATCH') {

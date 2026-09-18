@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════
-   THE HEART OF CB — app.js
+   THE HEART OF CB - app.js
 ═══════════════════════════════════════ */
 
-// All emails send via Resend through /.netlify/functions/send-email — see _sendEmail() below.
+// All emails send via Resend through /.netlify/functions/send-email - see _sendEmail() below.
 async function _sendEmail(to, subject, html) {
   try {
     await fetch('/.netlify/functions/send-email', {
@@ -65,11 +65,11 @@ async function _sendGuestConfirmation(inquiry) {
     <p>Feel free to browse the property at <a href="https://theheartofcb.com" style="color:#b8882a;">theheartofcb.com</a>.</p>
     <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
-    <p style="font-size:.85rem;color:#9ca3af;">📥 Don't see my next email in your inbox? Check spam/junk — worth marking it "not spam" so nothing gets missed.</p>
+    <p style="font-size:.85rem;color:#9ca3af;">📥 Don't see my next email in your inbox? Check spam/junk - worth marking it "not spam" so nothing gets missed.</p>
     <p>Talk soon!<br><strong>Jesse</strong><br><em>The Heart Of CB</em></p>
   </div>
 </div></body></html>`;
-  await _sendEmail(inquiry.email, `We got your inquiry — The Heart Of CB`, html);
+  await _sendEmail(inquiry.email, `We got your inquiry - The Heart Of CB`, html);
 }
 
 async function _notifyHost(inquiry) {
@@ -177,7 +177,7 @@ const _RATES = {
 let _overrides     = { prop1:{}, prop2:{}, prop3:{} };
 let _restrictions  = { prop1:{}, prop2:{}, prop3:{} }; // {minNights,noCheckIn,noCheckOut}
 
-// Fetch pricing from cloud and apply — called once at page load
+// Fetch pricing from cloud and apply - called once at page load
 (async function _loadPricing() {
   try {
     const r = await fetch(`https://api.jsonbin.io/v3/b/${_JBIN_BIN}/latest`, {
@@ -416,18 +416,18 @@ function _dayClick(key, prop, wrapId) {
   const isOrphan = _isOrphanCheckIn(dt, ranges);
   if (!_selStart || (_selStart && _selEnd)) {
     if (isSat && !isOrphan) {
-      _showCalError('Saturday check-in is not available — please choose a different day.');
+      _showCalError('Saturday check-in is not available - please choose a different day.');
       return;
     }
     if (isBooked) {
       _showCalError('That date is already booked. Pick an available (green) date to check in.');
       return;
     }
-    // Prewall: next night already booked, only 1 free night — violates 2-night min (unless orphan)
+    // Prewall: next night already booked, only 1 free night - violates 2-night min (unless orphan)
     const nxtCI = new Date(dt); nxtCI.setDate(nxtCI.getDate() + 1);
     const prvCI = new Date(dt); prvCI.setDate(prvCI.getDate() - 1);
     if (_isBooked(nxtCI, ranges) && !_isBooked(prvCI, ranges)) {
-      _showCalError('Only 1 free night before the next booking — please choose an earlier check-in date.');
+      _showCalError('Only 1 free night before the next booking - please choose an earlier check-in date.');
       return;
     }
     _selStart = dt; _selEnd = null;
@@ -450,7 +450,7 @@ function _dayClick(key, prop, wrapId) {
       const nxtR = new Date(dt); nxtR.setDate(nxtR.getDate() + 1);
       const prvR = new Date(dt); prvR.setDate(prvR.getDate() - 1);
       if (_isBooked(nxtR, ranges) && !_isBooked(prvR, ranges)) {
-        _showCalError('Only 1 free night before the next booking — please choose an earlier check-in date.');
+        _showCalError('Only 1 free night before the next booking - please choose an earlier check-in date.');
         _refreshAllWrapStyles();
         return;
       }
@@ -466,11 +466,11 @@ function _dayClick(key, prop, wrapId) {
   }
   const nights = Math.round((dt - _selStart) / 86400000);
   if (isSat && !(nights === 1 && _isOrphanCheckIn(_selStart, ranges))) {
-    _showCalError('Saturday check-out is not available — please choose a different day.');
+    _showCalError('Saturday check-out is not available - please choose a different day.');
     return;
   }
   if (nights < 2 && !_isOrphanCheckIn(_selStart, ranges)) {
-    _showCalError('Minimum stay is 2 nights — please select a later check-out date.');
+    _showCalError('Minimum stay is 2 nights - please select a later check-out date.');
     return;
   }
   // Check if this day is blocked for checkout
@@ -518,12 +518,12 @@ function _tlDayClick(dateKey, propId) {
   const isOrphan = _isOrphanCheckIn(dt, ranges);
 
   if (!_selStart || (_selStart && _selEnd)) {
-    if (isSat && !isOrphan) { _showCalError('Saturday check-in is not available — please choose a different day.'); return; }
+    if (isSat && !isOrphan) { _showCalError('Saturday check-in is not available - please choose a different day.'); return; }
     if (isBooked) { _showCalError('That date is already booked. Pick an available date to check in.'); return; }
     const nxt = new Date(dt); nxt.setDate(nxt.getDate() + 1);
     const prv = new Date(dt); prv.setDate(prv.getDate() - 1);
     if (!isOrphan && _isBooked(nxt, ranges) && !_isBooked(prv, ranges)) {
-      _showCalError('Only 1 free night before the next booking — please choose an earlier check-in date.'); return;
+      _showCalError('Only 1 free night before the next booking - please choose an earlier check-in date.'); return;
     }
     _selStart = dt; _selEnd = null; _calProp = propId;
     _clearCalError();
@@ -539,7 +539,7 @@ function _tlDayClick(dateKey, propId) {
       const nxt = new Date(dt); nxt.setDate(nxt.getDate() + 1);
       const prv = new Date(dt); prv.setDate(prv.getDate() - 1);
       if (_isBooked(nxt, ranges) && !_isBooked(prv, ranges)) {
-        _showCalError('Only 1 free night before the next booking — please choose an earlier check-in date.');
+        _showCalError('Only 1 free night before the next booking - please choose an earlier check-in date.');
         _refreshAllWrapStyles(); return;
       }
       _selStart = dt; _selEnd = null; _calProp = propId; _clearCalError();
@@ -548,8 +548,8 @@ function _tlDayClick(dateKey, propId) {
     return;
   }
   const nights = Math.round((dt - _selStart) / 86400000);
-  if (isSat && !(nights === 1 && isOrphan)) { _showCalError('Saturday check-out is not available — please choose a different day.'); return; }
-  if (nights < 2 && !_isOrphanCheckIn(_selStart, ranges)) { _showCalError('Minimum stay is 2 nights — please select a later check-out date.'); return; }
+  if (isSat && !(nights === 1 && isOrphan)) { _showCalError('Saturday check-out is not available - please choose a different day.'); return; }
+  if (nights < 2 && !_isOrphanCheckIn(_selStart, ranges)) { _showCalError('Minimum stay is 2 nights - please select a later check-out date.'); return; }
   // Check for booked nights in range
   const scan = new Date(_selStart); scan.setDate(scan.getDate() + 1);
   while (scan < dt) {
@@ -652,7 +652,7 @@ function _refreshWrapStyles(wrap) {
         el.classList.add('cal-checkout-blocked');
         return;
       }
-      // dt > _selStart — determine if valid checkout
+      // dt > _selStart - determine if valid checkout
       const nights = Math.round((dt - _selStart) / 86400000);
       if (nights === 1) {
         if (_isOrphanCheckIn(_selStart, ranges)) { el.classList.add('cal-checkout-eligible'); }
@@ -662,7 +662,7 @@ function _refreshWrapStyles(wrap) {
       } else if (dt.getDay() === 6) {
         el.classList.add('cal-checkout-blocked'); // no Saturday checkout
       } else {
-        el.classList.add('cal-checkout-eligible'); // valid — includes firstWall back-to-back
+        el.classList.add('cal-checkout-eligible'); // valid - includes firstWall back-to-back
       }
     } else if (isBooked) {
       el.classList.add('cal-checkout-blocked');
@@ -934,7 +934,7 @@ function _resetAttestBtn() {
   btn.style.color = allDone ? 'var(--navy)' : '#fff';
   btn.style.cursor = allDone ? 'pointer' : 'not-allowed';
   btn.textContent = allDone
-    ? '✅ I\'ve read and agree to all house rules and policies — unlock booking'
+    ? '✅ I\'ve read and agree to all house rules and policies - unlock booking'
     : `Click all tabs above to unlock (${visited} of ${_ALL_TABS.length} reviewed)`;
 }
 
@@ -962,7 +962,7 @@ function _fillFormDates(start, end) {
   const propMap = { prop1: 'Home in The Heart Of CB (Front)', prop2: 'Left Private Suite', prop3: 'Right Private Suite' };
   const propHid = document.getElementById('form-property-hidden');
   if (propHid) propHid.value = propMap[_calProp] || '';
-  // Snapshot the raw prop key too — _calProp is a shared global that any OTHER calendar on the
+  // Snapshot the raw prop key too - _calProp is a shared global that any OTHER calendar on the
   // page can overwrite before the guest actually hits submit, so submitBooking() must read the
   // property from here, not from live _calProp, or a stray click elsewhere silently swaps it.
   const propKeyHid = document.getElementById('form-prop-key');
@@ -973,7 +973,7 @@ function _fillFormDates(start, end) {
   const dispCI   = document.getElementById('form-locked-ci');
   const dispCO   = document.getElementById('form-locked-co');
   const propLabels = { prop1: '🏠 Home in The Heart Of CB (Front · 6 guests · 3 bed)', prop2: '🛎️ Left Private Guest Suite (2 guests · 1 bed)', prop3: '🛎️ Right Private Guest Suite (2 guests · 1 bed)' };
-  if (dispProp) dispProp.textContent = propLabels[_calProp] || '—';
+  if (dispProp) dispProp.textContent = propLabels[_calProp] || '-';
   if (dispCI)   dispCI.textContent   = fmt(start);
   if (dispCO)   dispCO.textContent   = fmt(end);
   // Change dates → specific property detail page, scrolled to its calendar
@@ -1014,7 +1014,7 @@ function _updateFormSummary(start, end) {
   const propNames = { prop1: 'Front Home', prop2: 'Left Suite', prop3: 'Right Suite' };
   const fmt = d => d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
   box.innerHTML = `
-    <div class="fcs-title">Your Requested Stay — ${propNames[_calProp] || 'Front Home'}</div>
+    <div class="fcs-title">Your Requested Stay - ${propNames[_calProp] || 'Front Home'}</div>
     <div class="fcs-dates">${fmt(start)} → ${fmt(end)}</div>
     <div class="fcs-rows">
       <div class="fcs-row"><span>Room Fare × ${est.nights} night${est.nights>1?'s':''}</span><span>$${est.subtotal}</span></div>
@@ -1023,7 +1023,7 @@ function _updateFormSummary(start, end) {
       <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${est.preTax}</span></div>
       <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>Credit Card Fee (3%)</span><span>$${est.ccFee}</span></div>
     </div>
-    <div class="fcs-note">Estimate — Jesse will confirm your exact rate.</div>
+    <div class="fcs-note">Estimate - Jesse will confirm your exact rate.</div>
   `;
   box.style.display = 'block';
 }
@@ -1057,7 +1057,7 @@ function attestHouseRules() {
   _updateBbBtn();
   const bar = document.getElementById('booking-bar');
   const btn = document.getElementById('attest-rules-btn');
-  if (btn) { btn.textContent = '✅ House rules acknowledged — click Request to Book in the bar below'; btn.disabled = true; btn.style.opacity = '.6'; }
+  if (btn) { btn.textContent = '✅ House rules acknowledged - click Request to Book in the bar below'; btn.disabled = true; btn.style.opacity = '.6'; }
   if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -1102,18 +1102,18 @@ var SLUG_PAGES = {};
 Object.keys(PAGE_SLUGS).forEach(function (id) { SLUG_PAGES[PAGE_SLUGS[id]] = id; });
 
 var PAGE_TITLES = {
-  home: 'The Heart Of CB — Direct Booking · Carolina Beach, NC',
-  stay: 'Book Your Stay — The Heart Of CB',
-  shop: 'Shop — The Heart Of CB',
-  explore: 'Explore CB — The Heart Of CB',
-  consulting: 'STR Consulting — The Heart Of CB',
-  about: 'About — The Heart Of CB',
-  guidebook: 'Guest Guidebook — The Heart Of CB',
-  book: 'Book Now — The Heart Of CB',
+  home: 'The Heart Of CB - Direct Booking · Carolina Beach, NC',
+  stay: 'Book Your Stay - The Heart Of CB',
+  shop: 'Shop - The Heart Of CB',
+  explore: 'Explore CB - The Heart Of CB',
+  consulting: 'STR Consulting - The Heart Of CB',
+  about: 'About - The Heart Of CB',
+  guidebook: 'Guest Guidebook - The Heart Of CB',
+  book: 'Book Now - The Heart Of CB',
   prop1: '(FRONT) Home in The Heart Of CB',
   prop2: '(LEFT) Private Guest Suite in The Heart Of CB',
   prop3: '(RIGHT) Private Guest Suite in The Heart Of CB',
-  privacy: 'Privacy Policy — The Heart Of CB'
+  privacy: 'Privacy Policy - The Heart Of CB'
 };
 
 function _pageIdFromPath(path) {
@@ -1231,7 +1231,7 @@ async function submitBooking(e) {
     const fd = new FormData(form);
     const propLabels = { prop1: 'Front Home', prop2: 'Left Suite', prop3: 'Right Suite' };
     // Read the property from the hidden field snapshotted when dates were picked, not the live
-    // _calProp global — that can get overwritten by a stray click on any other calendar on the
+    // _calProp global - that can get overwritten by a stray click on any other calendar on the
     // page before the guest actually submits.
     const submittedProp = fd.get('propKey') || _calProp || '';
     const inquiry = {
@@ -1265,7 +1265,7 @@ async function submitBooking(e) {
   } catch {
     btn.textContent = 'Send Booking Request';
     btn.disabled = false;
-    alert('Something went wrong — please email Jesse directly at stay@theheartofcb.com');
+    alert('Something went wrong - please email Jesse directly at stay@theheartofcb.com');
   }
 }
 
@@ -1292,7 +1292,7 @@ async function _sendContactEmail(subject, name, email, message, successEl, form)
     }
   } catch {
     if (btn) { btn.disabled = false; btn.textContent = 'Send Message'; }
-    alert('Something went wrong — email Jesse directly at stay@theheartofcb.com');
+    alert('Something went wrong - email Jesse directly at stay@theheartofcb.com');
   }
 }
 function submitConsult(e) {
@@ -1303,7 +1303,7 @@ function submitConsult(e) {
   const email = inputs[1]?.value.trim();
   const message = inputs[2]?.value.trim();
   if (!name || !email || !message) return;
-  _sendContactEmail(`STR Consulting Inquiry — ${name}`, name, email, message, document.getElementById('consult-confirm'), form);
+  _sendContactEmail(`STR Consulting Inquiry - ${name}`, name, email, message, document.getElementById('consult-confirm'), form);
 }
 function submitAbout(e) {
   e.preventDefault();
@@ -1313,7 +1313,7 @@ function submitAbout(e) {
   const email = inputs[1]?.value.trim();
   const message = inputs[2]?.value.trim();
   if (!name || !email || !message) return;
-  _sendContactEmail(`Message from ${name} — The Heart Of CB`, name, email, message, document.getElementById('about-confirm'), form);
+  _sendContactEmail(`Message from ${name} - The Heart Of CB`, name, email, message, document.getElementById('about-confirm'), form);
 }
 
 // ─── SHOP TABS ───
@@ -1414,7 +1414,7 @@ function lgbAccordion(id) {
   }
   // Blur immediately so the browser doesn't focus-scroll the button
   if (hd) hd.blur();
-  // On desktop, always land on the guidebook section header — prevents any scroll jump
+  // On desktop, always land on the guidebook section header - prevents any scroll jump
   if (window.innerWidth > 768 && section) {
     const lgbHeader = section.querySelector('.lgb-header') || section;
     const navH = document.querySelector('.site-header')?.offsetHeight || 150;
@@ -1454,7 +1454,7 @@ function _checkAttestReady() {
     btn.style.background = 'var(--gold)';
     btn.style.color = 'var(--navy)';
     btn.style.cursor = 'pointer';
-    btn.textContent = '✅ I\'ve read and agree to all house rules and policies — unlock booking';
+    btn.textContent = '✅ I\'ve read and agree to all house rules and policies - unlock booking';
   } else {
     btn.textContent = `Open all sections above to unlock (${visited} of ${_ALL_TABS.length} reviewed)`;
   }
@@ -1529,7 +1529,7 @@ let _mobileTab = 0;
 function _setMobileTab(idx) {
   _mobileTab = idx;
   document.querySelectorAll('.stay-mob-tab').forEach((b, i) => b.classList.toggle('active', i === idx));
-  // Only filter calendar columns — timeline always shows all 3 rows
+  // Only filter calendar columns - timeline always shows all 3 rows
   document.querySelectorAll('.stay-cal-col').forEach((col, i) => {
     col.style.display = (i === idx) ? '' : 'none';
   });

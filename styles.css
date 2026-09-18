@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   THE HEART OF CB — Modern Redesign
+   THE HEART OF CB - Modern Redesign
 ═══════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -103,7 +103,9 @@ em { font-style: italic; color: var(--gold2); }
   align-items: center; height: 150px;
 }
 .logo { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
-.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; overflow: hidden; box-shadow: 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2); }
+.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; overflow: hidden; }
+/* Gold ring only where the badge sits directly on a navy background - on white/cream it's not needed. */
+.pin-circle-navy { box-shadow: 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2); }
 .logo-pin  { height: 154px; width: auto; transition: transform var(--transition); }
 .logo-pin:hover { transform: scale(1.06); }
 .logo-wordmark { height: 110px; width: auto; transition: transform var(--transition); }
@@ -910,7 +912,7 @@ main { padding-top: 150px; }
 .cal-booked .cal-num { color: var(--muted2); }
 .cal-avail .cal-num { color: var(--text); }
 .cal-avail:hover { background: rgba(22,163,74,.1); cursor: pointer; }
-/* Orphan night: single free night sandwiched between 2 bookings — 1-night min exception */
+/* Orphan night: single free night sandwiched between 2 bookings - 1-night min exception */
 .cal-orphan { cursor: pointer; position: relative; }
 .cal-orphan .cal-num { color: var(--text); }
 .cal-orphan .cal-dot-sm { background: var(--gold); box-shadow: 0 0 0 2px rgba(184,136,42,.35); }
@@ -942,7 +944,7 @@ main { padding-top: 150px; }
 /* One-night (kept for tooltip only, now also maps to checkout-blocked visually) */
 .cal-one-night { position: relative; cursor: not-allowed; }
 
-/* Saturday: always blocked — red hover, cursor */
+/* Saturday: always blocked - red hover, cursor */
 .cal-saturday:not(.cal-past):not(.cal-orphan):hover { background: rgba(239,68,68,.12) !important; cursor: not-allowed !important; }
 /* Tooltips are handled by the global JS tooltip in app.js (position: fixed, never clipped) */
 
@@ -1032,7 +1034,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 .tl-prate { font-size: .65rem; color: var(--gold2); }
 .tl-cells { display: flex; flex: 1; }
 .tl-cell { flex-shrink: 0; height: 46px; border-right: 1px solid var(--border); box-sizing: border-box; position: relative; }
-/* Timeline cells — all white/transparent, dot-only (mirrors monthly calendar) */
+/* Timeline cells - all white/transparent, dot-only (mirrors monthly calendar) */
 .tl-c-past  { background: #f8f8f8; }
 .tl-c-avail { background: #fff; }
 .tl-c-booked { background: #fff; }
@@ -1048,7 +1050,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 .tl-c-booked .tl-dot { background: #dc2626; box-shadow: 0 0 5px rgba(220,38,38,.35); }
 .tl-c-orphan .tl-dot { background: var(--gold); box-shadow: 0 0 5px rgba(184,136,42,.45); }
 .tl-c-past .tl-dot   { background: #cbd5e1; box-shadow: none; }
-/* Timeline choosing mode — square shapes to match monthly calendar */
+/* Timeline choosing mode - square shapes to match monthly calendar */
 .tl-sel-start, .tl-sel-end { background: var(--navy) !important; border-radius: 6px; }
 .tl-sel-start .tl-dot, .tl-sel-end .tl-dot { background: var(--gold) !important; box-shadow: none !important; }
 .tl-eligible .tl-dot  { background: #16a34a !important; box-shadow: 0 0 5px rgba(22,163,74,.4) !important; }
@@ -1419,7 +1421,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  /* no overflow:hidden — it breaks position:sticky on the header */
+  /* no overflow:hidden - it breaks position:sticky on the header */
 }
 .stay-cal-hd {
   position: static;
@@ -1486,7 +1488,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 }
 
 @media (max-width: 900px) {
-  /* stay-cals-grid stays 3-col — no collapse */
+  /* stay-cals-grid stays 3-col - no collapse */
   .stay-cal-hd { top: 72px; }
 }
 
@@ -1512,7 +1514,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
   .listing-check-dates-btn { font-size: .78rem !important; padding: .48rem 2rem !important; }
 }
 
-/* ─── STAY PAGE STICKY WRAPPER — cards only, toggle is a separate sibling ─── */
+/* ─── STAY PAGE STICKY WRAPPER - cards only, toggle is a separate sibling ─── */
 .stay-sticky-wrapper {
   position: sticky;
   top: 150px;
@@ -1522,7 +1524,7 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 .stay-sticky-header {
   background: var(--sand);
 }
-/* On desktop: toggle lives inside wrapper — wrapper's sticky handles the whole block.
+/* On desktop: toggle lives inside wrapper - wrapper's sticky handles the whole block.
    On mobile: JS moves toggle outside wrapper; CSS gives it independent sticky. */
 .stay-sticky-toggle {
   z-index: 61;
@@ -1561,7 +1563,7 @@ body.timeline-mode .stay-sticky-toggle  { position: relative; top: auto; }
 .stay-prop-summary:hover .sps-cover-img { transform: scale(1.04); }
 .sps-cover-tour { position: relative; }
 .sps-cover-tour iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
-/* Shared small hint badge — every 3D tour embed on the site, present + future */
+/* Shared small hint badge - every 3D tour embed on the site, present + future */
 .tour-hint {
   position: absolute; left: 50%; bottom: .5rem; z-index: 2; pointer-events: none;
   transform: translateX(-50%);
@@ -1578,7 +1580,7 @@ body.timeline-mode .stay-sticky-toggle  { position: relative; top: auto; }
 @media (prefers-reduced-motion: reduce) {
   .tour-hint { animation: none; }
 }
-/* Compact state — photo slides up when cards go sticky */
+/* Compact state - photo slides up when cards go sticky */
 .stay-sticky-header.cards-compact .sps-cover {
   height: 0;
   margin-bottom: 0;
@@ -1589,11 +1591,11 @@ body.timeline-mode .stay-sticky-toggle  { position: relative; top: auto; }
 
 @media (max-width: 900px) {
   .stay-props-row { max-width: 480px; margin: 0 auto; }
-  /* Cards wrapper not sticky on mobile — cards scroll away normally */
+  /* Cards wrapper not sticky on mobile - cards scroll away normally */
   .stay-sticky-wrapper { position: relative; top: auto; }
   /* Toggle moved outside wrapper by JS → independently sticky through full calendar */
   .stay-sticky-toggle { position: sticky; top: 80px; }
-  /* Keep property card photos visible on mobile — no compact-hide */
+  /* Keep property card photos visible on mobile - no compact-hide */
   .stay-sticky-header.cards-compact .sps-cover { height: 140px; margin-bottom: .75rem; }
   .stay-sticky-header.cards-compact .sps-cover-img { transform: none; }
 }

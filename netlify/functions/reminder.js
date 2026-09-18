@@ -35,7 +35,7 @@ exports.handler = async function(event) {
   for (const res of reservations) {
     const recipients = [res.email, ...(res.additional_contacts || [])].filter(Boolean);
     if (!recipients.length) {
-      console.log(`Skipping ${res.guest} — no email on file`);
+      console.log(`Skipping ${res.guest} - no email on file`);
       continue;
     }
 
@@ -51,7 +51,7 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         from: 'The Heart Of CB <stay@theheartofcb.com>',
         to: recipients,
-        subject: `Your stay is 7 days away — ${propLabel}`,
+        subject: `Your stay is 7 days away - ${propLabel}`,
         html
       })
     });
@@ -76,7 +76,7 @@ function propName(prop) {
 }
 
 // Full-refund window closes 5 days before check-in (same cutoff used in book.html's
-// _cancelDates) — at the 7-day mark that always leaves exactly 2 days to still qualify.
+// _cancelDates) - at the 7-day mark that always leaves exactly 2 days to still qualify.
 function _fullRefundCutoff(ci) {
   const checkIn = new Date(ci + 'T12:00:00');
   const cutoff = new Date(checkIn);
@@ -110,7 +110,7 @@ function buildReminderHtml(res) {
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
       <p>Hi ${res.guest},</p>
-      <p>Just a quick reminder — your stay is one week away! Your full check-in details, door code, and house rules are all in your confirmation email, so we'll keep this one short.</p>
+      <p>Just a quick reminder - your stay is one week away! Your full check-in details, door code, and house rules are all in your confirmation email, so we'll keep this one short.</p>
       <div style="background:#f8f6f0;border-radius:8px;padding:18px 20px;margin:16px 0;font-size:.93rem;">
         <div style="margin-bottom:8px;"><strong>Property:</strong> ${propName(res.prop)}</div>
         <div style="margin-bottom:8px;"><strong>Check-in:</strong> ${fmtD(res.check_in)}</div>
@@ -119,11 +119,11 @@ function buildReminderHtml(res) {
         ${res.total  ? `<div><strong>Total:</strong> ${fmt$(res.total)}</div>` : ''}
       </div>
       <div style="background:#fbf0da;border-left:3px solid #b8882a;border-radius:6px;padding:14px 18px;margin:16px 0;font-size:.88rem;">
-        <strong>Plans changed?</strong> You have until <strong>${cutoffStr}</strong> — 2 days from now — to cancel for a full refund. After that it's a 50% refund up until check-in day, when cancellations are no longer accepted. Full policy details are in your confirmation email.
+        <strong>Plans changed?</strong> You have until <strong>${cutoffStr}</strong> - 2 days from now - to cancel for a full refund. After that it's a 50% refund up until check-in day, when cancellations are no longer accepted. Full policy details are in your confirmation email.
       </div>
       <p>Any questions before you arrive, reach out to Jesse directly:</p>
       <p>
-        📞 <strong>Jesse:</strong> <a href="tel:9105998118" style="color:#b8882a;text-decoration:none;">(910) 599-8118</a> — text or call anytime<br>
+        📞 <strong>Jesse:</strong> <a href="tel:9105998118" style="color:#b8882a;text-decoration:none;">(910) 599-8118</a> - text or call anytime<br>
         📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;text-decoration:none;">stay@theheartofcb.com</a>
       </p>
       <p style="font-size:.85rem;color:#6b7280;">Emergency only, if Jesse's unreachable: Alison Baringer, <a href="tel:3303097037" style="color:#6b7280;">330-309-7037</a>.</p>

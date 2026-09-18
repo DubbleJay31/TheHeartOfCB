@@ -1,5 +1,5 @@
 // Runs daily alongside the other reminders. Sends Jesse a single heads-up email listing any
-// guest(s) checking in tomorrow — the only host-side arrival notice he wants (Airbnb's 8-day
+// guest(s) checking in tomorrow - the only host-side arrival notice he wants (Airbnb's 8-day
 // one is too far out to be useful).
 exports.handler = async function(event) {
   const SUPABASE_URL = process.env.SUPABASE_URL;

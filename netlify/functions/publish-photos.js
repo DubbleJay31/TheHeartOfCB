@@ -6,7 +6,7 @@ const BRANCH = 'main';
 const PATH   = 'photos.json';
 
 // Commits the new photos.json straight to GitHub, which triggers Netlify's existing
-// auto-deploy-on-push — no local git commands needed from the admin dashboard.
+// auto-deploy-on-push - no local git commands needed from the admin dashboard.
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };

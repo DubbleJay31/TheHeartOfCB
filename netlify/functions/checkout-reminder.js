@@ -1,5 +1,5 @@
 // Runs daily at 8am ET (see netlify.toml). Sends the morning-of-checkout email to any guest
-// checking out today — mirrors the Airbnb "checkout instructions" auto-message, adapted for
+// checking out today - mirrors the Airbnb "checkout instructions" auto-message, adapted for
 // direct bookings (no Airbnb private-review system here, so the review ask points to a reply
 // email instead, matching how the homepage testimonials are actually sourced).
 exports.handler = async function(event) {
@@ -31,7 +31,7 @@ exports.handler = async function(event) {
   for (const res of reservations) {
     const recipients = [res.email, ...(res.additional_contacts || [])].filter(Boolean);
     if (!recipients.length) {
-      console.log(`Skipping ${res.guest} — no email on file`);
+      console.log(`Skipping ${res.guest} - no email on file`);
       continue;
     }
     const emailResp = await fetch('https://api.resend.com/emails', {
@@ -40,7 +40,7 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         from: 'The Heart Of CB <stay@theheartofcb.com>',
         to: recipients,
-        subject: 'Checkout today at 11:00 AM — thank you for staying!',
+        subject: 'Checkout today at 11:00 AM - thank you for staying!',
         html: _buildCheckoutHtml(res)
       })
     });
@@ -72,23 +72,23 @@ function _buildCheckoutHtml(res) {
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
       <p>Hi ${firstName}!</p>
-      <p>I hope you've enjoyed your stay! This is an automated reminder that checkout is <strong>11:00 AM</strong> — about 3 hours from now.</p>
+      <p>I hope you've enjoyed your stay! This is an automated reminder that checkout is <strong>11:00 AM</strong> - about 3 hours from now.</p>
       <div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:16px 18px;margin:18px 0;font-size:.9rem;">
         <p style="margin:0 0 8px;font-weight:700;color:#0a1f3a;">Checkout Instructions</p>
         <p style="margin:0;line-height:1.9;">
-          ✓ Do not strip bed — straighten sheets, blankets not balled up<br>
+          ✓ Do not strip bed - straighten sheets, blankets not balled up<br>
           ✓ Leave used towels in the bathroom<br>
           ✓ Wash used dishes<br>
           ✓ Remove all food and drinks from the refrigerator<br>
           ✓ Wipe up spills, pick up trash, return items where they belong<br>
           ✓ Take kitchen and bathroom trash to the outdoor cans under the front stairs<br>
-          ✓ Do a final walk-through — make sure nothing is left behind<br>
+          ✓ Do a final walk-through - make sure nothing is left behind<br>
           <strong>✓ Text Jesse when you leave: (910) 599-8118</strong>
         </p>
-        <p style="margin:10px 0 0;font-size:.85rem;font-style:italic;color:#6b7280;">If you know your checkout time in advance — especially if you'll be leaving early — let me know as soon as possible so I can plan cleaning and get the house ready for the next guest.</p>
+        <p style="margin:10px 0 0;font-size:.85rem;font-style:italic;color:#6b7280;">If you know your checkout time in advance - especially if you'll be leaving early - let me know as soon as possible so I can plan cleaning and get the house ready for the next guest.</p>
       </div>
       <div style="background:#f8f6f0;border-radius:8px;padding:16px 18px;margin:18px 0;font-size:.9rem;">
-        <p style="margin:0;font-style:italic;color:#4b5563;">I hope you had an incredible stay! My goal is to give every guest a 5-star experience — if anything wasn't perfect, just reply to this email and let me know so I can make it right. I genuinely read every reply, and many of the small touches in this home came directly from past guests' feedback. And if you loved it, I'd be grateful for a quick word — some guest replies end up featured right on the site.</p>
+        <p style="margin:0;font-style:italic;color:#4b5563;">I hope you had an incredible stay! My goal is to give every guest a 5-star experience - if anything wasn't perfect, just reply to this email and let me know so I can make it right. I genuinely read every reply, and many of the small touches in this home came directly from past guests' feedback. And if you loved it, I'd be grateful for a quick word - some guest replies end up featured right on the site.</p>
       </div>
       <p>Safe travels, and thank you so much for staying!</p>
       <p style="margin-top:1.5rem;">

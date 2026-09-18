@@ -1,5 +1,5 @@
 // Runs daily alongside reminder.js. For any quote expiring tomorrow that hasn't turned into a
-// booking, sends the guest a low-pressure nudge and lets Jesse know — explicitly telling him the
+// booking, sends the guest a low-pressure nudge and lets Jesse know - explicitly telling him the
 // guest was already nudged, so he doesn't double up.
 exports.handler = async function(event) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -39,7 +39,7 @@ exports.handler = async function(event) {
       );
       const existing = checkResp.ok ? await checkResp.json() : [];
       if (existing.length > 0) {
-        console.log(`Skipping ${q.guest} — already booked`);
+        console.log(`Skipping ${q.guest} - already booked`);
         results.push({ guest: q.guest, status: 'already booked' });
         continue;
       }
@@ -83,14 +83,14 @@ async function _sendGuestNudge(q, RESEND_KEY) {
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
       <p>Hi ${firstName},</p>
-      <p>Just noticed your quote for ${_propName(q.prop)} is set to expire tomorrow. No pressure at all — plans change, and I get it!</p>
-      <p>But if you're still weighing it, I'd love to have you. If something about the dates, price, or space isn't quite right, let me know — happy to see what I can work out. And if you just haven't had a chance to finish up, your link's still good:</p>
+      <p>Just noticed your quote for ${_propName(q.prop)} is set to expire tomorrow. No pressure at all - plans change, and I get it!</p>
+      <p>But if you're still weighing it, I'd love to have you. If something about the dates, price, or space isn't quite right, let me know - happy to see what I can work out. And if you just haven't had a chance to finish up, your link's still good:</p>
       <div style="text-align:center;margin:22px 0;">
         <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View Your Booking →</a>
       </div>
       <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;text-decoration:none;">(910) 599-8118</a><br>
       📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;text-decoration:none;">stay@theheartofcb.com</a></p>
-      <p>Either way — thanks for considering The Heart Of CB. Hope to host you soon!</p>
+      <p>Either way - thanks for considering The Heart Of CB. Hope to host you soon!</p>
       <p style="margin-top:1.5rem;">Warm regards,<br><strong>Jesse</strong><br><em>The Heart Of CB</em></p>
     </div>
     <div style="background:#f8f6f0;padding:14px 32px;text-align:center;font-size:.72rem;color:#9ca3af;border-top:1px solid #e5e7eb;">
@@ -130,7 +130,7 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
         <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${q.email}" style="color:#b8882a;">${q.email}</a></td></tr>
       </table>
       <div style="background:#eaf3ff;border-radius:6px;padding:12px 14px;font-size:13px;color:#1d4e89;margin-bottom:18px;">
-        📥 They've already been sent a friendly reminder — no need to double up unless you want to add a personal touch.
+        📥 They've already been sent a friendly reminder - no need to double up unless you want to add a personal touch.
       </div>
       <div style="text-align:center;">
         <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 26px;border-radius:7px;">View Their Booking Link →</a>

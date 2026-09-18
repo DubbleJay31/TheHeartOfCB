@@ -35,7 +35,7 @@ exports.handler = async function(event) {
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   try {
-    // Dedupe on the exact booking link (unique per quote — it carries the signature timestamp),
+    // Dedupe on the exact booking link (unique per quote - it carries the signature timestamp),
     // not just email+check_in. The same guest can legitimately book the same dates twice across
     // separate quotes (re-tests, rebookings), and email+check_in alone would wrongly treat that
     // second one as "already confirmed" and silently skip saving it.
@@ -68,7 +68,7 @@ exports.handler = async function(event) {
     }
 
     // This new signed contract replaces an older reservation (guest changed dates/terms and
-    // re-signed) — remove the old one now that the new one is safely saved, so there's never a
+    // re-signed) - remove the old one now that the new one is safely saved, so there's never a
     // window where both exist, and never a case where the old one gets removed if the new
     // insert above had failed.
     if (supersedes) {
