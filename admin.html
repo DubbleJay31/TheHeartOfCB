@@ -1072,7 +1072,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Pull latest from cloud">☁️ Refresh</button>
           <span id="cloud-sync-status" style="font-size:.7rem;color:var(--gold);"></span>
           <button onclick="showImport()" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Paste a sync link or code from another device">📥 Import</button>
-          <button onclick="clearAllQuotes()" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Wipe all recent quotes, everywhere">🗑️ Clear All</button>
         </div>
       </div>
       <div class="adm-card-body">
@@ -1267,7 +1266,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <h3>✅ Confirmed Reservations</h3>
       <div style="display:flex;gap:.5rem;">
         <button class="btn btn-sm" onclick="loadConfirmed(this)" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;">⟳ Refresh</button>
-        <button class="btn btn-sm" onclick="clearAllReservations()" style="background:none;border:1.5px solid #dc2626;color:#dc2626;font-weight:700;">🗑️ Clear All</button>
       </div>
     </div>
     <div id="conf-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
@@ -2664,19 +2662,6 @@ async function confirmFromQuote(q, btn) {
   }
 }
 
-async function clearAllReservations() {
-  if (!_confirmedCache.length) { alert('No reservations to clear.'); return; }
-  if (!confirm(`Permanently delete all ${_confirmedCache.length} reservation(s)? This cannot be undone.`)) return;
-  for (const r of [..._confirmedCache]) {
-    try {
-      await fetch(`/.netlify/functions/reservations-delete?id=${encodeURIComponent(r.id)}`, { method: 'DELETE', headers: _adminAuthHeader() });
-    } catch (e) { console.error('Delete failed for', r.id, e); }
-  }
-  _confirmedCache = [];
-  renderConfirmed();
-  _renderConflictBanner();
-}
-
 async function deleteConfirmed(id) {
   if (!confirm('Cancel this reservation? This cannot be undone. (The matching quote will move back to "not confirmed" so you can edit and resend it if needed.)')) return;
   try {
@@ -2830,14 +2815,6 @@ function _checkSyncHash() {
 function showImport() {
   const box = document.getElementById('import-box');
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
-}
-
-async function clearAllQuotes() {
-  if (!confirm('Permanently clear all recent quotes — on this device and in the cloud? This cannot be undone.')) return;
-  localStorage.setItem('thocb_quotes', '[]');
-  _recentQuotesCache = [];
-  renderRecent();
-  await _cloudWrite();
 }
 
 function importQuotes() {
