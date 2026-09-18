@@ -103,7 +103,7 @@ em { font-style: italic; color: var(--gold2); }
   align-items: center; height: 150px;
 }
 .logo { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
-.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; overflow: hidden; }
+.pin-circle { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 50%; flex-shrink: 0; overflow: hidden; box-shadow: 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2); }
 .logo-pin  { height: 154px; width: auto; transition: transform var(--transition); }
 .logo-pin:hover { transform: scale(1.06); }
 .logo-wordmark { height: 110px; width: auto; transition: transform var(--transition); }
@@ -351,7 +351,7 @@ main { padding-top: 150px; }
   display: inline-flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,.92); border-radius: 50%;
   width: 180px; height: 180px; margin-bottom: 1rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,.3), 0 0 0 3px rgba(201,146,42,.7), 0 0 0 5px rgba(201,146,42,.2);
 }
 .stay-hero-pin { height: 198px; width: auto; }
 .bb-rating { font-weight: 700; color: var(--gold); margin-right: .4rem; font-size: .9rem; }
