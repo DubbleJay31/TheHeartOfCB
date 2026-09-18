@@ -908,10 +908,12 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           </div>
           <!-- Prior payment credit (for a new/amended contract replacing an existing reservation) -->
           <div class="field-row single" style="margin-top:.5rem;">
-            <div class="field field-prefix">
+            <div class="field">
               <label>Already Paid / Credit <span style="font-weight:400;text-transform:none;letter-spacing:0;">— optional</span></label>
-              <span>$</span>
-              <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
+              <div class="field-prefix">
+                <span>$</span>
+                <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
+              </div>
               <span class="field-hint">For a new contract replacing an old one — the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
             </div>
           </div>
