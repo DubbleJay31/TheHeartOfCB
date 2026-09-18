@@ -2579,7 +2579,9 @@ function openReservationDetail(id) {
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link — this reservation predates this feature.</span>`}
-        <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🗑️ Delete</button>
+        <button class="conf-btn" onclick="_changeReservation('${r.id}')">✏️ Change Reservation</button>
+        <button class="conf-btn" onclick="sendCancellationEmail('${r.id}', this)">✉️ Send Cancellation Email</button>
+        <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🚫 Cancel Reservation</button>
       </div>
     </div>`;
   document.body.appendChild(backdrop);
@@ -2676,7 +2678,7 @@ async function clearAllReservations() {
 }
 
 async function deleteConfirmed(id) {
-  if (!confirm('Remove this confirmed reservation? This cannot be undone.')) return;
+  if (!confirm('Cancel this reservation? This cannot be undone. (The matching quote will move back to "not confirmed" so you can edit and resend it if needed.)')) return;
   try {
     const r = await fetch(`/.netlify/functions/reservations-delete?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
@@ -2687,13 +2689,89 @@ async function deleteConfirmed(id) {
       _closeReservationDetail();
       renderConfirmed();
     } else {
-      alert('Delete failed — check console.');
+      alert('Cancel failed — check console.');
       console.error(await r.text());
     }
   } catch(e) {
     alert('Network error.');
     console.error(e);
   }
+}
+
+// ── CANCELLATION EMAIL ──
+async function sendCancellationEmail(id, btn) {
+  const r = _confirmedCache.find(x => x.id === id);
+  if (!r) { alert('Could not find that reservation — try refreshing.'); return; }
+  if (!r.email) { alert('No email on file for this guest.'); return; }
+  if (!confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
+  const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+<div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+  <div style="background:#0a1f3a;padding:24px;text-align:center;">
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+      <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
+    </td></tr></table>
+    <div style="height:10px;"></div>
+    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Reservation Canceled</h1>
+  </div>
+  <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
+    <p>Hi ${(r.guest||'').split(' ')[0] || r.guest},</p>
+    <p>Your reservation at <strong>${propName}</strong> has been canceled:</p>
+    <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
+      <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(r.check_in)}</div>
+      <div><strong>Check-out:</strong> ${fmtD(r.check_out)}</div>
+    </div>
+    <p>If a refund is due, it will be issued per the cancellation policy in your signed rental agreement, using whatever terms were agreed upon at booking.</p>
+    <p>Questions? Reach out anytime.</p>
+    <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
+    📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
+  </div>
+</div></body></html>`;
+  try {
+    const resp = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: [r.email], subject: `Your Reservation Has Been Canceled — The Heart Of CB`, html })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    if (btn) { btn.textContent = '✅ Sent'; }
+  } catch(e) {
+    console.error(e);
+    if (btn) { btn.disabled = false; btn.textContent = '⚠️ Failed — try again'; }
+  }
+}
+
+// ── CHANGE RESERVATION ──
+// Loads this reservation's info into the Booking-tab quote builder as a brand-new quote,
+// so Jesse can adjust dates/price and send the guest a fresh link to sign a new agreement.
+// The old reservation is left in place — cancel it separately once the new one is signed.
+function _changeReservation(id) {
+  const r = _confirmedCache.find(x => x.id === id);
+  if (!r) return;
+  _closeReservationDetail();
+  switchAdmTab('booking');
+  const parts = (r.guest || '').split(' ');
+  document.getElementById('f-first').value = parts[0] || '';
+  document.getElementById('f-last').value = parts.slice(1).join(' ') || '';
+  document.getElementById('f-email').value = r.email || '';
+  const propKey = Object.keys(PROPS).find(k => PROPS[k].name === r.prop) || r.prop;
+  if (PROPS[propKey]) selectProp(propKey);
+  document.getElementById('f-ci').value = r.check_in || '';
+  document.getElementById('f-co').value = r.check_out || '';
+  calcNights();
+  if (r.rate != null) document.getElementById('f-rate').value = r.rate;
+  const noteEl = document.getElementById('f-private-note');
+  if (noteEl) {
+    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
+    noteEl.value = `CHANGE to existing reservation — was ${fmtD(r.check_in)}–${fmtD(r.check_out)}, $${parseFloat(r.total||0).toFixed(2)} total. Cancel the old reservation once this new one is signed.`;
+  }
+  calcTotal();
+  generate();
+  _checkDateConflict();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  alert('Loaded into the quote builder — adjust dates/price, then send this as a brand-new booking link. Once the guest signs the new agreement, come back to Reservations and Cancel the old one.');
 }
 
 // Auto-refresh when tab becomes visible
