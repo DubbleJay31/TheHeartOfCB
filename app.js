@@ -63,6 +63,11 @@ async function _sendGuestConfirmation(inquiry) {
   await _sendEmail(inquiry.email, `We got your inquiry - The Heart Of CB`, html);
 }
 
+// Guest-typed text (name/phone/pets/message from the public inquiry form) flows unescaped into
+// this notification email otherwise - wrap anything guest-controlled before interpolating it
+// into HTML, same convention admin.html's own _esc() follows.
+const _esc = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 async function _notifyHost(inquiry, code) {
   try {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
@@ -70,6 +75,7 @@ async function _notifyHost(inquiry, code) {
       ? 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code)
       : 'https://theheartofcb.com/admin.html';
     const guestName = [inquiry.first, inquiry.last].filter(Boolean).join(' ');
+    const propLabel = inquiry.propLabel || inquiry.prop;
     const html = `<div style="font-family:Georgia,serif;background:#f5f0e8;padding:24px 16px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
     <div style="background:#0a1f3a;padding:20px 32px;text-align:center;">
@@ -77,18 +83,18 @@ async function _notifyHost(inquiry, code) {
       <div style="color:#c8b99a;font-size:12px;margin-top:2px;">The Heart of CB</div>
     </div>
     <div style="padding:28px 32px;">
-      <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#0a1f3a;">📨 ${guestName} wants to book the ${inquiry.propLabel || inquiry.prop}</p>
+      <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#0a1f3a;">📨 ${_esc(guestName)} wants to book the ${_esc(propLabel)}</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
-        <tr><td style="padding:5px 0;color:#666;width:110px;">Guest</td><td style="color:#0a1f3a;font-weight:600;">${guestName}</td></tr>
-        <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${inquiry.email}" style="color:#b8882a;">${inquiry.email}</a></td></tr>
-        ${inquiry.phone ? `<tr><td style="padding:5px 0;color:#666;">Phone</td><td style="color:#0a1f3a;">${inquiry.phone}</td></tr>` : ''}
+        <tr><td style="padding:5px 0;color:#666;width:110px;">Guest</td><td style="color:#0a1f3a;font-weight:600;">${_esc(guestName)}</td></tr>
+        <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${encodeURIComponent(inquiry.email)}" style="color:#b8882a;">${_esc(inquiry.email)}</a></td></tr>
+        ${inquiry.phone ? `<tr><td style="padding:5px 0;color:#666;">Phone</td><td style="color:#0a1f3a;">${_esc(inquiry.phone)}</td></tr>` : ''}
         ${inquiry.contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="color:#0a1f3a;font-weight:600;">${inquiry.contactPref === 'email' ? '📧 Email' : inquiry.contactPref === 'text' ? '💬 Text' : '📧💬 Both'}</td></tr>` : ''}
-        <tr><td style="padding:5px 0;color:#666;">Property</td><td style="color:#0a1f3a;">${inquiry.propLabel || inquiry.prop}</td></tr>
+        <tr><td style="padding:5px 0;color:#666;">Property</td><td style="color:#0a1f3a;">${_esc(propLabel)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="color:#0a1f3a;">${fmtD(inquiry.ci)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="color:#0a1f3a;">${fmtD(inquiry.co)}</td></tr>
-        ${inquiry.guests ? `<tr><td style="padding:5px 0;color:#666;">Guests</td><td style="color:#0a1f3a;">${inquiry.guests}</td></tr>` : ''}
-        ${inquiry.pets ? `<tr><td style="padding:5px 0;color:#666;">Pets</td><td style="color:#0a1f3a;">${inquiry.pets}</td></tr>` : ''}
-        ${inquiry.message ? `<tr><td style="padding:5px 0;color:#666;vertical-align:top;">Message</td><td style="color:#0a1f3a;font-style:italic;">"${inquiry.message}"</td></tr>` : ''}
+        ${inquiry.guests ? `<tr><td style="padding:5px 0;color:#666;">Guests</td><td style="color:#0a1f3a;">${_esc(inquiry.guests)}</td></tr>` : ''}
+        ${inquiry.pets ? `<tr><td style="padding:5px 0;color:#666;">Pets</td><td style="color:#0a1f3a;">${_esc(inquiry.pets)}</td></tr>` : ''}
+        ${inquiry.message ? `<tr><td style="padding:5px 0;color:#666;vertical-align:top;">Message</td><td style="color:#0a1f3a;font-style:italic;">"${_esc(inquiry.message)}"</td></tr>` : ''}
       </table>
       <div style="text-align:center;">
         <a href="${adminUrl}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">Open in Admin &amp; Generate Quote</a>
@@ -96,7 +102,7 @@ async function _notifyHost(inquiry, code) {
     </div>
   </div>
 </div>`;
-    await _sendEmail('jessejonesrealestate@gmail.com', `New Inquiry: ${guestName} · ${inquiry.propLabel || inquiry.prop}`, html);
+    await _sendEmail('jessejonesrealestate@gmail.com', `New Inquiry: ${guestName} · ${propLabel}`, html);
   } catch(err) {
     console.error('Host notification email failed:', err);
   }
@@ -129,6 +135,20 @@ async function _fetchICS(url) {
     const r = await fetch(url);
     const txt = await r.text();
     return _parseICS(txt);
+  } catch(e) { return []; }
+}
+
+// Airbnb's iCal feed only reflects what's blocked there - a direct booking made through book.html
+// is confirmed in this site's own database immediately, but Airbnb has no idea until Jesse
+// manually blocks it, a real double-booking window. This supplements the iCal-derived ranges with
+// confirmed reservations from the database itself, using the same {s, e} Date-range shape _isBooked
+// already expects, so every existing calendar/conflict check benefits without any other change.
+async function _fetchConfirmedRanges(prop) {
+  try {
+    const r = await fetch(`/.netlify/functions/reservations-busy-dates?prop=${encodeURIComponent(prop)}`);
+    if (!r.ok) return [];
+    const rows = await r.json();
+    return rows.map(x => ({ s: _keyToDate(x.check_in), e: _keyToDate(x.check_out) }));
   } catch(e) { return []; }
 }
 
@@ -221,10 +241,15 @@ function _calcEstimate(start, end, prop) {
     nights++;
     cur.setDate(cur.getDate() + 1);
   }
-  const salesTax = Math.round(subtotal * 0.07);
-  const occTax   = Math.round(subtotal * 0.06);
+  // Un-rounded until final display, matching admin.html's calcTotal()/generate() - this used to
+  // round each tax component to a whole dollar, then round the card fee again on top of the
+  // already-rounded subtotal, compounding error against admin's unrounded math. That drift meant
+  // the guest's pre-inquiry price estimate didn't exactly match what Jesse's dashboard would later
+  // quote for the same dates.
+  const salesTax = subtotal * 0.07;
+  const occTax   = subtotal * 0.06;
   const preTax   = subtotal + salesTax + occTax;
-  const ccFee    = Math.round(preTax * 0.03);
+  const ccFee    = preTax * 0.03;
   const total    = preTax + ccFee;
   return { nights, subtotal, salesTax, occTax, ccFee, preTax, total };
 }
@@ -240,10 +265,11 @@ function _showBookingBar(start, end) {
     `<strong>${fmt(start)}</strong> – <strong>${fmt(end)}</strong> · ${est.nights} night${est.nights>1?'s':''} · ${propNames[_calProp]}`;
 
   const avgNightly = Math.round(est.subtotal / est.nights);
+  const totalRounded = Math.round(est.total);
   document.getElementById('bb-price').innerHTML =
-    `<div class="bb-price-compact"><div class="bb-price-main">~$${avgNightly}<span class="bb-per-night">/night +tax</span></div><span class="bb-price-total-est">est. $${est.total} total</span></div>`;
+    `<div class="bb-price-compact"><div class="bb-price-main">~$${avgNightly}<span class="bb-per-night">/night +tax</span></div><span class="bb-price-total-est">est. $${totalRounded} total</span></div>`;
   const hiddenEst = document.getElementById('form-est-total');
-  if (hiddenEst) hiddenEst.value = `~$${est.total} total ($${avgNightly}/night avg, ${est.nights} nights)`;
+  if (hiddenEst) hiddenEst.value = `~$${totalRounded} total ($${avgNightly}/night avg, ${est.nights} nights)`;
   // Store for inquiry auto-fill in admin
   window._lastAvgNightly = avgNightly;
 
@@ -296,7 +322,11 @@ async function renderCalInto(prop, wrapId, startOffset) {
   _calInst[wrapId] = inst;
 
   if (!_calCache[prop]) {
-    _calCache[prop] = await _fetchICS(ICAL_URLS[prop]);
+    const [icalRanges, confirmedRanges] = await Promise.all([
+      _fetchICS(ICAL_URLS[prop]),
+      _fetchConfirmedRanges(prop)
+    ]);
+    _calCache[prop] = icalRanges.concat(confirmedRanges);
   }
 
   // Guard: instance may have been replaced if user navigated away quickly
@@ -1007,10 +1037,10 @@ function _updateFormSummary(start, end) {
     <div class="fcs-dates">${fmt(start)} → ${fmt(end)}</div>
     <div class="fcs-rows">
       <div class="fcs-row"><span>Room Fare × ${est.nights} night${est.nights>1?'s':''}</span><span>$${est.subtotal}</span></div>
-      <div class="fcs-row"><span>NC Sales Tax (7%)</span><span>$${est.salesTax}</span></div>
-      <div class="fcs-row"><span>Room Occupancy Tax (6%)</span><span>$${est.occTax}</span></div>
-      <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${est.preTax}</span></div>
-      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%)</span><span>$${est.ccFee}</span></div>
+      <div class="fcs-row"><span>NC Sales Tax (7%)</span><span>$${Math.round(est.salesTax)}</span></div>
+      <div class="fcs-row"><span>Room Occupancy Tax (6%)</span><span>$${Math.round(est.occTax)}</span></div>
+      <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${Math.round(est.preTax)}</span></div>
+      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%)</span><span>$${Math.round(est.ccFee)}</span></div>
     </div>
     <div class="fcs-note">Estimate - Jesse will confirm your exact rate.</div>
   `;
@@ -1265,9 +1295,9 @@ async function _sendContactEmail(subject, name, email, message, successEl, form)
   const btn = form.querySelector('button[type="submit"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
   const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">
-    <p><strong>From:</strong> ${name} &lt;${email}&gt;</p>
+    <p><strong>From:</strong> ${_esc(name)} &lt;${_esc(email)}&gt;</p>
     <p><strong>Message:</strong></p>
-    <p>${message.replace(/\n/g,'<br>')}</p>
+    <p>${_esc(message).replace(/\n/g,'<br>')}</p>
   </div>`;
   try {
     const r = await fetch('/.netlify/functions/send-email', {
