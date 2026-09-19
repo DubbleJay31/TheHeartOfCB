@@ -1127,6 +1127,10 @@ function showPage(id, _skipHistory) {
     target.classList.add('active');
     window.scrollTo({ top: 0 });
   }
+  // The mobile Book Now bar (styles.css, gated on body.page-home-active) is only supposed to
+  // show on the actual home section - showPage() just swaps which section is visible within
+  // this same document, so body.site-home alone can't tell home apart from every other page.
+  document.body.classList.toggle('page-home-active', id === 'home');
   // Reset booking form if navigating away from it
   const bookingForm = document.querySelector('.booking-form');
   const bookingConfirm = document.getElementById('booking-confirm');
