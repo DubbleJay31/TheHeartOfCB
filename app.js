@@ -156,11 +156,9 @@ function _dateKey(d) {
 }
 
 // ─── PRICE ESTIMATOR ───
-const _RATES = {
-  prop1: { wd: [100,120,140,180,210,300,350,280,190,160,140,120], we: [140,150,180,270,350,480,500,450,300,250,180,180] },
-  prop2: { wd: [80,80,100,100,120,160,180,140,120,100,80,90],     we: [100,100,120,160,190,230,260,230,170,140,120,100] },
-  prop3: { wd: [80,80,100,100,120,160,180,140,120,100,80,90],     we: [100,100,120,160,190,230,260,230,170,140,120,100] },
-};
+// Starting values come from default-rates.js (shared with admin.html) - deep-copied since
+// _loadPricing() below mutates this in place once cloud pricing arrives.
+const _RATES = JSON.parse(JSON.stringify(_DEFAULT_RATES));
 // Overrides loaded from cloud at page load (key = 'YYYY-MM-DD', value = nightly rate)
 let _overrides     = { prop1:{}, prop2:{}, prop3:{} };
 let _restrictions  = { prop1:{}, prop2:{}, prop3:{} }; // {minNights,noCheckIn,noCheckOut}
@@ -1007,7 +1005,7 @@ function _updateFormSummary(start, end) {
       <div class="fcs-row"><span>NC Sales Tax (7%)</span><span>$${est.salesTax}</span></div>
       <div class="fcs-row"><span>Room Occupancy Tax (6%)</span><span>$${est.occTax}</span></div>
       <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${est.preTax}</span></div>
-      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>Credit Card Fee (3%)</span><span>$${est.ccFee}</span></div>
+      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%)</span><span>$${est.ccFee}</span></div>
     </div>
     <div class="fcs-note">Estimate - Jesse will confirm your exact rate.</div>
   `;

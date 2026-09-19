@@ -2,3 +2,6 @@
 # not served from Netlify — kept locally only as the source for those deploys.
 tour/
 .wrangler/
+
+# Local Netlify folder
+.netlify

@@ -26,6 +26,27 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing content' }) };
   }
 
+  // This commits straight to the live site (Netlify auto-deploys on push) - a malformed
+  // photos.json would break photo display for every guest until someone noticed and fixed it
+  // by hand. Validate the shape the admin Photos tab actually produces before it ever reaches
+  // GitHub, instead of trusting the client.
+  let photosData;
+  try { photosData = JSON.parse(body.content); } catch {
+    return { statusCode: 400, body: JSON.stringify({ message: 'content is not valid JSON' }) };
+  }
+  if (!photosData || typeof photosData !== 'object' || Array.isArray(photosData)) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'content must be an object keyed by property' }) };
+  }
+  for (const key of ['front', 'left', 'right']) {
+    const prop = photosData[key];
+    if (!prop || typeof prop !== 'object' || typeof prop.folder !== 'string' || !Array.isArray(prop.photos)) {
+      return { statusCode: 400, body: JSON.stringify({ message: `content.${key} is missing folder (string) or photos (array)` }) };
+    }
+    if (prop.photos.some(p => !p || typeof p.file !== 'string')) {
+      return { statusCode: 400, body: JSON.stringify({ message: `content.${key}.photos has an entry missing a file (string)` }) };
+    }
+  }
+
   const GH_H = {
     Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github+json',

@@ -27,9 +27,12 @@ exports.handler = async function(event) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const candidates = quotes.filter(q => q.exp === tomorrowStr && q.email && q.guest && q.ci);
+  // followupSentAt makes this idempotent - without it, triggering the function twice in the
+  // same day (a retry, a manual "Run now", whatever) would nudge the same guest twice.
+  const candidates = quotes.filter(q => q.exp === tomorrowStr && q.email && q.guest && q.ci && !q.followupSentAt);
   console.log(`Quote follow-up: ${candidates.length} quote(s) expiring ${tomorrowStr}`);
 
+  let anySent = false;
   const results = [];
   for (const q of candidates) {
     try {
@@ -40,20 +43,38 @@ exports.handler = async function(event) {
       const existing = checkResp.ok ? await checkResp.json() : [];
       if (existing.length > 0) {
         console.log(`Skipping ${q.guest} - already booked`);
-        results.push({ guest: q.guest, status: 'already booked' });
+        results.push('already booked');
         continue;
       }
 
       await _sendGuestNudge(q, RESEND_KEY);
       await _sendHostHeadsUp(q, RESEND_KEY);
-      results.push({ guest: q.guest, status: 'sent' });
+      q.followupSentAt = Date.now();
+      anySent = true;
+      results.push('sent');
     } catch (e) {
       console.error(`Follow-up failed for ${q.guest}:`, e);
-      results.push({ guest: q.guest, status: 'failed', error: String(e) });
+      results.push('failed');
     }
   }
 
-  return { statusCode: 200, body: JSON.stringify({ processed: candidates.length, results }) };
+  if (anySent) {
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+      body: JSON.stringify({ quotes, inquiries: data.inquiries || [], pricing: data.pricing })
+    }).catch(err => console.error('Failed to persist followupSentAt:', err));
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      processed: candidates.length,
+      sent: results.filter(s => s === 'sent').length,
+      alreadyBooked: results.filter(s => s === 'already booked').length,
+      failed: results.filter(s => s === 'failed').length
+    })
+  };
 };
 
 function _propName(prop) {

@@ -35,15 +35,26 @@ exports.handler = async function(event) {
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   try {
-    // Dedupe on the exact booking link (unique per quote - it carries the signature timestamp),
-    // not just email+check_in. The same guest can legitimately book the same dates twice across
+    // Dedupe on the booking link (unique per quote - it carries the signature timestamp), not
+    // just email+check_in. The same guest can legitimately book the same dates twice across
     // separate quotes (re-tests, rebookings), and email+check_in alone would wrongly treat that
     // second one as "already confirmed" and silently skip saving it.
+    //
+    // Exact match isn't enough on its own: the admin "Confirm" button on a quote sends the bare
+    // quote URL, while the guest's own sign-and-confirm flow sends that same URL with
+    // &signed=1&...&tok=...&sip=... appended - same underlying quote, two different strings. So
+    // one is always a prefix of the other when they're really the same booking; two genuinely
+    // different quotes have different base URLs and won't prefix-match.
     if (notes) {
-      const checkUrl = `${SB_URL}/rest/v1/reservations?notes=eq.${encodeURIComponent(notes)}&select=id`;
+      const checkUrl = `${SB_URL}/rest/v1/reservations?select=id,notes`;
       const checkResp = await fetch(checkUrl, { headers: SB_H });
       const existing = checkResp.ok ? await checkResp.json() : [];
-      if (existing.length > 0) {
+      const isDup = existing.some(r => {
+        const exNotes = r.notes || '';
+        if (!exNotes || exNotes.length < 20 || notes.length < 20) return exNotes === notes;
+        return exNotes === notes || exNotes.startsWith(notes) || notes.startsWith(exNotes);
+      });
+      if (isDup) {
         return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
       }
     }

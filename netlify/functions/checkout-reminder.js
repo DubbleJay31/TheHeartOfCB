@@ -15,7 +15,7 @@ exports.handler = async function(event) {
   const todayStr = new Date().toISOString().split('T')[0];
 
   const sbResp = await fetch(
-    `${SUPABASE_URL}/rest/v1/reservations?check_out=eq.${todayStr}&select=*`,
+    `${SUPABASE_URL}/rest/v1/reservations?check_out=eq.${todayStr}&checkout_reminder_sent_at=is.null&select=*`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   if (!sbResp.ok) {
@@ -29,7 +29,7 @@ exports.handler = async function(event) {
 
   const results = [];
   for (const res of reservations) {
-    const recipients = [res.email, ...(res.additional_contacts || [])].filter(Boolean);
+    const recipients = [res.email].filter(Boolean);
     if (!recipients.length) {
       console.log(`Skipping ${res.guest} - no email on file`);
       continue;
@@ -47,10 +47,23 @@ exports.handler = async function(event) {
     const result = await emailResp.json().catch(() => ({}));
     const status = emailResp.ok ? 'sent' : 'failed';
     console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
-    results.push({ guest: res.guest, status, id: result.id });
+    results.push(status);
+
+    if (emailResp.ok) {
+      await fetch(`${SUPABASE_URL}/rest/v1/reservations?id=eq.${res.id}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimum'
+        },
+        body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
+      }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.id}:`, err));
+    }
   }
 
-  return { statusCode: 200, body: JSON.stringify({ processed: reservations.length, results }) };
+  return { statusCode: 200, body: JSON.stringify({ processed: reservations.length, sent: results.filter(s => s === 'sent').length, failed: results.filter(s => s === 'failed').length }) };
 };
 
 function _buildCheckoutHtml(res) {

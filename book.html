@@ -849,21 +849,6 @@ a { color: inherit; text-decoration: none; }
             <div class="pm-cash-callout" style="margin-top:.75rem;">
               <strong>⚠️ CANCELLATION POLICY - STRICTLY ENFORCED</strong>
               <span id="cash-cancel-text"></span>
-              <script>
-              (function() {
-                const cd = _cancelDates(ciRaw);
-                const el = document.getElementById('cash-cancel-text');
-                if (!el) return;
-                if (cd) {
-                  el.innerHTML = `Cancel by <strong>${cd.fullBy}</strong>: full refund. ` +
-                    `Cancel <strong>${cd.halfStart}&ndash;${cd.halfEnd}</strong>: 50% refund. ` +
-                    `<strong>${cd.ciFormatted} (check-in day): no cancellations &mdash; no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}</strong> ` +
-                    `Only exceptions: Jesse&rsquo;s written approval or Airbnb&rsquo;s Major Disruptive Events Policy. Personal reasons and weather at your origin are not covered.`;
-                } else {
-                  el.textContent = `5+ days: full refund. 1–4 days: 50% refund. Same day: not accepted - no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}`;
-                }
-              })();
-              </script>
             </div>
             <button id="pm-cash-confirm-btn" onclick="handleCashConfirm()" style="margin-top:.75rem;width:100%;padding:.7rem;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;">✅ Confirm - I'll follow these steps</button>
           </div>
@@ -1348,6 +1333,22 @@ function chooseCash() {
   }
 
   inner.innerHTML = html;
+  // This used to live in a static inline <script> next to #cash-cancel-text, but that ran at
+  // parse time - before _cancelDates (defined later in this same script) existed yet - so it
+  // silently threw and the span was permanently blank. Building it here instead, since this
+  // function only ever runs well after the whole script has initialized.
+  const cancelTextEl = document.getElementById('cash-cancel-text');
+  if (cancelTextEl) {
+    const cd = _cancelDates(ciRaw);
+    if (cd) {
+      cancelTextEl.innerHTML = `Cancel by <strong>${cd.fullBy}</strong>: full refund. ` +
+        `Cancel <strong>${cd.halfStart}&ndash;${cd.halfEnd}</strong>: 50% refund. ` +
+        `<strong>${cd.ciFormatted} (check-in day): no cancellations &mdash; no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}</strong> ` +
+        `Only exceptions: Jesse&rsquo;s written approval or Airbnb&rsquo;s Major Disruptive Events Policy. Personal reasons and weather at your origin are not covered.`;
+    } else {
+      cancelTextEl.textContent = `5+ days: full refund. 1–4 days: 50% refund. Same day: not accepted - no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}`;
+    }
+  }
   depSection.style.display = '';
   document.getElementById('pm-cash-card').style.opacity = '.5';
   document.getElementById('pm-cash-choose-btn').disabled = true;
@@ -1854,7 +1855,11 @@ async function _notifyJesse(method) {
           rate, tax_occ: taxOcc, tax_sales: taxSales,
           signed_ip: sigIp,
           tok: sigTok,
-          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`,
+          // tok and sip are one-time signing credentials, not identifying info worth keeping -
+          // signed_ip above already stores the IP properly, so strip both before persisting the
+          // link (the exact/prefix dedup check in reservations-confirm.js only needs the ci/co/
+          // total/etc query params, not these).
+          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '').replace(/&tok=[^&]*/, '').replace(/&sip=[^&]*/, '')}`,
           supersedes: supersedesId || undefined,
           contact_pref: contactPref || undefined
         })
@@ -1874,7 +1879,7 @@ async function _notifyJesse(method) {
       <div style="font-size:3rem;margin-bottom:.5rem;">📬</div>
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
-      ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest is fine with either'}</div>` : ''}
+      ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
       ${methodName === 'Refund' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${refundDue ? fmt2(refundDue) : ''} refund, then send confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
