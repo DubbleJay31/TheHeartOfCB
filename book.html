@@ -2029,9 +2029,29 @@ async function _notifyJesse(method) {
 })();
 
 // ── AGREEMENT PRINT VIEW ──
-(function() {
+// This used to render purely off the bare `signed=1` URL flag - anyone could append that (plus a
+// fake signame/ts) to any copy of a quote link and get a convincing, fully-styled "signed
+// agreement" page, with no real signature and nothing having touched the server. It can't move
+// money or write to the database (that path is separately gated by sign-link.js/
+// reservations-confirm.js and already hardened), but it could manufacture a misleading document.
+// Now confirms the link's `tok` actually verifies server-side (the same check
+// reservations-confirm.js does) before showing anything - an invalid/missing tok just leaves the
+// normal booking page showing instead of a fake signed one.
+(async function() {
   if (get('signed') !== '1') return;
   if (get('action') === 'confirm') return; // confirm UI handled above
+  const tok = get('tok') ? decodeURIComponent(get('tok')) : '';
+  if (!tok) return;
+  try {
+    const r = await fetch('/.netlify/functions/verify-signed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guest, email, check_in: ciRaw, check_out: coRaw, code, tok })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!j.valid) return;
+  } catch { return; }
+
   // Hide booking UI, show print view only
   document.querySelector('.bk-hero') && (document.querySelector('.bk-hero').style.display = 'none');
   document.querySelector('.bk-main') && (document.querySelector('.bk-main').style.display = 'none');
