@@ -2502,6 +2502,16 @@ function _renderConflictBanner() {
 const _STATUS_LABEL = { inquiry: '📥 Inquiry', quoted: '🕐 Quoted', signed: '✍️ Signed', confirmed: '✅ Confirmed', cancelled: '🚫 Cancelled' };
 const _STATUS_COLOR = { inquiry: '#6b7280', quoted: '#b8882a', signed: '#1d4e89', confirmed: '#166534', cancelled: '#7a1f1f' };
 
+// `r.total` (and the `total` sent to book.html) has always been the card-fee-inclusive figure -
+// book.html needs that to price the Square/card option, and correctly shows guests a separate,
+// lower no-fee total for Venmo/Cash App/Zelle (the fee-free methods most guests actually use).
+// The admin dashboard was still displaying the raw fee-inclusive total though, which reads as
+// a different number than "the quote" whenever a guest isn't paying by card. This reconstructs
+// the no-fee figure guests actually see, from the same rate/tax fields the row already stores.
+function _noFeeTotal(r) {
+  return (parseFloat(r.rate) || 0) + (parseFloat(r.tax_occ) || 0) + (parseFloat(r.tax_sales) || 0);
+}
+
 // The row's own `url` (set once a quote is first saved) is the guest-facing booking link -
 // read-only once signed (it carries signed=1 from signing time, rendering the signed-agreement
 // view with no action buttons), so that's the one guests should get via Copy Link/Text Guest.
@@ -2561,7 +2571,7 @@ function renderConfirmedPanel() {
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
         <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};">${_STATUS_LABEL[r.status] || r.status}</span></div>
-        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${r.total ? ' · ' + fmt$(r.total) : ''}</div>
+        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_noFeeTotal(r) ? ' · ' + fmt$(_noFeeTotal(r)) : ''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
@@ -2608,7 +2618,8 @@ function openReservationDetail(code) {
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
-        <div><b>Total:</b> ${fmt$(r.total)}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        <div><b>Total (no card fee):</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes 3% fee)</div>` : ''}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
         ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
