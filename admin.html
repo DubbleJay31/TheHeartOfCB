@@ -2626,11 +2626,11 @@ function openReservationDetail(code) {
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
-        ${!isCancelled ? `
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
-        <button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>
-        ` : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
+        ${!isCancelled
+          ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>`
+          : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
       </div>
     </div>`;
   document.body.appendChild(backdrop);

@@ -34,6 +34,9 @@ exports.handler = async function(event) {
     credit: credit != null ? parseFloat(credit) || 0 : 0,
     contact_pref: contactPref || null,
     status: 'quoted',
+    // Clears any stale cancelled_at when this is a reinstate (editing a cancelled reservation
+    // back to active) - harmless no-op otherwise, since it's already null on everything else.
+    cancelled_at: null,
     updated_at: new Date().toISOString()
   };
 
