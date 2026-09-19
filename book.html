@@ -1092,6 +1092,36 @@ if (note) {
 // ── SIG DATE ──
 document.getElementById('sig-date').value = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
+// ── QUOTE BLOCKED PAGE ── a disabled submit button and a banner at the top wasn't actually
+// stopping anything - the full agreement (15 sections' worth of checkboxes, signature fields)
+// stayed fully interactive underneath, so a guest could fill out the entire contract before
+// discovering at the very last step that they couldn't submit. This replaces the whole page with
+// just the warning for any state where signing/paying genuinely shouldn't proceed - true
+// date-based expiry, a stale price (sign-link.js already blocks the actual signing action for
+// this, but the page itself used to just keep showing the old numbers with no warning), or a
+// canceled reservation.
+function _showQuoteBlockedPage(message) {
+  ['bk-hero', 'bk-main'].forEach(id => {
+    const el = document.getElementById(id) || document.querySelector('.' + id);
+    if (el) el.style.display = 'none';
+  });
+  const expiryBanner = document.getElementById('expiry-banner');
+  if (expiryBanner) expiryBanner.style.display = 'none';
+  const div = document.createElement('div');
+  div.style.cssText = 'max-width:520px;margin:3rem auto;padding:0 1.25rem;font-family:Inter,sans-serif;';
+  div.innerHTML = `
+    <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2.5rem 2rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:.75rem;">⛔</div>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.75rem;">This Quote Is No Longer Valid</h2>
+      <p style="color:#4b5563;font-size:.95rem;line-height:1.6;margin-bottom:1.5rem;">${message}</p>
+      <p style="font-size:.88rem;color:#6b7280;line-height:1.7;">
+        📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;font-weight:600;">(910) 599-8118</a><br/>
+        📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;font-weight:600;">stay@theheartofcb.com</a>
+      </p>
+    </div>`;
+  document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+}
+
 // ── EXPIRY ──
 if (expRaw && get('action') !== 'confirm') {
   const expDate = new Date(expRaw + 'T23:59:59');
@@ -1104,9 +1134,7 @@ if (expRaw && get('action') !== 'confirm') {
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `📋 Jesse has received your submission and will send an official confirmation once everything is verified.`;
   } else if (diff < 0) {
-    inner.className = 'expiry-banner';
-    inner.innerHTML = '⛔ This quote has expired. Please contact Jesse for an updated quote.';
-    document.getElementById('pay-methods').setAttribute('data-expired', '1');
+    _showQuoteBlockedPage('This quote has expired. Please check your email for a new quote link, or contact Jesse directly.');
   } else {
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `⚠️ Your booking is not complete until payment is received. Your dates are <strong>not blocked</strong> - anyone can book them until you pay.`;
@@ -1115,25 +1143,16 @@ if (expRaw && get('action') !== 'confirm') {
 
 // ── STALE-QUOTE CHECK ── sign-link.js already blocks the actual signing action if the price on
 // this page has drifted from what's currently saved (Jesse edited the quote after this link was
-// sent) - but until now the page itself just kept showing the old numbers with no indication
-// anything had changed, so a guest could read the whole page, even start filling in the agreement,
-// before hitting an error only at the very last step. This surfaces it immediately instead.
+// sent) - this surfaces it immediately instead of only at the very last step.
 (async function() {
   if (get('action') === 'confirm' || get('signed') === '1' || !code) return;
   try {
     const r = await fetch(`/.netlify/functions/check-quote-freshness?code=${encodeURIComponent(code)}&total=${encodeURIComponent(totalRaw)}`);
     const j = await r.json().catch(() => ({}));
     if (j.fresh !== false) return;
-    document.getElementById('pay-methods').setAttribute('data-expired', '1');
-    const el = document.getElementById('expiry-banner');
-    const inner = document.getElementById('expiry-inner');
-    if (!el || !inner) return;
-    el.style.display = 'block';
-    inner.className = 'expiry-banner';
-    inner.innerHTML = j.reason === 'cancelled'
-      ? '⛔ This reservation has been canceled. Please contact Jesse with any questions.'
-      : '⛔ This quote has been updated since this link was sent - the pricing shown below is no longer current. Please contact Jesse for an updated link before signing or paying.';
-    checkReady();
+    _showQuoteBlockedPage(j.reason === 'cancelled'
+      ? 'This reservation has been canceled. Please contact Jesse with any questions.'
+      : 'This quote has been updated since this link was sent. Please check your email for a new quote link, or contact Jesse directly.');
   } catch (e) { console.error('Freshness check failed:', e); }
 })();
 
