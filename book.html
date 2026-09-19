@@ -951,6 +951,7 @@ const ccFee    = parseFloat(get('cc_fee'))    || 0;
 const totalRaw = get('total');
 const total   = parseFloat(totalRaw) || 0;
 const qtok    = get('qtok') || '';
+const contactPref = get('contact_pref') || '';
 // When this contract replaces an old one (see admin's "Change Reservation"), `total` above is
 // already the BALANCE DUE (full stay value minus what was already paid) - every fee/payment
 // calculation below can keep using `total` unchanged. `priorCredit`/`fullTotal` are only for
@@ -1806,7 +1807,8 @@ async function _notifyJesse(method) {
           signed_ip: sigIp,
           tok: sigTok,
           notes: `url:${window.location.href.replace(/&action=confirm.*$/, '')}`,
-          supersedes: supersedesId || undefined
+          supersedes: supersedesId || undefined,
+          contact_pref: contactPref || undefined
         })
       });
       const j = await r.json().catch(() => ({}));

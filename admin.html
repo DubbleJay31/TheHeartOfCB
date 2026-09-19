@@ -2008,6 +2008,7 @@ function generate() {
   if (note) p.set('note', note);
   if (exp)  p.set('exp',  exp);
   if (_supersedesId) p.set('supersedes', _supersedesId);
+  if (_contactPref) p.set('contact_pref', _contactPref);
 
   _generatedUrl = base + '?' + p.toString();
   _qtok = '';
@@ -2769,6 +2770,7 @@ function openReservationDetail(id) {
         ${r.payment_method ? `<div><b>Paid via:</b> ${_esc(r.payment_method)}</div>` : ''}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
+        ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Either'}</span></div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
       </div>
       <label>Private Note - only visible to you</label>
@@ -2829,7 +2831,8 @@ async function confirmFromQuote(q, btn) {
     tax_sales: q.taxSales != null ? parseFloat(q.taxSales) || 0 : null,
     host_notes: q.privateNote || '',
     notes: q.url ? `url:${q.url}` : '',
-    supersedes: q.supersedes || undefined
+    supersedes: q.supersedes || undefined,
+    contact_pref: q.contactPref || undefined
   };
   try {
     const r = await fetch('/.netlify/functions/reservations-confirm', {
@@ -2966,6 +2969,8 @@ function _changeReservation(id) {
   calcNights();
   if (r.rate != null) document.getElementById('f-rate').value = r.rate;
   document.getElementById('f-credit').value = parseFloat(r.total || 0).toFixed(2);
+  _contactPref = r.contact_pref || '';
+  _updateContactPrefUI();
   const noteEl = document.getElementById('f-private-note');
   if (noteEl) {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
