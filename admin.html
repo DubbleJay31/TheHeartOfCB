@@ -3053,7 +3053,24 @@ async function _refreshQuotesConfirmedStatus() {
     const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
     let changed = false;
     saved.forEach(q => {
-      const match = reservations.find(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
+      // Match on the reservation's saved booking URL (its notes field, minus the "url:"
+      // prefix), not just email+date - two different quotes can share the same guest and
+      // check-in (a reprice, a redo, testing), and matching on email+date alone marked BOTH
+      // as confirmed off of one real reservation, overwriting the other's total to match.
+      // A reservation's notes URL is always either exactly the quote's saved url, or that url
+      // with signing params appended after it (&signed=1&signame=...), so a prefix check here
+      // is exact - never a partial/coincidental match.
+      let match = null;
+      if (q.url) {
+        match = reservations.find(res => {
+          const notesUrl = (res.notes || '').replace(/^url:/, '');
+          return notesUrl && (notesUrl === q.url || notesUrl.startsWith(q.url + '&'));
+        });
+      }
+      if (!match && !q.url) {
+        // Only fall back to the loose match for old quotes saved before urls were recorded.
+        match = reservations.find(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
+      }
       // Sync both directions: mark confirmed (and pull the real total) when a matching
       // reservation exists, but also un-mark it if that reservation is gone - e.g. deleted -
       // so a stale "Confirmed" badge doesn't linger and disagree with the real total.
