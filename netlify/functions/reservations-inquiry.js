@@ -60,6 +60,19 @@ exports.handler = async function(event) {
     const r = await sbReservations('', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(row) });
     if (!r.ok) {
       const err = await r.text();
+      // The check above is a fast-path, not a guarantee - two truly simultaneous submits (see
+      // migrations/002_inquiry_dedup_index.sql) can both pass it before either insert commits.
+      // The database's own unique index catches that instead, surfaced here as a 23505 violation -
+      // treat it the same as the fast-path match above rather than failing the guest's request.
+      if (err.includes('reservations_inquiry_dedup_idx') || err.includes('23505')) {
+        const retryResp = await sbReservations(
+          `?email=eq.${encodeURIComponent(email)}&check_in=eq.${encodeURIComponent(ci)}&${coFilter}&status=eq.inquiry&select=code`
+        );
+        const retryExisting = retryResp.ok ? await retryResp.json() : [];
+        if (retryExisting.length > 0) {
+          return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, code: retryExisting[0].code, skipped: true }) };
+        }
+      }
       return { statusCode: 500, body: JSON.stringify({ ok: false, message: err }) };
     }
 
