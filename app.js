@@ -77,6 +77,7 @@ async function _notifyHost(inquiry) {
         <tr><td style="padding:5px 0;color:#666;width:110px;">Guest</td><td style="color:#0a1f3a;font-weight:600;">${guestName}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${inquiry.email}" style="color:#b8882a;">${inquiry.email}</a></td></tr>
         ${inquiry.phone ? `<tr><td style="padding:5px 0;color:#666;">Phone</td><td style="color:#0a1f3a;">${inquiry.phone}</td></tr>` : ''}
+        ${inquiry.contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="color:#0a1f3a;font-weight:600;">${inquiry.contactPref === 'email' ? '📧 Email' : inquiry.contactPref === 'text' ? '💬 Text' : '📧💬 Either'}</td></tr>` : ''}
         <tr><td style="padding:5px 0;color:#666;">Property</td><td style="color:#0a1f3a;">${inquiry.propLabel || inquiry.prop}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="color:#0a1f3a;">${fmtD(inquiry.ci)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="color:#0a1f3a;">${fmtD(inquiry.co)}</td></tr>
@@ -1231,6 +1232,7 @@ async function submitBooking(e) {
       guests: fd.get('guests')    || '',
       pets:  fd.get('pets')       || '',
       message: fd.get('message') || fd.get('notes') || fd.get('trip_description') || '',
+      contactPref: fd.get('contact_pref') || '',
       rate:  window._lastAvgNightly || 0,
       ts: Date.now()
     };

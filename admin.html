@@ -1049,14 +1049,14 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             <a class="send-opt" id="send-email" href="#" onclick="return sendEmail()">
               <div class="so-icon">✉️</div>
               <div>
-                <div class="so-label">Send via Email</div>
+                <div class="so-label">Send via Email <span id="pref-badge-email" style="display:none;color:#166534;font-size:.72rem;font-weight:700;">★ Guest prefers this</span></div>
                 <div class="so-sub">Preview branded email · copy &amp; paste to Gmail</div>
               </div>
             </a>
             <a class="send-opt" id="send-sms" href="#" onclick="sendSMS(); return false;">
               <div class="so-icon">💬</div>
               <div>
-                <div class="so-label">Send via Text</div>
+                <div class="so-label">Send via Text <span id="pref-badge-text" style="display:none;color:#166534;font-size:.72rem;font-weight:700;">★ Guest prefers this</span></div>
                 <div class="so-sub">Opens your default SMS app</div>
               </div>
             </a>
@@ -1468,6 +1468,7 @@ function loadInquiries() {
           <div style="font-weight:600;color:var(--navy)">${name}</div>
           <div style="font-size:.8rem;color:var(--muted)">${prop} · ${dates}</div>
           <div style="font-size:.75rem;color:var(--muted)">${_esc(inq.email)}${inq.phone ? ' · ' + _esc(inq.phone) : ''}</div>
+          ${inq.contactPref ? `<div style="font-size:.72rem;color:#166534;font-weight:600;">${inq.contactPref === 'email' ? '📧 Prefers Email' : inq.contactPref === 'text' ? '💬 Prefers Text' : '📧💬 Either works'}</div>` : ''}
           ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${_esc(inq.guests)}${inq.pets && inq.pets !== 'No pets' ? ' · ' + _esc(inq.pets) : ''}</div>` : ''}
           ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${_esc(inq.message.slice(0,80))}${inq.message.length>80?'…':''}"</div>` : ''}
         </div>
@@ -1505,6 +1506,8 @@ function fillFromInquiry(i, el) {
   document.getElementById('f-last').value  = inq.last  || '';
   document.getElementById('f-email').value = inq.email || '';
   document.getElementById('f-phone').value = inq.phone || '';
+  _contactPref = inq.contactPref || '';
+  _updateContactPrefUI();
   // Dates
   if (inq.ci) document.getElementById('f-ci').value = inq.ci;
   if (inq.co) document.getElementById('f-co').value = inq.co;
@@ -1858,6 +1861,16 @@ function cashDepPctInput() {
 let _generatedUrl = '';
 let _qtok = '';
 let _supersedesId = null;
+let _contactPref = '';
+
+// Shows a "★ Guest prefers this" badge next to whichever send option (email/text) matches
+// the guest's stated preference - both options always stay fully usable either way.
+function _updateContactPrefUI() {
+  const emailBadge = document.getElementById('pref-badge-email');
+  const textBadge  = document.getElementById('pref-badge-text');
+  if (emailBadge) emailBadge.style.display = (_contactPref === 'email' || _contactPref === 'either') ? '' : 'none';
+  if (textBadge)  textBadge.style.display  = (_contactPref === 'text'  || _contactPref === 'either') ? '' : 'none';
+}
 
 // The booking link's `total`/`prop`/dates need a server-minted signature (qtok) before
 // sign-link.js will let the guest actually sign - otherwise anyone could hand sign-link.js
@@ -2281,16 +2294,9 @@ async function copyEmailHtml() {
   });
 }
 
-// ── SEND SMS ──
-function sendSMS() {
-  if (!_generatedUrl) return false;
-  const guest     = getGuestName();
-  const firstName = guest.split(' ')[0];
-  const phone     = document.getElementById('f-phone').value.trim();
-  const buildMsg = url => `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
-  const msg = buildMsg(_generatedUrl);
-
-  // Build modal
+// ── SEND SMS ── shared modal, reused by the quote builder, Resend (quotes list), and
+// reservation cancellation - anywhere an email option exists, this gives a text alternative.
+function _openSmsModal(msg, phone) {
   let modal = document.getElementById('sms-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -2315,20 +2321,29 @@ function sendSMS() {
       </div>`;
     document.body.appendChild(modal);
   }
-
   modal.querySelector('#sms-to').textContent = phone ? `To: ${phone}` : 'No phone number on file - copy and send manually';
   modal.querySelector('#sms-text').value = msg;
   const smsHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}` : `sms:?body=${encodeURIComponent(msg)}`;
   modal.querySelector('#sms-open-link').href = smsHref;
   modal.style.display = 'flex';
+  return modal;
+}
+
+function sendSMS() {
+  if (!_generatedUrl) return false;
+  const guest     = getGuestName();
+  const firstName = guest.split(' ')[0];
+  const phone     = document.getElementById('f-phone').value.trim();
+  const buildMsg = url => `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
+  _openSmsModal(buildMsg(_generatedUrl), phone);
   // Save immediately (see sendEmail()'s note) rather than waiting on the qtok mint - patch the
   // modal text and the saved record with the signed link once minting finishes in the background.
   const savedTs = saveRecent();
   _getShareableUrl().then(url => {
     if (!url || url === _generatedUrl) return;
-    const liveMsg = buildMsg(url);
     const liveModal = document.getElementById('sms-modal');
     if (liveModal && liveModal.style.display !== 'none') {
+      const liveMsg = buildMsg(url);
       liveModal.querySelector('#sms-text').value = liveMsg;
       const liveHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(liveMsg)}` : `sms:?body=${encodeURIComponent(liveMsg)}`;
       liveModal.querySelector('#sms-open-link').href = liveHref;
@@ -2355,15 +2370,16 @@ function saveRecent() {
   const co    = document.getElementById('f-co').value;
   if (!guest || !ci) return;
   const email = document.getElementById('f-email')?.value?.trim() || '';
+  const phone = document.getElementById('f-phone')?.value?.trim() || '';
   const exp   = document.getElementById('f-exp')?.value || '';
   const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
   const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
   const ts = Date.now();
   saved.unshift({
-    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts, email,
+    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts, email, phone,
     nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp, privateNote,
-    credit, supersedes: _supersedesId || ''
+    credit, supersedes: _supersedesId || '', contactPref: _contactPref || ''
   });
   localStorage.setItem('thocb_quotes', JSON.stringify(saved.slice(0, 10)));
   renderRecent();
@@ -2401,12 +2417,13 @@ function renderRecent() {
     <div class="booking-item">
       <div class="bi-prop">${PROPS[q.prop]?.icon || '🏠'}</div>
       <div class="bi-info">
-        <div class="bi-guest">${_esc(q.guest)}</div>
+        <div class="bi-guest">${_esc(q.guest)}${q.contactPref ? ` <span style="font-size:.7rem;color:#166534;font-weight:600;">${q.contactPref === 'email' ? '· 📧 prefers email' : q.contactPref === 'text' ? '· 💬 prefers text' : '· 📧💬 either'}</span>` : ''}</div>
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
         <button class="bi-btn" onclick="_editQuote(_recentQuotesCache[${i}])">✏️ Edit</button>
-        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}], this)">Resend</button>
+        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}], this)">📧 Resend</button>
+        <button class="bi-btn resend" onclick="resendQuoteViaText(_recentQuotesCache[${i}])">💬 Text</button>
         <button class="bi-btn confirm-res${q.confirmed ? ' is-confirmed' : ''}" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">${q.confirmed ? '✓ Confirmed' : '✓ Confirm'}</button>
       </div>
     </div>
@@ -2434,6 +2451,8 @@ function _editQuote(q) {
   } else {
     _clearSupersede();
   }
+  _contactPref = q.contactPref || '';
+  _updateContactPrefUI();
   switchAdmTab('booking');
   const parts = (q.guest || '').split(' ');
   document.getElementById('f-first').value = parts[0] || '';
@@ -2504,6 +2523,15 @@ async function resendQuote(q, btn) {
     alert('Send failed - check console.');
     console.error(e);
   }
+}
+
+// Text version of Resend - same booking link, opened as a text message instead of an email.
+function resendQuoteViaText(q) {
+  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
+  if (!q.url) { alert('No booking link saved for this quote.'); return; }
+  const firstName = (q.guest || '').split(' ')[0] || 'there';
+  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. Here's your booking link - review, sign the agreement, and pay securely all in one place:\n\n${q.url}\n\nQuestions? Just reply or call me anytime.`;
+  _openSmsModal(msg, q.phone || '');
 }
 
 // ── CLOUD SYNC (JSONBin.io) ── proxied server-side via cloud-sync.js, admin-session gated.
@@ -2754,6 +2782,7 @@ function openReservationDetail(id) {
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link - this reservation predates this feature.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.id}')">✏️ Change Reservation</button>
         <button class="conf-btn" onclick="sendCancellationEmail('${r.id}', this)">✉️ Send Cancellation Email</button>
+        <button class="conf-btn" onclick="sendCancellationText('${r.id}')">💬 Send Cancellation Text</button>
         <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🚫 Cancel Reservation</button>
       </div>
     </div>`;
@@ -2904,6 +2933,17 @@ async function sendCancellationEmail(id, btn) {
     console.error(e);
     if (btn) { btn.disabled = false; btn.textContent = '⚠️ Failed - try again'; }
   }
+}
+
+// Text version of the cancellation notice - same info, opened as a text message.
+function sendCancellationText(id) {
+  const r = _confirmedCache.find(x => x.id === id);
+  if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
+  const { phone } = _reservationLinks(r);
+  const firstName = (r.guest || '').split(' ')[0] || r.guest;
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Your reservation (${fmtD(r.check_in)} - ${fmtD(r.check_out)}) has been canceled. If a refund is due, it'll be issued per the cancellation policy in your signed agreement. Questions? Just reply or call me anytime.`;
+  _openSmsModal(msg, phone || '');
 }
 
 // ── CHANGE RESERVATION ──
