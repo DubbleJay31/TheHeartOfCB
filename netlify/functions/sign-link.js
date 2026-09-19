@@ -47,16 +47,19 @@ exports.handler = async function(event) {
 
   const ip = event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'] || '';
 
-  // Best-effort - a guest who signs but never completes payment used to leave zero record
-  // anywhere. This is the one moment signing happens, so it's the natural place to persist it,
-  // without ever blocking the signing flow itself if the write fails for any reason. Scoped to
-  // status=quoted so a guest re-triggering this (e.g. a page refresh mid-flow) can never step
-  // status backward from confirmed/cancelled to signed.
-  sbReservations(`?code=eq.${encodeURIComponent(code)}&status=eq.quoted`, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify({ status: 'signed', signed_name: guest, signed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-  }).catch(() => {});
+  // Best-effort in the sense that a failed write here never fails the signing flow itself (guest
+  // still gets their tok/ip either way) - but it must be awaited: an un-awaited request left
+  // running after this handler returns can get silently abandoned when the serverless runtime
+  // freezes/tears down the execution context, which is exactly what "sometimes doesn't end up
+  // signed" turned out to be. Scoped to status=quoted so a guest re-triggering this (e.g. a page
+  // refresh mid-flow) can never step status backward from confirmed/cancelled to signed.
+  try {
+    await sbReservations(`?code=eq.${encodeURIComponent(code)}&status=eq.quoted`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ status: 'signed', signed_name: guest, signed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    });
+  } catch (e) { console.error('Failed to mark signed:', e); }
 
   return {
     statusCode: 200,
