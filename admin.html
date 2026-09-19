@@ -1063,26 +1063,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
-      <!-- QUOTES & INQUIRIES LIST (pre-confirmation pipeline - confirmed/cancelled live on the
-           separate Reservations tab instead) -->
-      <div class="adm-card">
-        <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-          <h3>🕐 Quotes &amp; Inquiries</h3>
-          <button id="res-refresh-btn" onclick="loadReservations(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--gold);font-weight:600;">⟳ Refresh</button>
-        </div>
-        <div class="adm-card-body">
-          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;">
-            <button class="res-filter-pill active" id="res-filter-all" onclick="_setResFilter('all')" style="background:var(--navy);color:#fff;border:none;border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">All</button>
-            <button class="res-filter-pill" id="res-filter-inquiry" onclick="_setResFilter('inquiry')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Inquiries</button>
-            <button class="res-filter-pill" id="res-filter-quoted" onclick="_setResFilter('quoted')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Quoted</button>
-            <button class="res-filter-pill" id="res-filter-signed" onclick="_setResFilter('signed')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Signed</button>
-          </div>
-          <div id="reservations-list">
-            <div class="no-bookings">Loading…</div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
   </div><!-- /#adm-panel-booking -->
@@ -1097,8 +1077,11 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     </div>
     <div id="res-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
     <div class="conf-filter-pills">
-      <button class="conf-filter-pill active" id="conf-filter-upcoming" onclick="_setConfFilter('upcoming')">Upcoming</button>
-      <button class="conf-filter-pill" id="conf-filter-past" onclick="_setConfFilter('past')">Past</button>
+      <button class="conf-filter-pill active" id="conf-filter-all" onclick="_setConfFilter('all')">All</button>
+      <button class="conf-filter-pill" id="conf-filter-inquiry" onclick="_setConfFilter('inquiry')">Inquiries</button>
+      <button class="conf-filter-pill" id="conf-filter-quoted" onclick="_setConfFilter('quoted')">Quoted</button>
+      <button class="conf-filter-pill" id="conf-filter-signed" onclick="_setConfFilter('signed')">Signed</button>
+      <button class="conf-filter-pill" id="conf-filter-confirmed" onclick="_setConfFilter('confirmed')">Confirmed</button>
       <button class="conf-filter-pill" id="conf-filter-cancelled" onclick="_setConfFilter('cancelled')">Cancelled</button>
     </div>
     <div id="confirmed-res-list" class="conf-loading">Loading…</div>
@@ -2464,20 +2447,18 @@ function _sbNights(ci, co) {
 }
 
 let _reservationsCache = [];
-let _resFilter = 'all';
 
 async function loadReservations(btn) {
-  const el = document.getElementById('reservations-list');
+  const el = document.getElementById('confirmed-res-list');
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
     const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
     if (!r.ok) throw new Error(await r.text());
     _reservationsCache = await r.json();
-    renderReservations();
     renderConfirmedPanel();
     _renderConflictBanner();
   } catch(e) {
-    el.innerHTML = '<div class="no-bookings">⚠️ Could not load reservations. Check Supabase connection.</div>';
+    if (el) { el.className = ''; el.innerHTML = '<div class="no-bookings">⚠️ Could not load reservations. Check Supabase connection.</div>'; }
     console.error('Supabase load error:', e);
   }
   if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
@@ -2518,19 +2499,6 @@ function _renderConflictBanner() {
   banner.style.display = 'block';
 }
 
-function _setResFilter(filter) {
-  _resFilter = filter;
-  ['all','inquiry','quoted','signed','confirmed','cancelled'].forEach(f => {
-    const btn = document.getElementById('res-filter-' + f);
-    if (!btn) return;
-    const active = f === filter;
-    btn.classList.toggle('active', active);
-    btn.style.background = active ? 'var(--navy)' : 'var(--sand2)';
-    btn.style.color = active ? '#fff' : 'var(--navy)';
-  });
-  renderReservations();
-}
-
 const _STATUS_LABEL = { inquiry: '📥 Inquiry', quoted: '🕐 Quoted', signed: '✍️ Signed', confirmed: '✅ Confirmed', cancelled: '🚫 Cancelled' };
 const _STATUS_COLOR = { inquiry: '#6b7280', quoted: '#b8882a', signed: '#1d4e89', confirmed: '#166534', cancelled: '#7a1f1f' };
 
@@ -2553,89 +2521,60 @@ function _reservationLinks(r) {
   return { confirmUrl, viewUrl, phone };
 }
 
-// Backs the Quotes & Inquiries tab - deliberately excludes confirmed/cancelled, which live on
-// the separate Reservations tab instead (see renderConfirmedPanel). Both read from the same
-// _reservationsCache, so switching tabs never needs a re-fetch.
-function renderReservations() {
-  const el = document.getElementById('reservations-list');
-  const list = _reservationsCache
-    .filter(r => r.status !== 'confirmed' && r.status !== 'cancelled')
-    .filter(r => _resFilter === 'all' || r.status === _resFilter)
-    .sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
+let _confFilter = 'all';
+function _setConfFilter(filter) {
+  _confFilter = filter;
+  ['all', 'inquiry', 'quoted', 'signed', 'confirmed', 'cancelled'].forEach(f => {
+    document.getElementById('conf-filter-' + f)?.classList.toggle('active', f === filter);
+  });
+  renderConfirmedPanel();
+}
 
+// Backs the Reservations tab - every reservation at every stage, from a brand-new inquiry
+// through confirmed (or cancelled), one browsable list. Sorted by check-in date so "what's
+// coming up" reads naturally regardless of status. Reads from the same _reservationsCache the
+// Quotes tab form loads from; loadReservations() populates it once per fetch.
+function renderConfirmedPanel() {
+  const el = document.getElementById('confirmed-res-list');
+  if (!el) return;
+  const list = _reservationsCache
+    .filter(r => _confFilter === 'all' || r.status === _confFilter)
+    .sort((a, b) => (a.check_in || '9999').localeCompare(b.check_in || '9999'));
+
+  el.className = '';
   if (!list.length) {
     el.innerHTML = '<div class="no-bookings">Nothing here yet.</div>';
     return;
   }
   const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '?';
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
   el.innerHTML = list.map(r => {
-    const dates = r.check_in ? `${fmtD(r.check_in)}${r.check_out ? ' → ' + fmtD(r.check_out) : ''}` : 'No dates';
+    const dates = r.check_in ? `${fmtD(r.check_in)} → ${fmtD(r.check_out)}` : 'No dates yet';
+    // Confirmed/cancelled open the manage-it modal; anything earlier in the pipeline opens the
+    // Quotes tab with the form pre-filled - that's where you actually work on a quote.
+    const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
+      ? `openReservationDetail('${r.code}')` : `_openInQuotesForm('${r.code}')`;
     return `
-    <div class="recent-item" style="cursor:pointer;border-left:3px solid ${_STATUS_COLOR[r.status] || '#ccc'};padding-left:.8rem;margin-bottom:.6rem;" onclick="_loadIntoForm('${r.code}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
-        <div>
-          <div style="font-weight:600;color:var(--navy);">${PROPS[r.prop]?.icon || '🏠'} ${_esc(r.guest)}</div>
-          <div style="font-size:.8rem;color:var(--muted);">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '')} · ${dates}${r.total ? ' · ' + fmt$(r.total) : ''}</div>
-          ${r.email ? `<div style="font-size:.75rem;color:var(--muted);">${_esc(r.email)}${r.phone ? ' · ' + _esc(r.phone) : ''}</div>` : ''}
-          ${r.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem;">"${_esc(r.message.slice(0,80))}${r.message.length>80?'…':''}"</div>` : ''}
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
-          <span style="font-size:.7rem;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};white-space:nowrap;">${_STATUS_LABEL[r.status] || r.status}</span>
-          ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm</button>` : ''}
-        </div>
+    <div class="conf-row" onclick="${clickable}">
+      <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
+      <div class="conf-row-info">
+        <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};">${_STATUS_LABEL[r.status] || r.status}</span></div>
+        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${r.total ? ' · ' + fmt$(r.total) : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
+        <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
+        ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm</button>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-let _confFilter = 'upcoming';
-function _setConfFilter(filter) {
-  _confFilter = filter;
-  ['upcoming', 'past', 'cancelled'].forEach(f => {
-    document.getElementById('conf-filter-' + f)?.classList.toggle('active', f === filter);
-  });
-  renderConfirmedPanel();
-}
-
-// Backs the separate Reservations tab - confirmed/cancelled only, filtered by check_out date
-// (Upcoming/Past) or by status (Cancelled). Reads from the same _reservationsCache as the
-// Quotes tab; loadReservations() populates both on fetch.
-function renderConfirmedPanel() {
-  const el = document.getElementById('confirmed-res-list');
-  if (!el) return;
-  const today = new Date().toISOString().split('T')[0];
-  const list = _reservationsCache
-    .filter(r => {
-      if (_confFilter === 'cancelled') return r.status === 'cancelled';
-      if (r.status !== 'confirmed') return false;
-      return _confFilter === 'upcoming' ? r.check_out >= today : r.check_out < today;
-    })
-    .sort((a, b) => _confFilter === 'past' ? b.check_in.localeCompare(a.check_in) : a.check_in.localeCompare(b.check_in));
-
-  el.className = '';
-  if (!list.length) {
-    el.innerHTML = _confFilter === 'upcoming'
-      ? '<div class="no-bookings">No upcoming reservations. Confirm a quote from the Quotes tab to add one.</div>'
-      : _confFilter === 'past'
-      ? '<div class="no-bookings">No past reservations on file.</div>'
-      : '<div class="no-bookings">Nothing cancelled.</div>';
-    return;
-  }
-  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '?';
-  const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
-
-  el.innerHTML = list.map(r => `
-    <div class="conf-row" onclick="openReservationDetail('${r.code}')">
-      <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
-      <div class="conf-row-info">
-        <div class="conf-row-guest">${_esc(r.guest)}${r.status === 'cancelled' ? ' <span style="color:#7a1f1f;font-weight:700;font-size:.78em;">CANCELLED</span>' : ''}</div>
-        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
-      </div>
-      <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
-    </div>`).join('');
+// Jumps to the Quotes tab (the actual generate/edit tool) with this reservation loaded.
+function _openInQuotesForm(code) {
+  switchAdmTab('booking');
+  _loadIntoForm(code);
 }
 
 function _closeReservationDetail() {
@@ -2786,7 +2725,7 @@ async function permanentlyDeleteReservation(code) {
     if (r.ok) {
       _reservationsCache = _reservationsCache.filter(x => x.code !== code);
       _closeReservationDetail();
-      renderReservations();
+      renderConfirmedPanel();
     } else {
       alert('Delete failed - check console.');
       console.error(await r.text());
@@ -2861,7 +2800,7 @@ function sendCancellationText(code) {
 // rows exist for one booking. No more create-new-then-delete-old dance.
 function _changeReservation(code) {
   _closeReservationDetail();
-  _loadIntoForm(code);
+  _openInQuotesForm(code);
 }
 
 // Auto-refresh when tab becomes visible
