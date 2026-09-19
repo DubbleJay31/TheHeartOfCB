@@ -48,24 +48,37 @@ exports.handler = async function(event) {
       }
     }
 
-    const r = await fetch(`${SB_URL}/rest/v1/reservations`, {
+    const baseRow = {
+      guest, email: email || '', prop, check_in, check_out, nights,
+      total: parseFloat(total) || 0,
+      rate: rate != null ? parseFloat(rate) || 0 : null,
+      tax_occ: tax_occ != null ? parseFloat(tax_occ) || 0 : null,
+      tax_sales: tax_sales != null ? parseFloat(tax_sales) || 0 : null,
+      signed_ip: signed_ip || null,
+      host_notes: host_notes || null,
+      notes: notes || ''
+    };
+
+    let r = await fetch(`${SB_URL}/rest/v1/reservations`, {
       method: 'POST',
       headers: { ...SB_H, Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        guest, email: email || '', prop, check_in, check_out, nights,
-        total: parseFloat(total) || 0,
-        rate: rate != null ? parseFloat(rate) || 0 : null,
-        tax_occ: tax_occ != null ? parseFloat(tax_occ) || 0 : null,
-        tax_sales: tax_sales != null ? parseFloat(tax_sales) || 0 : null,
-        signed_ip: signed_ip || null,
-        host_notes: host_notes || null,
-        contact_pref: contact_pref || null,
-        notes: notes || ''
-      })
+      body: JSON.stringify({ ...baseRow, contact_pref: contact_pref || null })
     });
     if (!r.ok) {
       const err = await r.text();
-      return { statusCode: 500, body: JSON.stringify({ ok: false, message: err }) };
+      // contact_pref needs a migration (contact_pref column) that may not have run yet -
+      // never let a booking fail over that one optional field, just save without it.
+      if (err.includes('contact_pref') || err.includes('PGRST204')) {
+        r = await fetch(`${SB_URL}/rest/v1/reservations`, {
+          method: 'POST',
+          headers: { ...SB_H, Prefer: 'return=minimal' },
+          body: JSON.stringify(baseRow)
+        });
+      }
+      if (!r.ok) {
+        const err2 = await r.text();
+        return { statusCode: 500, body: JSON.stringify({ ok: false, message: err2 }) };
+      }
     }
 
     // This new signed contract replaces an older reservation (guest changed dates/terms and
