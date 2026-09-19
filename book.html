@@ -1842,11 +1842,11 @@ async function _notifyJesse(method) {
       ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
       <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
         style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:.6rem;">
-        ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}
+        ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}${contactPref === 'email' || contactPref === 'either' ? ' ★' : ''}
       </button>
       <button id="send-confirm-text-btn" onclick="sendGuestConfirmationText()" ${phone ? '' : 'disabled'}
         style="width:100%;padding:1rem;background:${phone ? '#166534' : '#d1d5db'};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:${phone ? 'pointer' : 'not-allowed'};letter-spacing:.01em;">
-        💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}
+        💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}${contactPref === 'text' || contactPref === 'either' ? ' ★' : ''}
       </button>
       <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
     </div>`;
