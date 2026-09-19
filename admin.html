@@ -3233,7 +3233,21 @@ function _checkSyncHash() {
   const code = decodeURIComponent(hash.slice(6));
   history.replaceState(null, '', window.location.pathname);
   // The reservations list may not have loaded yet (this runs right after login) - wait for it.
-  loadReservations().then(() => _loadIntoForm(code));
+  // Same routing every other entry point into a reservation already uses (renderConfirmedPanel's
+  // row click, _detectReservationConflicts, etc.): confirmed/cancelled open the manage-it detail
+  // modal, everything earlier opens the quote-builder form. A notification email link (Stripe
+  // payment received, new inquiry, etc.) landing here used to always go to the quote-builder
+  // form, even for an already-confirmed reservation - useful for editing a quote, not for what
+  // you actually want after a payment just landed (see and send its confirmation).
+  loadReservations().then(() => {
+    const r = _reservationsCache.find(x => x.code === code);
+    if (r && (r.status === 'confirmed' || r.status === 'cancelled')) {
+      switchAdmTab('confirmed');
+      openReservationDetail(code);
+    } else {
+      _openInQuotesForm(code);
+    }
+  });
   return true;
 }
 
