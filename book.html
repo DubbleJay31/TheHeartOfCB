@@ -783,7 +783,7 @@ a { color: inherit; text-decoration: none; }
             <div class="pm-amount" id="pm-cc-amount"></div>
             <div class="pm-note">Includes 3% processing fee - covers secure card handling</div>
           </div>
-          <a id="pm-cc-btn" href="#" class="pm-btn" target="_blank" rel="noopener" onclick="handlePayClick('square',event)">Pay Now →</a>
+          <a id="pm-cc-btn" href="#" class="pm-btn" onclick="handlePayClick('stripe',event)">Pay Now →</a>
         </div>
 
         <!-- PayPal -->
@@ -963,22 +963,6 @@ const refundDue = parseFloat(get('refund_due')) || 0;
 const priorCredit = parseFloat(get('credit')) || 0;
 const fullTotal   = parseFloat(get('full_total')) || 0;
 const dueRaw  = get('due')     || '';
-// `pay` isn't part of the signed qtok payload or the freshness check - only guest/email/dates/
-// prop/total are. A link that's been intercepted and forwarded with a swapped `pay` value would
-// otherwise present a malicious payment destination with everything ELSE (guest, dates, total)
-// still displaying correctly, since those alone are what's actually verified. This doesn't require
-// widening the signing scheme - it just refuses to treat an unexpected domain as a live payment
-// link at all, since a legitimate value only ever came from Jesse pasting a real Square link.
-const _rawPayUrl = get('pay') || '';
-function _isTrustedPayUrl(u) {
-  if (!u) return false;
-  try {
-    const host = new URL(u).hostname.toLowerCase();
-    return host === 'squareup.com' || host.endsWith('.squareup.com')
-        || host === 'square.link' || host.endsWith('.square.link');
-  } catch { return false; }
-}
-const payUrl  = _isTrustedPayUrl(_rawPayUrl) ? _rawPayUrl : '';
 // Set when Jesse checks "Override - no card option" in admin.html - lets him intentionally leave
 // card payment off a specific quote (e.g. cash/Venmo-only arrangement), now that Stripe would
 // otherwise make the card option available by default on every quote.
@@ -993,11 +977,11 @@ const paypalBase = noFeeTotal > 0 ? noFeeTotal : total;
 const paypalFee   = paypalBase * PAYPAL_FEE_RATE;
 const paypalTotal = paypalBase + paypalFee;
 
-// The actual amount paid depends on method - Square/PayPal include their fee,
+// The actual amount paid depends on method - Stripe/PayPal include their fee,
 // Cash reflects any cash discount, everything else (Venmo/Cash App/Zelle) is fee-free.
 function _amountForMethod(method) {
   const base = noFeeTotal > 0 ? noFeeTotal : total;
-  if (method === 'square') return total;
+  if (method === 'stripe') return total;
   if (method === 'paypal') return paypalTotal;
   if (method === 'Cash')   return cashTotal > 0 ? cashTotal : base;
   return base;
@@ -1175,10 +1159,10 @@ function toggleCheck(e) {
   const noFee = noFeeTotal > 0 ? noFeeTotal : total;
   const noFeeLabel = `${fmtAmt(noFee)} - no fee`;
 
-  // Credit Card - Stripe checkout is created on demand (see payWithStripe()) so this no longer
-  // needs a pre-minted payUrl to be worth showing; only Jesse explicitly disabling the card
-  // option (no_card=1, set by admin.html's "Override" checkbox) hides it now. A legacy payUrl
-  // from an older, already-sent link still works as a static fallback (see payWithStripe()).
+  // Credit Card - Stripe Checkout Session is created on demand (see handlePayClick()) the moment
+  // the guest clicks Pay Now, so this doesn't need anything pre-set to be worth showing. Only
+  // Jesse explicitly disabling the card option (no_card=1, admin.html's "Override" checkbox)
+  // hides it.
   if (!noCardOption) {
     document.getElementById('pm-cc-card').style.display = '';
     document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
@@ -1236,7 +1220,8 @@ function toggleCheck(e) {
 // from unlockAndPay() - the same moment the .locked class actually comes off.
 function _activatePayLinks() {
   const noFee = noFeeTotal > 0 ? noFeeTotal : total;
-  if (payUrl) document.getElementById('pm-cc-btn').href = payUrl;
+  // Credit Card has no static href to activate - handlePayClick('stripe') always creates a fresh
+  // Stripe Checkout Session on click instead.
   document.getElementById('pm-pp-btn').href = `https://paypal.me/jessejones430/${paypalTotal.toFixed(2)}`;
   document.getElementById('pm-v-btn').href = `https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${noFee.toFixed(2)}&note=213+Harper+Stay`;
   document.getElementById('pm-ca-btn').href = `https://cash.app/$dubblejay31/${noFee.toFixed(2)}`;
@@ -1741,18 +1726,17 @@ function _setAgreementMethod(method) {
 async function handlePayClick(method, e) {
   // The .locked CSS class (pointer-events:none) only blocks a mouse click - not keyboard Enter
   // activation, and it never hides the underlying href from "copy link address" or page source.
-  // Without this check, a guest could pay via Square/PayPal/Venmo/Cash App before ever signing
+  // Without this check, a guest could pay via Stripe/PayPal/Venmo/Cash App before ever signing
   // the agreement, which also means sign-link.js's price-freshness check never runs on this path.
   if (!_agreementSent) { if (e) e.preventDefault(); return false; }
   const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
   if (expired) { if (e) e.preventDefault(); return false; }
 
-  // Credit Card with no pre-set legacy Square link (the normal case for any quote generated after
-  // Stripe was added) - create a fresh Checkout Session on demand instead of following a static
-  // href. The charge amount always comes from the reservation's own current, trusted total (looked
-  // up server-side in create-stripe-checkout.js), so a session created this way can't go stale and
-  // can't be tampered with the way a URL-embedded price could.
-  if (method === 'square' && !payUrl) {
+  // Credit Card always creates a fresh Stripe Checkout Session on demand rather than following a
+  // static href. The charge amount always comes from the reservation's own current, trusted total
+  // (looked up server-side in create-stripe-checkout.js), so a session created this way can't go
+  // stale and can't be tampered with the way a URL-embedded price could.
+  if (method === 'stripe') {
     if (e) e.preventDefault();
     const btn = document.getElementById('pm-cc-btn');
     if (btn.disabled) return;
@@ -1803,15 +1787,18 @@ function _showPaymentSentSection(method) {
   const btn = document.getElementById('pm-sent-btn');
   if (!section || !btn) return;
   const fmtL = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const amtByMethod = { square: total, paypal: paypalTotal };
+  // Credit Card (Stripe) never reaches this function - handlePayClick() returns before falling
+  // through to here for that method, since Stripe's own checkout page (and the automatic webhook
+  // confirmation) replaces this "click here to tell Jesse you paid" self-report entirely.
+  const amtByMethod = { paypal: paypalTotal };
   const amt = fmtL(amtByMethod[method] ?? (noFeeTotal > 0 ? noFeeTotal : (total > 0 ? total : 0)));
-  const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
+  const names = { venmo: 'Venmo', cashapp: 'Cash App', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
   const methodLabel = names[method] || method;
   btn.textContent = `👉 CLICK HERE - I've sent ${amt} via ${methodLabel} - I agree to the rules & cancellation policy`;
   btn.dataset.method = method;
   section.style.display = '';
   // Move green box to directly after the selected payment method card
-  const cardMap = { venmo: 'pm-venmo-card', cashapp: 'pm-cashapp-card', square: 'pm-cc-card', paypal: 'pm-pp-card', Zelle: 'pm-zelle-card' };
+  const cardMap = { venmo: 'pm-venmo-card', cashapp: 'pm-cashapp-card', paypal: 'pm-pp-card', Zelle: 'pm-zelle-card' };
   const cardId = cardMap[method];
   const card = cardId ? document.getElementById(cardId) : null;
   if (card && card.parentNode) {
@@ -1834,7 +1821,7 @@ async function _notifyGuest(method) {
   if (!email) return;
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', stripe: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
     const methodLabel = names[method] || method;
     const r = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
@@ -1869,7 +1856,7 @@ async function _notifyJesse(method) {
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const isRefund = method === 'Refund';
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
+    const names = { venmo: 'Venmo', cashapp: 'Cash App', stripe: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
     const methodLabel = isRefund ? 'No payment - refund owed' : (names[method] || method);
     // Build confirm link - use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
@@ -2010,7 +1997,6 @@ async function _notifyJesse(method) {
         guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
         noFeeTotal, taxOcc, taxSales, ccFee,
         cashMode, cashTotal, cashDep, cashDisc,
-        payUrl,
         signedName: sigName,
         signedAt: sigTs,
         bookUrl,

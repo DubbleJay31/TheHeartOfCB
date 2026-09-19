@@ -253,17 +253,6 @@ a { color: inherit; text-decoration: none; }
 .prop-card .pc-cap { font-size: .62rem; color: var(--muted); margin-top: .15rem; }
 .prop-card.selected .pc-cap { color: rgba(255,255,255,.5); }
 
-/* ── SQUARE LINK HINT ── */
-.square-hint {
-  background: rgba(15,30,61,.04);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: .75rem .9rem;
-  font-size: .78rem; color: var(--muted); line-height: 1.5;
-  margin-top: .5rem;
-}
-.square-hint strong { color: var(--navy); }
-
 /* ── RECENT BOOKINGS ── */
 .booking-item {
   padding: .75rem 0;
@@ -935,22 +924,8 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         <div class="adm-card-header"><h3>💳 Payment</h3></div>
         <div class="adm-card-body">
 
-          <!-- Invoice Title generator -->
-          <div class="field" style="margin-bottom:1rem;">
-            <label style="display:flex;align-items:center;justify-content:space-between;">
-              <span>Invoice Title <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- only needed if manually creating a legacy Square link below</span></span>
-              <button type="button" id="copy-inv-btn" onclick="copyInvoiceTitle()" style="background:var(--gold);color:#fff;border:none;border-radius:6px;padding:.25rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer;">📋 Copy</button>
-            </label>
-            <input type="text" id="invoice-title-display" readonly
-              style="background:var(--sand);border:1.5px dashed var(--gold);border-radius:8px;padding:.6rem .9rem;font-size:.85rem;color:var(--navy);font-weight:600;cursor:pointer;"
-              onclick="copyInvoiceTitle()" value="Fill in guest, dates &amp; rate above…" />
-          </div>
-
-          <!-- Payment link URL -->
-          <div class="field" id="square-link-field">
-            <label>Square Payment Link URL <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- optional, legacy override. Leave blank and card payment happens automatically via Stripe.</span></label>
-            <input type="url" id="f-pay" placeholder="https://squareup.com/pay/... (only if you want to bypass Stripe)" oninput="generate()" />
-          </div>
+          <!-- Card payment happens automatically via Stripe when the guest pays - nothing to
+               fill in here for it. -->
 
           <!-- Override CC - explicitly disable the card option -->
           <div class="field" style="margin-top:.5rem;">
@@ -1437,14 +1412,10 @@ function _loadIntoForm(code) {
   _editingCode = code;
   _generatedUrl = r.url || ''; _qtok = _generatedUrl.includes('qtok=') ? '1' : '';
 
-  // Payment method (legacy Square link/Cash/no-card override), due date, and the guest-facing
-  // note aren't separate DB columns - they only ever lived inside the previously-generated link's
-  // own query string, so without restoring these from the saved url, re-opening an existing
-  // reservation to edit it would silently drop them (this is what used to blank _generatedUrl
-  // back to '' entirely, back when generate() required one of these to be set before it would
-  // build a link at all - no longer true now that Stripe makes card available by default, but
-  // still restoring them here so an edit doesn't silently change what was already agreed).
-  const payEl = document.getElementById('f-pay');
+  // Cash terms, due date, no-card override, and the guest-facing note aren't separate DB columns -
+  // they only ever lived inside the previously-generated link's own query string, so without
+  // restoring these from the saved url, re-opening an existing reservation to edit it would
+  // silently drop them.
   const cashEl = document.getElementById('f-cash');
   const overrideEl = document.getElementById('f-override-cc');
   const dueEl = document.getElementById('f-due');
@@ -1461,7 +1432,6 @@ function _loadIntoForm(code) {
   const cashDiscPctEl = document.getElementById('f-cash-disc-pct');
   const cashFlatEl = document.getElementById('f-cash-flat');
   const cashDepPctEl = document.getElementById('f-cash-dep-pct');
-  if (payEl) payEl.value = '';
   if (cashEl) cashEl.checked = false;
   if (overrideEl) overrideEl.checked = false;
   if (dueEl) dueEl.value = '';
@@ -1474,7 +1444,6 @@ function _loadIntoForm(code) {
   if (_generatedUrl) {
     try {
       const qp = new URL(_generatedUrl).searchParams;
-      if (payEl) payEl.value = qp.get('pay') || '';
       if (cashEl) cashEl.checked = qp.get('cash') === '1';
       if (dueEl) dueEl.value = qp.get('due') || '';
       if (guestNoteEl) guestNoteEl.value = qp.get('note') || '';
@@ -1989,7 +1958,7 @@ function _clearEditing() {
   document.getElementById('editing-badge').style.display = 'none';
   const inqBox = document.getElementById('inquiry-details-box');
   if (inqBox) inqBox.style.display = 'none';
-  ['f-first','f-last','f-email','f-phone','f-ci','f-co','f-rate','f-pay','f-due','f-note',
+  ['f-first','f-last','f-email','f-phone','f-ci','f-co','f-rate','f-due','f-note',
    'f-cash-disc-amt','f-cash-disc-pct','f-cash-flat','f-cash-dep-amt','f-cash-dep-pct',
    'f-private-note','f-exp','f-credit','f-guest-total'].forEach(id => {
     const el = document.getElementById(id);
@@ -2021,7 +1990,6 @@ function generate() {
   const co    = document.getElementById('f-co').value;
   const subtotal = parseFloat(document.getElementById('f-rate').value) || 0;
   const due   = document.getElementById('f-due').value;
-  const pay   = document.getElementById('f-pay').value.trim();
   const cash     = document.getElementById('f-cash').checked;
   const overrideCc = document.getElementById('f-override-cc')?.checked;
   const cashDisc = parseFloat(document.getElementById('f-cash-disc-amt')?.value) || 0;
@@ -2034,17 +2002,6 @@ function generate() {
   const linkEl  = document.getElementById('link-display');
   const copyBtn = document.getElementById('copy-btn');
   const prevBtn = document.getElementById('preview-btn');
-
-  // Always update invoice title whenever dates + rate + property are ready
-  const fmtShort = s => { const d = new Date(s+'T12:00:00'); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); };
-  const invEl = document.getElementById('invoice-title-display');
-  if (invEl) {
-    if (ci && co && _nights > 0 && subtotal > 0) {
-      invEl.value = `The Heart Of CB · ${PROPS[_prop].short} · ${fmtShort(ci)} – ${fmtShort(co)} · ${_nights} night${_nights!==1?'s':''}`;
-    } else {
-      invEl.value = 'Fill in guest, dates & rate above…';
-    }
-  }
 
   // Card payment no longer needs a pasted Square link to be available - book.html creates a
   // Stripe Checkout Session on demand instead (see create-stripe-checkout.js), so it's always a
@@ -2095,9 +2052,6 @@ function generate() {
   }
   if (refundDue > 0) p.set('refund_due', refundDue.toFixed(2));
   if (due)  p.set('due',  due);
-  // `pay` only ever needs to be set for the legacy manual-Square-link path now - Stripe doesn't
-  // need anything embedded in the URL, it's created fresh when the guest actually clicks pay.
-  if (pay)  p.set('pay',  pay);
   if (overrideCc) p.set('no_card', '1');
   if (cash) p.set('cash', '1');
   if (cash && cashDisc > 0) p.set('cdsc', cashDisc.toFixed(2));
@@ -2112,17 +2066,6 @@ function generate() {
   linkEl.textContent = _generatedUrl;
   copyBtn.disabled = false;
   prevBtn.disabled = false;
-}
-
-function copyInvoiceTitle() {
-  const val = document.getElementById('invoice-title-display')?.value;
-  if (!val || val.includes('Fill in')) return;
-  navigator.clipboard.writeText(val).then(() => {
-    const btn = document.getElementById('copy-inv-btn');
-    btn.textContent = '✅ Copied!';
-    btn.style.background = '#2a7a3b';
-    setTimeout(() => { btn.textContent = '📋 Copy'; btn.style.background = 'var(--gold)'; }, 2200);
-  });
 }
 
 // ── COPY ──
@@ -2750,7 +2693,7 @@ const _STATUS_LABEL = { inquiry: '📥 Inquiry', quoted: '🕐 Quoted', signed: 
 const _STATUS_COLOR = { inquiry: '#6b7280', quoted: '#b8882a', signed: '#1d4e89', confirmed: '#166534', cancelled: '#7a1f1f' };
 
 // `r.total` (and the `total` sent to book.html) has always been the card-fee-inclusive figure -
-// book.html needs that to price the Square/card option, and correctly shows guests a separate,
+// book.html needs that to price the Stripe/card option, and correctly shows guests a separate,
 // lower no-fee total for Venmo/Cash App/Zelle (the fee-free methods most guests actually use).
 // The admin dashboard was still displaying the raw fee-inclusive total though, which reads as
 // a different number than "the quote" whenever a guest isn't paying by card. This reconstructs
