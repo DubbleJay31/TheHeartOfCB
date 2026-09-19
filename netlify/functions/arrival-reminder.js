@@ -1,13 +1,13 @@
 // Runs daily alongside the other reminders. Sends Jesse a single heads-up email listing any
 // guest(s) checking in tomorrow - the only host-side arrival notice he wants (Airbnb's 8-day
 // one is too far out to be useful).
-exports.handler = async function(event) {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  const RESEND_KEY   = process.env.RESEND_API_KEY;
+const { sbReservations, propLabel } = require('./_reservations');
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
-    console.error('Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY required');
+exports.handler = async function(event) {
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_KEY) {
+    console.error('Missing env var: RESEND_API_KEY required');
     return { statusCode: 500, body: 'Missing environment variables' };
   }
 
@@ -15,10 +15,7 @@ exports.handler = async function(event) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const sbResp = await fetch(
-    `${SUPABASE_URL}/rest/v1/reservations?check_in=eq.${tomorrowStr}&select=*`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
+  const sbResp = await sbReservations(`?check_in=eq.${tomorrowStr}&status=eq.confirmed&select=*`);
   if (!sbResp.ok) {
     const err = await sbResp.text();
     console.error('Supabase query error:', err);
@@ -50,13 +47,6 @@ exports.handler = async function(event) {
   return { statusCode: 200, body: JSON.stringify({ processed: reservations.length }) };
 };
 
-function _propName(prop) {
-  if (typeof prop === 'string' && prop.includes('Front')) return '(FRONT) Home in The Heart Of CB';
-  if (typeof prop === 'string' && prop.includes('Left')) return '(LEFT) Private Guest Suite';
-  if (typeof prop === 'string' && prop.includes('Right')) return '(RIGHT) Private Guest Suite';
-  return prop || 'The Heart Of CB';
-}
-
 function _buildArrivalHtml(reservations) {
   const fmtD = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); } catch { return s; } };
   const fmt$ = n => '$' + parseFloat(n || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -64,7 +54,7 @@ function _buildArrivalHtml(reservations) {
   const cards = reservations.map(r => `
     <div style="background:#f8f6f0;border-radius:8px;padding:16px 18px;margin:0 0 14px;font-size:.93rem;">
       <div style="font-weight:700;color:#0a1f3a;font-size:1.05rem;margin-bottom:6px;">${r.guest}</div>
-      <div style="margin-bottom:6px;"><strong>Property:</strong> ${_propName(r.prop)}</div>
+      <div style="margin-bottom:6px;"><strong>Property:</strong> ${propLabel(r.prop)}</div>
       <div style="margin-bottom:6px;"><strong>Check-out:</strong> ${fmtD(r.check_out)}</div>
       ${r.total ? `<div style="margin-bottom:6px;"><strong>Total:</strong> ${fmt$(r.total)}</div>` : ''}
       ${r.email ? `<div style="margin-bottom:6px;"><strong>Email:</strong> ${r.email}</div>` : ''}

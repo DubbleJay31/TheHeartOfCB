@@ -21,13 +21,13 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { guest, email, ci, co, prop, total } = body;
-  if (!guest || !email || !ci || !co || !prop || !total) {
-    return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, email, ci, co, prop, or total' }) };
+  const { guest, email, ci, co, prop, total, code } = body;
+  if (!guest || !email || !ci || !co || !prop || !total || !code) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, email, ci, co, prop, total, or code' }) };
   }
 
   const qtok = crypto.createHmac('sha256', process.env.LINK_SECRET)
-    .update(`${guest}|${email}|${ci}|${co}|${prop}|${total}`)
+    .update(`${guest}|${email}|${ci}|${co}|${prop}|${total}|${code}`)
     .digest('hex');
 
   return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ qtok }) };

@@ -930,6 +930,7 @@ const get = k => p.get(k) || '';
 const _esc = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 // ── PARSE PARAMS ──
+const code    = get('code')    || '';
 const prop    = get('prop')    || 'Property';
 const guest   = get('guest')   || 'Guest';
 const email   = get('email')   || '';
@@ -952,7 +953,6 @@ const refundDue = parseFloat(get('refund_due')) || 0;
 // showing the guest the full contract value and what's being credited toward it.
 const priorCredit = parseFloat(get('credit')) || 0;
 const fullTotal   = parseFloat(get('full_total')) || 0;
-const supersedesId = get('supersedes') || '';
 const dueRaw  = get('due')     || '';
 const payUrl  = get('pay')     || '';
 const cashMode = get('cash') === '1';
@@ -1235,7 +1235,7 @@ async function submitAgreement() {
     const r = await fetch('/.netlify/functions/sign-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw, prop, total: totalRaw, qtok })
+      body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw, prop, total: totalRaw, qtok, code })
     });
     if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
     else { console.error('sign-link rejected:', await r.text()); }
@@ -1847,7 +1847,7 @@ async function _notifyJesse(method) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          guest, email, prop, check_in: ciRaw, check_out: coRaw, nights,
+          code, guest, email, check_in: ciRaw, check_out: coRaw,
           // Record the full stay value here, not just today's balance - rate/tax_occ/tax_sales
           // below are always full-stay figures, so total needs to match them for the numbers to
           // add up in the admin dashboard and any tax reporting.
@@ -1855,12 +1855,6 @@ async function _notifyJesse(method) {
           rate, tax_occ: taxOcc, tax_sales: taxSales,
           signed_ip: sigIp,
           tok: sigTok,
-          // tok and sip are one-time signing credentials, not identifying info worth keeping -
-          // signed_ip above already stores the IP properly, so strip both before persisting the
-          // link (the exact/prefix dedup check in reservations-confirm.js only needs the ci/co/
-          // total/etc query params, not these).
-          notes: `url:${window.location.href.replace(/&action=confirm.*$/, '').replace(/&tok=[^&]*/, '').replace(/&sip=[^&]*/, '')}`,
-          supersedes: supersedesId || undefined,
           contact_pref: contactPref || undefined
         })
       });

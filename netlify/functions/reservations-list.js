@@ -1,4 +1,5 @@
 const { requireAdmin } = require('./_auth');
+const { sbReservations } = require('./_reservations');
 
 exports.handler = async function(event) {
   if (event.httpMethod !== 'GET') {
@@ -8,12 +9,10 @@ exports.handler = async function(event) {
     return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
   }
 
-  const SB_URL = process.env.SUPABASE_URL;
-  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  const status = (event.queryStringParameters || {}).status;
+  const statusFilter = status ? `&status=eq.${encodeURIComponent(status)}` : '';
 
-  const r = await fetch(`${SB_URL}/rest/v1/reservations?order=check_in.asc&select=*`, {
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
-  });
+  const r = await sbReservations(`?order=check_in.asc&select=*${statusFilter}`);
   const body = await r.text();
   return {
     statusCode: r.status,

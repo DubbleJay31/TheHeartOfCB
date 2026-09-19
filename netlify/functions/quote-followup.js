@@ -1,56 +1,40 @@
-// Runs daily alongside reminder.js. For any quote expiring tomorrow that hasn't turned into a
-// booking, sends the guest a low-pressure nudge and lets Jesse know - explicitly telling him the
-// guest was already nudged, so he doesn't double up.
-exports.handler = async function(event) {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  const RESEND_KEY   = process.env.RESEND_API_KEY;
-  const JSONBIN_KEY  = process.env.JSONBIN_KEY;
-  const JSONBIN_BIN  = process.env.JSONBIN_BIN;
+// Runs daily alongside reminder.js. For any quote expiring tomorrow that's still sitting at
+// status='quoted' (never signed, never booked elsewhere), sends the guest a low-pressure nudge
+// and lets Jesse know. Reads/writes the reservations table directly now - no JSONBin involved.
+const { sbReservations, propLabel } = require('./_reservations');
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY || !JSONBIN_KEY || !JSONBIN_BIN) {
-    console.error('Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY, JSONBIN_KEY, JSONBIN_BIN required');
+exports.handler = async function(event) {
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_KEY) {
+    console.error('Missing env var: RESEND_API_KEY required');
     return { statusCode: 500, body: 'Missing environment variables' };
   }
-
-  const binResp = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`, {
-    headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
-  });
-  if (!binResp.ok) {
-    console.error('jsonbin read error:', await binResp.text());
-    return { statusCode: 500, body: 'jsonbin read failed' };
-  }
-  const data = await binResp.json();
-  const quotes = data.quotes || [];
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  // followupSentAt makes this idempotent - without it, triggering the function twice in the
-  // same day (a retry, a manual "Run now", whatever) would nudge the same guest twice.
-  const candidates = quotes.filter(q => q.exp === tomorrowStr && q.email && q.guest && q.ci && !q.followupSentAt);
+  const sbResp = await sbReservations(
+    `?status=eq.quoted&exp=eq.${tomorrowStr}&followup_sent_at=is.null&select=*`
+  );
+  if (!sbResp.ok) {
+    const err = await sbResp.text();
+    console.error('Supabase query error:', err);
+    return { statusCode: 500, body: 'Supabase error: ' + err };
+  }
+  const candidates = (await sbResp.json()).filter(q => q.email && q.guest && q.check_in);
   console.log(`Quote follow-up: ${candidates.length} quote(s) expiring ${tomorrowStr}`);
 
-  let anySent = false;
   const results = [];
   for (const q of candidates) {
     try {
-      const checkResp = await fetch(
-        `${SUPABASE_URL}/rest/v1/reservations?email=eq.${encodeURIComponent(q.email)}&check_in=eq.${encodeURIComponent(q.ci)}&select=id`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-      );
-      const existing = checkResp.ok ? await checkResp.json() : [];
-      if (existing.length > 0) {
-        console.log(`Skipping ${q.guest} - already booked`);
-        results.push('already booked');
-        continue;
-      }
-
       await _sendGuestNudge(q, RESEND_KEY);
       await _sendHostHeadsUp(q, RESEND_KEY);
-      q.followupSentAt = Date.now();
-      anySent = true;
+      await sbReservations(`?code=eq.${encodeURIComponent(q.code)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ followup_sent_at: new Date().toISOString() })
+      });
       results.push('sent');
     } catch (e) {
       console.error(`Follow-up failed for ${q.guest}:`, e);
@@ -58,34 +42,17 @@ exports.handler = async function(event) {
     }
   }
 
-  if (anySent) {
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
-      body: JSON.stringify({ quotes, inquiries: data.inquiries || [], pricing: data.pricing })
-    }).catch(err => console.error('Failed to persist followupSentAt:', err));
-  }
-
   return {
     statusCode: 200,
     body: JSON.stringify({
       processed: candidates.length,
       sent: results.filter(s => s === 'sent').length,
-      alreadyBooked: results.filter(s => s === 'already booked').length,
       failed: results.filter(s => s === 'failed').length
     })
   };
 };
 
-function _propName(prop) {
-  if (prop === 'prop1') return '(FRONT) Home in The Heart Of CB';
-  if (prop === 'prop2') return '(LEFT) Private Guest Suite';
-  if (prop === 'prop3') return '(RIGHT) Private Guest Suite';
-  return prop || 'The Heart Of CB';
-}
-
 async function _sendGuestNudge(q, RESEND_KEY) {
-  const fmtD = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return s; } };
   const firstName = (q.guest || '').split(' ')[0] || 'there';
   const html = `<!DOCTYPE html>
 <html>
@@ -104,7 +71,7 @@ async function _sendGuestNudge(q, RESEND_KEY) {
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
       <p>Hi ${firstName},</p>
-      <p>Just noticed your quote for ${_propName(q.prop)} is set to expire tomorrow. No pressure at all - plans change, and I get it!</p>
+      <p>Just noticed your quote for ${propLabel(q.prop)} is set to expire tomorrow. No pressure at all - plans change, and I get it!</p>
       <p>But if you're still weighing it, I'd love to have you. If something about the dates, price, or space isn't quite right, let me know - happy to see what I can work out. And if you just haven't had a chance to finish up, your link's still good:</p>
       <div style="text-align:center;margin:22px 0;">
         <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View Your Booking →</a>
@@ -145,8 +112,8 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
     <div style="padding:28px 32px;">
       <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#0a1f3a;">${q.guest}'s quote hasn't converted yet</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
-        <tr><td style="padding:5px 0;color:#666;width:110px;">Property</td><td style="color:#0a1f3a;">${_propName(q.prop)}</td></tr>
-        <tr><td style="padding:5px 0;color:#666;">Dates</td><td style="color:#0a1f3a;">${fmtD(q.ci)} – ${fmtD(q.co)}</td></tr>
+        <tr><td style="padding:5px 0;color:#666;width:110px;">Property</td><td style="color:#0a1f3a;">${propLabel(q.prop)}</td></tr>
+        <tr><td style="padding:5px 0;color:#666;">Dates</td><td style="color:#0a1f3a;">${fmtD(q.check_in)} – ${fmtD(q.check_out)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Total</td><td style="color:#0a1f3a;font-weight:700;">${fmt$(q.total)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${q.email}" style="color:#b8882a;">${q.email}</a></td></tr>
       </table>
@@ -166,7 +133,7 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
     body: JSON.stringify({
       from: 'The Heart Of CB <stay@theheartofcb.com>',
       to: ['jessejonesrealestate@gmail.com'],
-      subject: `Quote expiring tomorrow: ${q.guest} · ${_propName(q.prop)}`,
+      subject: `Quote expiring tomorrow: ${q.guest} · ${propLabel(q.prop)}`,
       html
     })
   });

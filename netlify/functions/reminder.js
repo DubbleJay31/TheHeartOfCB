@@ -1,10 +1,10 @@
-exports.handler = async function(event) {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  const RESEND_KEY   = process.env.RESEND_API_KEY;
+const { sbReservations, propLabel } = require('./_reservations');
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
-    console.error('Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY required');
+exports.handler = async function(event) {
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_KEY) {
+    console.error('Missing env var: RESEND_API_KEY required');
     return { statusCode: 500, body: 'Missing environment variables' };
   }
 
@@ -12,14 +12,10 @@ exports.handler = async function(event) {
   target.setDate(target.getDate() + 7);
   const dateStr = target.toISOString().split('T')[0];
 
-  const sbResp = await fetch(
-    `${SUPABASE_URL}/rest/v1/reservations?check_in=eq.${dateStr}&reminder_sent_at=is.null&select=*`,
-    {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    }
+  // status=eq.confirmed matters now that inquiry/quoted/signed/cancelled rows share this same
+  // table - without it, this would email guests about stays nobody ever actually confirmed.
+  const sbResp = await sbReservations(
+    `?check_in=eq.${dateStr}&status=eq.confirmed&reminder_sent_at=is.null&select=*`
   );
 
   if (!sbResp.ok) {
@@ -40,7 +36,6 @@ exports.handler = async function(event) {
     }
 
     const html = buildReminderHtml(res);
-    const propLabel = propName(res.prop);
 
     const emailResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -51,7 +46,7 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         from: 'The Heart Of CB <stay@theheartofcb.com>',
         to: recipients,
-        subject: `Your stay is 7 days away - ${propLabel}`,
+        subject: `Your stay is 7 days away - ${propLabel(res.prop)}`,
         html
       })
     });
@@ -62,16 +57,11 @@ exports.handler = async function(event) {
     results.push(status);
 
     if (emailResp.ok) {
-      await fetch(`${SUPABASE_URL}/rest/v1/reservations?id=eq.${res.id}`, {
+      await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
         method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimum'
-        },
+        headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({ reminder_sent_at: new Date().toISOString() })
-      }).catch(err => console.error(`Failed to mark reminder_sent_at for ${res.id}:`, err));
+      }).catch(err => console.error(`Failed to mark reminder_sent_at for ${res.code}:`, err));
     }
   }
 
@@ -80,13 +70,6 @@ exports.handler = async function(event) {
     body: JSON.stringify({ processed: reservations.length, sent: results.filter(s => s === 'sent').length, failed: results.filter(s => s === 'failed').length })
   };
 };
-
-function propName(prop) {
-  if (prop === 'prop1') return '(FRONT) Home in The Heart Of CB';
-  if (prop === 'prop2') return '(LEFT) Private Guest Suite';
-  if (prop === 'prop3') return '(RIGHT) Private Guest Suite';
-  return prop || 'Your Stay';
-}
 
 // Full-refund window closes 5 days before check-in (same cutoff used in book.html's
 // _cancelDates) - at the 7-day mark that always leaves exactly 2 days to still qualify.
@@ -125,7 +108,7 @@ function buildReminderHtml(res) {
       <p>Hi ${res.guest},</p>
       <p>Just a quick reminder - your stay is one week away! Your full check-in details, door code, and house rules are all in your confirmation email, so we'll keep this one short.</p>
       <div style="background:#f8f6f0;border-radius:8px;padding:18px 20px;margin:16px 0;font-size:.93rem;">
-        <div style="margin-bottom:8px;"><strong>Property:</strong> ${propName(res.prop)}</div>
+        <div style="margin-bottom:8px;"><strong>Property:</strong> ${propLabel(res.prop)}</div>
         <div style="margin-bottom:8px;"><strong>Check-in:</strong> ${fmtD(res.check_in)}</div>
         <div style="margin-bottom:8px;"><strong>Check-out:</strong> ${fmtD(res.check_out)}</div>
         ${res.nights ? `<div style="margin-bottom:8px;"><strong>Nights:</strong> ${res.nights}</div>` : ''}

@@ -1,7 +1,9 @@
 const { requireAdmin } = require('./_auth');
+const { sbReservations } = require('./_reservations');
 
-// Admin-only field update - currently just the private host_notes field, kept separate from
-// reservations-confirm.js since this is an edit to an existing row, not a new booking.
+// Admin-only field update: the private host_notes field, and soft-cancelling a reservation
+// (status -> 'cancelled', row retained rather than deleted - a hard delete is a separate,
+// rarely-used cleanup action in reservations-delete.js).
 exports.handler = async function(event) {
   if (event.httpMethod !== 'PATCH') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -10,9 +12,9 @@ exports.handler = async function(event) {
     return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
   }
 
-  const id = (event.queryStringParameters || {}).id;
-  if (!id) {
-    return { statusCode: 400, body: JSON.stringify({ message: 'Missing id' }) };
+  const code = (event.queryStringParameters || {}).code;
+  if (!code) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Missing code' }) };
   }
 
   let body;
@@ -20,16 +22,18 @@ exports.handler = async function(event) {
 
   const patch = {};
   if (typeof body.host_notes === 'string') patch.host_notes = body.host_notes;
+  if (body.status === 'cancelled') {
+    patch.status = 'cancelled';
+    patch.cancelled_at = new Date().toISOString();
+  }
   if (!Object.keys(patch).length) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Nothing to update' }) };
   }
+  patch.updated_at = new Date().toISOString();
 
-  const SB_URL = process.env.SUPABASE_URL;
-  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
-
-  const r = await fetch(`${SB_URL}/rest/v1/reservations?id=eq.${encodeURIComponent(id)}`, {
+  const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
     method: 'PATCH',
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    headers: { Prefer: 'return=minimal' },
     body: JSON.stringify(patch)
   });
   return { statusCode: r.ok ? 204 : r.status, body: '' };

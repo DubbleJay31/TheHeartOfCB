@@ -13,15 +13,19 @@ async function _sendEmail(to, subject, html) {
   } catch(e) { console.error('Email send failed:', e); }
 }
 
-// ── CLOUD SYNC ── proxied server-side via cloud-sync.js, which holds the real key.
-async function _pushInquiryToCloud(inquiry) {
+// ── INQUIRY SUBMIT ── creates the one row that carries this booking through its whole
+// lifecycle (inquiry -> quoted -> signed -> confirmed), identified by a reservation code from
+// here on - not a JSONBin array entry correlated later by guessing which quote matches it.
+async function _submitInquiry(inquiry) {
   try {
-    await fetch('/.netlify/functions/cloud-sync', {
+    const r = await fetch('/.netlify/functions/reservations-inquiry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inquiry })
+      body: JSON.stringify(inquiry)
     });
-  } catch(e) { console.warn('Cloud inquiry push failed:', e); }
+    const j = await r.json().catch(() => ({}));
+    return j.code || '';
+  } catch(e) { console.warn('Inquiry submit failed:', e); return ''; }
 }
 
 async function _sendGuestConfirmation(inquiry) {
@@ -59,11 +63,12 @@ async function _sendGuestConfirmation(inquiry) {
   await _sendEmail(inquiry.email, `We got your inquiry - The Heart Of CB`, html);
 }
 
-async function _notifyHost(inquiry) {
+async function _notifyHost(inquiry, code) {
   try {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
-    const inqCode = btoa(unescape(encodeURIComponent(JSON.stringify(inquiry))));
-    const adminUrl = 'https://theheartofcb.com/admin.html#inq=' + inqCode;
+    const adminUrl = code
+      ? 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code)
+      : 'https://theheartofcb.com/admin.html';
     const guestName = [inquiry.first, inquiry.last].filter(Boolean).join(' ');
     const html = `<div style="font-family:Georgia,serif;background:#f5f0e8;padding:24px 16px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
@@ -1238,12 +1243,9 @@ async function submitBooking(e) {
       rate:  window._lastAvgNightly || 0,
       ts: Date.now()
     };
-    const existing = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-    existing.unshift(inquiry);
-    localStorage.setItem('thocb_inquiries', JSON.stringify(existing.slice(0, 50)));
-    _pushInquiryToCloud(inquiry);
+    const _inquiryCode = await _submitInquiry(inquiry);
     await _sendGuestConfirmation(inquiry);
-    await _notifyHost(inquiry);
+    await _notifyHost(inquiry, _inquiryCode);
     form.classList.add('hidden');
     const confirmEl = document.getElementById('booking-confirm');
     confirmEl.classList.remove('hidden');

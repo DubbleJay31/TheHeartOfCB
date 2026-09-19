@@ -2,21 +2,20 @@
 // checking out today - mirrors the Airbnb "checkout instructions" auto-message, adapted for
 // direct bookings (no Airbnb private-review system here, so the review ask points to a reply
 // email instead, matching how the homepage testimonials are actually sourced).
-exports.handler = async function(event) {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  const RESEND_KEY   = process.env.RESEND_API_KEY;
+const { sbReservations } = require('./_reservations');
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
-    console.error('Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, RESEND_API_KEY required');
+exports.handler = async function(event) {
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_KEY) {
+    console.error('Missing env var: RESEND_API_KEY required');
     return { statusCode: 500, body: 'Missing environment variables' };
   }
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const sbResp = await fetch(
-    `${SUPABASE_URL}/rest/v1/reservations?check_out=eq.${todayStr}&checkout_reminder_sent_at=is.null&select=*`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  const sbResp = await sbReservations(
+    `?check_out=eq.${todayStr}&status=eq.confirmed&checkout_reminder_sent_at=is.null&select=*`
   );
   if (!sbResp.ok) {
     const err = await sbResp.text();
@@ -50,16 +49,11 @@ exports.handler = async function(event) {
     results.push(status);
 
     if (emailResp.ok) {
-      await fetch(`${SUPABASE_URL}/rest/v1/reservations?id=eq.${res.id}`, {
+      await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
         method: 'PATCH',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimum'
-        },
+        headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
-      }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.id}:`, err));
+      }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.code}:`, err));
     }
   }
 

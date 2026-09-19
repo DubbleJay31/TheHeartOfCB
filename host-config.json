@@ -1,0 +1,44 @@
+{
+  "business": {
+    "name": "The Heart Of CB",
+    "hostName": "Jesse Jones",
+    "tagline": "Carolina Beach, NC",
+    "email": "stay@theheartofcb.com",
+    "phone": "9105998118",
+    "phoneDisplay": "(910) 599-8118",
+    "address": "213 Harper Ave",
+    "addressFull": "213 Harper Avenue",
+    "city": "Carolina Beach",
+    "state": "NC",
+    "zip": "28428",
+    "emergencyContact": {
+      "name": "Alison Baringer",
+      "phone": "3303097037",
+      "phoneDisplay": "(330) 309-7037"
+    }
+  },
+  "properties": {
+    "prop1": { "short": "Front Home", "name": "Home in The Heart Of CB (Front Home)", "label": "(FRONT) Home in The Heart Of CB", "airbnbUrl": "https://airbnb.com/h/213harperfront" },
+    "prop2": { "short": "Left Suite", "name": "Private Guest Suite in The Heart Of CB (Left)", "label": "(LEFT) Private Guest Suite", "airbnbUrl": "https://airbnb.com/h/213harperleft" },
+    "prop3": { "short": "Right Suite", "name": "Private Guest Suite in The Heart Of CB (Right)", "label": "(RIGHT) Private Guest Suite", "airbnbUrl": "https://airbnb.com/h/213harperright" }
+  },
+  "payment": {
+    "venmo": "Jesse-Jones-85",
+    "cashapp": "dubblejay31",
+    "zelle": "9105998118",
+    "zelleDisplay": "910-599-8118"
+  },
+  "tax": {
+    "salesPct": 7,
+    "occupancyPct": 6,
+    "creditCardFeePct": 3
+  },
+  "airbnbProfileUrl": "https://www.airbnb.com/users/profile/1469231363763843136",
+  "branding": {
+    "navy": "#0f1e3d",
+    "navy2": "#162649",
+    "navy3": "#1d3058",
+    "gold": "#b8882a",
+    "gold2": "#d4a44c"
+  }
+}

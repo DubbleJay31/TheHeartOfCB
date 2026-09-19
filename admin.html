@@ -775,9 +775,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <!-- Page tab nav -->
   <div class="adm-tabs-nav">
     <div class="adm-tabs-scroll">
-      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Booking</button>
-      <button class="adm-tab-btn" id="adm-tab-btn-quotes" onclick="switchAdmTab('quotes')">🕐 Quotes</button>
-      <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
+      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Reservations</button>
       <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
       <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
       <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Stats</button>
@@ -793,10 +791,10 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <!-- ── LEFT COLUMN: FORM ── -->
     <div>
 
-      <!-- REPLACING-RESERVATION BADGE (shown by "Change Reservation") -->
-      <div id="supersede-badge" style="display:none;margin-bottom:1rem;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#92400e;font-weight:600;align-items:center;justify-content:space-between;gap:.6rem;">
-        <span id="supersede-badge-text">🔁 This new contract will replace an existing reservation once signed.</span>
-        <button type="button" onclick="_clearSupersede()" style="background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:.2rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer;">✕ Clear</button>
+      <!-- EDITING BADGE (shown when the form is loaded from an existing reservation, not a blank new one) -->
+      <div id="editing-badge" style="display:none;margin-bottom:1rem;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#92400e;font-weight:600;align-items:center;justify-content:space-between;gap:.6rem;">
+        <span id="editing-badge-text">✏️ Editing an existing reservation.</span>
+        <button type="button" onclick="_clearEditing()" style="background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:.2rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer;">✕ New Instead</button>
       </div>
 
       <!-- PROPERTY -->
@@ -1064,45 +1062,31 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
-      <!-- INQUIRY INBOX -->
+      <!-- UNIFIED RESERVATIONS LIST -->
       <div class="adm-card">
         <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-          <h3>📥 Booking Inquiries</h3>
-          <div style="display:flex;align-items:center;gap:.9rem;">
-            <button id="inq-clear-btn" onclick="clearAllInquiriesAndQuotes(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:#b91c1c;font-weight:600;">🗑 Clear All</button>
-            <button id="inq-refresh-btn" onclick="refreshInquiries(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--gold);font-weight:600;">Refresh</button>
-          </div>
+          <h3>📋 All Reservations</h3>
+          <button id="res-refresh-btn" onclick="loadReservations(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--gold);font-weight:600;">⟳ Refresh</button>
         </div>
-        <div class="adm-card-body" id="inquiry-list">
-          <div class="no-bookings">No inquiries yet. When guests submit a booking request on your site, they'll appear here - click one to auto-fill the form.</div>
+        <div class="adm-card-body">
+          <div id="res-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#7a1f1f;line-height:1.6;"></div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;">
+            <button class="res-filter-pill active" id="res-filter-all" onclick="_setResFilter('all')" style="background:var(--navy);color:#fff;border:none;border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">All</button>
+            <button class="res-filter-pill" id="res-filter-inquiry" onclick="_setResFilter('inquiry')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Inquiries</button>
+            <button class="res-filter-pill" id="res-filter-quoted" onclick="_setResFilter('quoted')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Quoted</button>
+            <button class="res-filter-pill" id="res-filter-signed" onclick="_setResFilter('signed')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Signed</button>
+            <button class="res-filter-pill" id="res-filter-confirmed" onclick="_setResFilter('confirmed')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Confirmed</button>
+            <button class="res-filter-pill" id="res-filter-cancelled" onclick="_setResFilter('cancelled')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Cancelled</button>
+          </div>
+          <div id="reservations-list">
+            <div class="no-bookings">Loading…</div>
+          </div>
         </div>
       </div>
 
     </div>
   </div>
   </div><!-- /#adm-panel-booking -->
-
-  <!-- ── QUOTES PANEL ── -->
-  <div id="adm-panel-quotes" style="display:none;padding:1.5rem;max-width:860px;margin:0 auto;">
-    <div class="adm-card">
-      <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <h3>🕐 Recent Quotes</h3>
-        <div style="display:flex;gap:.5rem;">
-          <button id="export-btn" onclick="exportQuotes()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Copy a sync link - open it on any device to load your quotes">📤 Sync to Phone</button>
-          <button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Pull latest from cloud">☁️ Refresh</button>
-          <span id="cloud-sync-status" style="font-size:.7rem;color:var(--gold);"></span>
-          <button onclick="showImport()" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:.25rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;" title="Paste a sync link or code from another device">📥 Import</button>
-        </div>
-      </div>
-      <div class="adm-card-body">
-        <div id="import-box" style="display:none;margin-bottom:.75rem;">
-          <textarea id="import-text" rows="3" placeholder="Paste export code here…" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:.6rem;font-size:.8rem;box-sizing:border-box;font-family:monospace;"></textarea>
-          <button onclick="importQuotes()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:.4rem;width:100%;">Apply Import</button>
-        </div>
-        <div id="recent-quotes"><div class="no-bookings">No quotes sent yet.</div></div>
-      </div>
-    </div>
-  </div><!-- /#adm-panel-quotes -->
 
   <!-- ── PRICING PANEL ── -->
   <div id="adm-panel-pricing" style="display:none;">
@@ -1290,21 +1274,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     </div>
   </div><!-- /#adm-panel-photos -->
 
-  <!-- ── CONFIRMED RESERVATIONS PANEL ── -->
-  <div id="adm-panel-confirmed" style="display:none;">
-    <div class="conf-header">
-      <h3>✅ Confirmed Reservations</h3>
-      <div style="display:flex;gap:.5rem;">
-        <button class="btn btn-sm" onclick="loadConfirmed(this)" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;">⟳ Refresh</button>
-      </div>
-    </div>
-    <div id="conf-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
-    <div class="conf-filter-pills">
-      <button class="conf-filter-pill active" id="conf-filter-upcoming" onclick="_setConfFilter('upcoming')">Upcoming</button>
-      <button class="conf-filter-pill" id="conf-filter-past" onclick="_setConfFilter('past')">Past</button>
-    </div>
-    <div id="confirmed-res-list" class="conf-loading">Loading…</div>
-  </div><!-- /#adm-panel-confirmed -->
 
 </div><!-- /#app -->
 
@@ -1406,9 +1375,8 @@ function _enterAdminApp() {
   document.getElementById('f-note').value = 'Let me know if you have any questions. Thank you!';
   calcTotal();
   renderCalc();
-  loadInquiries();
+  if (!_checkSyncHash()) loadReservations();
   _cloudRead().then(_mergeCloudData);
-  _checkSyncHash();
   _initPricingSection();
 }
 
@@ -1437,109 +1405,52 @@ async function tryLogin() {
   }
 }
 
-// ── INQUIRY INBOX ──
-const PROP_KEY_MAP = { prop1: 'prop1', prop2: 'prop2', prop3: 'prop3' };
-function loadInquiries() {
-  const list = document.getElementById('inquiry-list');
-  if (!list) return;
-  const data = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-  if (!data.length) {
-    list.innerHTML = '<div class="no-bookings">No inquiries yet. When guests submit a booking request on your site, they\'ll appear here.</div>';
-    return;
-  }
-  const quotes = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-  const propLabel = { prop1: '🏠 Front Home', prop2: '🛎️ Left Suite', prop3: '🛎️ Right Suite' };
-  const fmtD = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '?';
-  list.innerHTML = data.map((inq, i) => {
-    const name = _esc([inq.first, inq.last].filter(Boolean).join(' ') || '(no name)');
-    const prop = propLabel[inq.prop] || _esc(inq.prop) || '?';
-    const dates = inq.ci && inq.co ? `${fmtD(inq.ci)} → ${fmtD(inq.co)}` : 'No dates';
-    const ago = _timeAgo(inq.ts);
+// ── LOAD INTO FORM ── replaces the old fillFromInquiry/_editQuote split.
+// Any reservation at inquiry/quoted/signed status opens here for editing; confirmed/cancelled
+// ones go through openReservationDetail instead (see renderReservations' click routing).
+function _loadIntoForm(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  _editingCode = code;
+  _generatedUrl = r.url || ''; _qtok = _generatedUrl.includes('qtok=') ? '1' : '';
 
-    // Flag inquiries sitting 48h+ with no quote generated yet for this guest/dates
-    const hasQuote = quotes.some(q => q.email && inq.email &&
-      q.email.toLowerCase() === inq.email.toLowerCase() && q.ci === inq.ci);
-    const hoursOld = inq.ts ? (Date.now() - inq.ts) / 3600000 : 0;
-    const needsFollowUp = !hasQuote && hoursOld >= 48;
-
-    const badge = needsFollowUp
-      ? `<span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.68rem;color:#b91c1c;background:#fef2f2;border:1px solid rgba(185,28,28,.25);padding:.15rem .5rem;border-radius:20px;white-space:nowrap;margin-left:.5rem;font-weight:700;">⚠️ No quote · ${ago}</span>`
-      : `<span class="inq-loaded-badge" id="inq-badge-${i}" style="font-size:.7rem;color:var(--muted);white-space:nowrap;margin-left:.5rem">${ago}</span>`;
-
-    return `<div class="recent-item inquiry-item" id="inq-item-${i}" style="cursor:pointer;border-left:3px solid ${needsFollowUp ? '#b91c1c' : 'var(--gold)'};padding-left:.8rem;transition:background .25s,border-color .25s;" onclick="fillFromInquiry(${i}, this)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div style="font-weight:600;color:var(--navy)">${name}</div>
-          <div style="font-size:.8rem;color:var(--muted)">${prop} · ${dates}</div>
-          <div style="font-size:.75rem;color:var(--muted)">${_esc(inq.email)}${inq.phone ? ' · ' + _esc(inq.phone) : ''}</div>
-          ${inq.contactPref ? `<div style="font-size:.72rem;color:#166534;font-weight:600;">${inq.contactPref === 'email' ? '📧 Prefers Email' : inq.contactPref === 'text' ? '💬 Prefers Text' : '📧💬 Prefers Both'}</div>` : ''}
-          ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${_esc(inq.guests)}${inq.pets && inq.pets !== 'No pets' ? ' · ' + _esc(inq.pets) : ''}</div>` : ''}
-          ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${_esc(inq.message.slice(0,80))}${inq.message.length>80?'…':''}"</div>` : ''}
-        </div>
-        ${badge}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function fillFromInquiry(i, el) {
-  const data = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-  const inq = data[i];
-  if (!inq) return;
-  _clearSupersede();
-  document.querySelectorAll('.inquiry-item.is-loaded').forEach(node => {
-    node.classList.remove('is-loaded');
-    node.style.background = '';
-    node.style.borderLeftColor = 'var(--gold)';
-  });
-  if (el) {
-    el.classList.add('is-loaded');
-    el.style.background = 'rgba(16,185,129,.08)';
-    el.style.borderLeftColor = '#059669';
-  }
-  const badge = document.getElementById(`inq-badge-${i}`);
+  const badge = document.getElementById('editing-badge');
   if (badge) {
-    const orig = badge.textContent;
-    badge.textContent = '✓ Loaded';
-    badge.style.color = '#059669';
-    badge.style.fontWeight = '700';
-    setTimeout(() => { if (badge.textContent === '✓ Loaded') { badge.textContent = orig; badge.style.color = ''; badge.style.fontWeight = ''; } }, 3000);
+    badge.style.display = 'flex';
+    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
+    document.getElementById('editing-badge-text').textContent =
+      `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`;
   }
-  // Guest info
-  document.getElementById('f-first').value = inq.first || '';
-  document.getElementById('f-last').value  = inq.last  || '';
-  document.getElementById('f-email').value = inq.email || '';
-  document.getElementById('f-phone').value = inq.phone || '';
-  _contactPref = inq.contactPref || '';
+
+  const parts = (r.guest || '').split(' ');
+  document.getElementById('f-first').value = r.first_name || parts[0] || '';
+  document.getElementById('f-last').value  = r.last_name  || parts.slice(1).join(' ') || '';
+  document.getElementById('f-email').value = r.email || '';
+  document.getElementById('f-phone').value = r.phone || '';
+  _contactPref = r.contact_pref || '';
   _updateContactPrefUI();
-  // Dates
-  if (inq.ci) document.getElementById('f-ci').value = inq.ci;
-  if (inq.co) document.getElementById('f-co').value = inq.co;
-  if (inq.ci && inq.co) calcNights();
-  // Property - use selectProp so cards, summary label, and all derived state stay in sync
-  if (inq.prop && PROPS[inq.prop]) selectProp(inq.prop);
-  // Note stays as default - guest message is visible in the inquiry email
-  // Auto-fill rate: use rate from inquiry (calculated from calendar pricing), else property default
+  if (r.check_in)  document.getElementById('f-ci').value = r.check_in;
+  if (r.check_out) document.getElementById('f-co').value = r.check_out;
+  if (r.check_in && r.check_out) calcNights();
+  if (r.prop && PROPS[r.prop]) selectProp(r.prop);
+  const noteEl = document.getElementById('f-private-note');
+  if (noteEl) noteEl.value = r.host_notes || '';
+  // Rate means two different things depending on how far along this row is: on an inquiry it's
+  // the raw per-night estimate from the public price calculator (reservations-inquiry.js), but
+  // once quoted it's the actual Room Fare total this field holds everywhere else - multiply the
+  // former by nights, use the latter as-is.
   const rateEl = document.getElementById('f-rate');
-  if (rateEl && inq.rate) {
-    const ci2 = document.getElementById('f-ci').value;
-    const co2 = document.getElementById('f-co').value;
-    const n   = (ci2 && co2) ? Math.round((new Date(co2) - new Date(ci2)) / 86400000) : 0;
-    rateEl.value = n > 0 ? Math.round(inq.rate * n) : inq.rate;
+  if (rateEl && r.rate) {
+    if (r.status === 'inquiry' && _nights > 0) {
+      rateEl.value = Math.round(r.rate * _nights);
+    } else {
+      rateEl.value = r.rate;
+    }
   }
   calcTotal();
   generate();
-  // Scroll to form
+  _checkDateConflict();
   document.querySelector('.adm-col-left')?.scrollIntoView({ behavior: 'smooth' });
-}
-
-function _timeAgo(ts) {
-  const mins = Math.floor((Date.now() - ts) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs/24)}d ago`;
 }
 
 // ── PRICING TABLE (mirrors app.js exactly) ──
@@ -1608,7 +1519,7 @@ function _checkDateConflict() {
     try {
       const [icalRanges, reservations] = await Promise.all([
         _fetchAdmIcal(prop),
-        fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() }).then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch('/.netlify/functions/reservations-list?status=confirmed', { headers: _adminAuthHeader() }).then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
       const start = new Date(ci + 'T12:00:00');
       const end   = new Date(co + 'T12:00:00');
@@ -1619,13 +1530,9 @@ function _checkDateConflict() {
       const startMid = new Date(ci + 'T00:00:00');
       const endMid   = new Date(co + 'T00:00:00');
       const overlapsIcal = icalRanges.some(r => startMid < r.e && endMid > r.s);
-      // Reservations store prop as the full label book.html sends ("Home in The Heart Of CB
-      // (Front Home)"), not the short key ("prop1") used here - compare against both so this
-      // actually matches instead of silently never firing.
-      const propName = PROPS[prop]?.name;
       const conflictingRes = (reservations || []).find(r =>
-        (r.prop === prop || (propName && r.prop === propName)) &&
-        !(_supersedesId && String(r.id) === String(_supersedesId)) &&
+        r.prop === prop &&
+        !(_editingCode && r.code === _editingCode) &&
         start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
       );
       if (conflictingRes) {
@@ -1865,7 +1772,7 @@ function cashDepPctInput() {
 // ── GENERATE LINK ──
 let _generatedUrl = '';
 let _qtok = '';
-let _supersedesId = null;
+let _editingCode = null; // code of the reservation currently loaded in the form, or null if this is a brand-new one not yet saved
 let _contactPref = '';
 
 // Shows a "★ Guest prefers this" badge next to whichever send option (email/text) matches
@@ -1877,38 +1784,48 @@ function _updateContactPrefUI() {
   if (textBadge)  textBadge.style.display  = (_contactPref === 'text'  || _contactPref === 'either') ? '' : 'none';
 }
 
-// The booking link's `total`/`prop`/dates need a server-minted signature (qtok) before
-// sign-link.js will let the guest actually sign - otherwise anyone could hand sign-link.js
-// made-up guest/dates and get a valid reservation-confirm token with no real quote behind it.
-// This mints (or reuses an already-minted) signature for the CURRENT _generatedUrl and
-// appends it, called lazily right before a link is actually copied/sent rather than on every
-// keystroke in generate().
+// Single choke point for every copy/send/preview path. Ensures (in order): the reservation row
+// exists server-side (creating it on first save if this is a brand-new quote, via _saveQuote),
+// the row's code is embedded in _generatedUrl, and a server-minted signature (qtok) is present -
+// sign-link.js refuses to let a guest sign without it, otherwise anyone could hand it made-up
+// guest/dates and get a valid reservation-confirm token with no real quote behind it. Called
+// lazily right before a link is actually copied/sent, not on every keystroke in generate().
 async function _getShareableUrl() {
   if (!_generatedUrl) return '';
-  if (_qtok && _generatedUrl.includes('qtok=')) return _generatedUrl;
-  try {
-    const urlObj = new URL(_generatedUrl);
-    const sp = urlObj.searchParams;
-    const r = await fetch('/.netlify/functions/mint-quote-token', {
-      method: 'POST',
-      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        guest: sp.get('guest'), email: sp.get('email'), ci: sp.get('ci'), co: sp.get('co'),
-        prop: sp.get('prop'), total: sp.get('total')
-      })
-    });
-    if (r.ok) {
-      const j = await r.json();
-      if (j.qtok) {
-        _qtok = j.qtok;
-        _generatedUrl += '&qtok=' + encodeURIComponent(_qtok);
-        const linkEl = document.getElementById('link-display');
-        if (linkEl && linkEl.className !== 'link-url empty') linkEl.textContent = _generatedUrl;
+  if (!_editingCode) await _saveQuote();
+  if (!_editingCode) return _generatedUrl; // save failed - return what we have, caller handles the empty qtok case
+  if (!_generatedUrl.includes('code=')) {
+    _generatedUrl += '&code=' + encodeURIComponent(_editingCode);
+    const linkEl = document.getElementById('link-display');
+    if (linkEl && linkEl.className !== 'link-url empty') linkEl.textContent = _generatedUrl;
+  }
+  if (!(_qtok && _generatedUrl.includes('qtok='))) {
+    try {
+      const urlObj = new URL(_generatedUrl);
+      const sp = urlObj.searchParams;
+      const r = await fetch('/.netlify/functions/mint-quote-token', {
+        method: 'POST',
+        headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest: sp.get('guest'), email: sp.get('email'), ci: sp.get('ci'), co: sp.get('co'),
+          prop: sp.get('prop'), total: sp.get('total'), code: _editingCode
+        })
+      });
+      if (r.ok) {
+        const j = await r.json();
+        if (j.qtok) {
+          _qtok = j.qtok;
+          _generatedUrl += '&qtok=' + encodeURIComponent(_qtok);
+          const linkEl = document.getElementById('link-display');
+          if (linkEl && linkEl.className !== 'link-url empty') linkEl.textContent = _generatedUrl;
+        }
+      } else {
+        console.error('Quote token mint failed:', await r.text());
       }
-    } else {
-      console.error('Quote token mint failed:', await r.text());
-    }
-  } catch (e) { console.error('Quote token mint failed:', e); }
+    } catch (e) { console.error('Quote token mint failed:', e); }
+  }
+  // Persist the now-complete url (code + qtok) back to the row.
+  await _saveQuote();
   return _generatedUrl;
 }
 
@@ -1923,9 +1840,10 @@ async function _finalizeEmailPreviewLink() {
   }
   return url;
 }
-function _clearSupersede() {
-  _supersedesId = null;
-  document.getElementById('supersede-badge').style.display = 'none';
+function _clearEditing() {
+  _editingCode = null;
+  _generatedUrl = ''; _qtok = '';
+  document.getElementById('editing-badge').style.display = 'none';
   generate();
 }
 function getGuestName() {
@@ -2017,7 +1935,6 @@ function generate() {
   if (cash && cashDep  > 0) p.set('cdep', cashDep.toFixed(2));
   if (note) p.set('note', note);
   if (exp)  p.set('exp',  exp);
-  if (_supersedesId) p.set('supersedes', _supersedesId);
   if (_contactPref) p.set('contact_pref', _contactPref);
 
   _generatedUrl = base + '?' + p.toString();
@@ -2046,10 +1963,6 @@ async function copyLink() {
   const orig = btn.textContent;
   btn.textContent = '⏳ Preparing…';
   const url = await _getShareableUrl();
-  // Save the quote as soon as we have the real URL, independent of whether the clipboard
-  // write itself succeeds - clipboard permissions/mobile quirks shouldn't be able to silently
-  // drop a quote from Recent Quotes.
-  saveRecent();
   navigator.clipboard.writeText(url).then(() => {
     btn.textContent = '✅ Copied!';
     btn.classList.add('copied');
@@ -2224,14 +2137,11 @@ function sendEmail() {
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
-  // Save the quote immediately so it's never lost to a slow/failed network call or the phone
-  // backgrounding the tab right after sending - previously this waited on the qtok mint to
-  // finish first, which meant a real quote could vanish from Recent Quotes if that request
-  // didn't complete in time. The link itself still gets its qtok signature in the background
-  // (sendEmailFromModal()/copyEmailHtml() also finalize it themselves right before use as a
-  // safety net), and the saved record is patched with the finalized link once that's ready.
-  const savedTs = saveRecent();
-  _finalizeEmailPreviewLink().then(url => _patchSavedQuoteUrl(savedTs, url));
+  // _finalizeEmailPreviewLink -> _getShareableUrl saves the row itself (creating it on first
+  // save if needed) - the link's qtok signature and the saved record both land in the
+  // background (sendEmailFromModal()/copyEmailHtml() also finalize it themselves right before
+  // use as a safety net).
+  _finalizeEmailPreviewLink();
   return false;
 }
 
@@ -2348,9 +2258,8 @@ function sendSMS() {
   const buildMsg = url => `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
   const originalUrl = _generatedUrl;
   _openSmsModal(buildMsg(originalUrl), phone);
-  // Save immediately (see sendEmail()'s note) rather than waiting on the qtok mint - patch the
-  // modal text and the saved record with the signed link once minting finishes in the background.
-  const savedTs = saveRecent();
+  // _getShareableUrl saves the row itself - update the modal text with the signed link once
+  // minting finishes in the background.
   _getShareableUrl().then(url => {
     // _getShareableUrl() mutates and returns _generatedUrl itself, so comparing against the
     // live _generatedUrl here would always be equal (true bug, caught live 2026-09-19) - compare
@@ -2363,7 +2272,6 @@ function sendSMS() {
       const liveHref = phone ? `sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(liveMsg)}` : `sms:?body=${encodeURIComponent(liveMsg)}`;
       liveModal.querySelector('#sms-open-link').href = liveHref;
     }
-    _patchSavedQuoteUrl(savedTs, url);
   });
   return false;
 }
@@ -2378,113 +2286,36 @@ function copySmsText() {
   });
 }
 
-// ── SAVE RECENT ──
-function saveRecent() {
+// ── SAVE QUOTE ── creates the reservation row on first save (status 'quoted'), or updates it
+// in place by code on every save after that. Replaces the old localStorage-based saveRecent().
+async function _saveQuote() {
   const guest = getGuestName();
   const ci    = document.getElementById('f-ci').value;
   const co    = document.getElementById('f-co').value;
-  if (!guest || !ci) return;
+  if (!guest || !ci) return _editingCode;
   const email = document.getElementById('f-email')?.value?.trim() || '';
   const phone = document.getElementById('f-phone')?.value?.trim() || '';
   const exp   = document.getElementById('f-exp')?.value || '';
   const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
-  const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-  const ts = Date.now();
-  saved.unshift({
-    guest, prop: _prop, ci, co, total: _total, url: _generatedUrl, ts, email, phone,
-    nights: _nights || 0, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales, exp, privateNote,
-    credit, supersedes: _supersedesId || '', contactPref: _contactPref || ''
-  });
-  localStorage.setItem('thocb_quotes', JSON.stringify(saved.slice(0, 10)));
-  renderRecent();
-  _cloudWrite();
-  return ts;
-}
-
-// Updates an already-saved quote's link once the background qtok mint finishes - used by
-// send flows that save the record immediately (for reliability) but finalize the actual
-// signed link a moment later.
-function _patchSavedQuoteUrl(ts, url) {
-  if (!ts || !url) return;
-  const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-  const idx = saved.findIndex(q => q.ts === ts);
-  if (idx !== -1 && saved[idx].url !== url) {
-    saved[idx].url = url;
-    localStorage.setItem('thocb_quotes', JSON.stringify(saved));
-    _recentQuotesCache = saved;
-    _cloudWrite();
-  }
-}
-
-let _recentQuotesCache = [];
-
-function renderRecent() {
-  const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-  _recentQuotesCache = saved;
-  const el = document.getElementById('recent-quotes');
-  if (!saved.length) {
-    el.innerHTML = '<div class="no-bookings">No quotes sent yet.</div>';
-    return;
-  }
-  const fmtD = s => { const d = new Date(s+'T12:00:00'); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); };
-  el.innerHTML = saved.map((q, i) => `
-    <div class="booking-item">
-      <div class="bi-prop">${PROPS[q.prop]?.icon || '🏠'}</div>
-      <div class="bi-info">
-        <div class="bi-guest">${_esc(q.guest)}${q.contactPref ? ` <span style="font-size:.7rem;color:#166534;font-weight:600;">${q.contactPref === 'email' ? '· 📧 prefers email' : q.contactPref === 'text' ? '· 💬 prefers text' : '· 📧💬 prefers both'}</span>` : ''}</div>
-        <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
-      </div>
-      <div class="bi-actions">
-        <button class="bi-btn" onclick="_editQuote(_recentQuotesCache[${i}])">✏️ Edit</button>
-        <button class="bi-btn resend" onclick="resendQuote(_recentQuotesCache[${i}], this)">📧 Resend</button>
-        <button class="bi-btn resend" onclick="resendQuoteViaText(_recentQuotesCache[${i}])">💬 Text</button>
-        <button class="bi-btn confirm-res${q.confirmed ? ' is-confirmed' : ''}" id="confirm-btn-${i}" onclick="confirmFromQuote(_recentQuotesCache[${i}], this)">${q.confirmed ? '✓ Confirmed' : '✓ Confirm'}</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-// Loads a saved quote back into the Booking tab form for editing - tweak anything and
-// re-send; a fresh entry gets saved rather than overwriting the original.
-function _editQuote(q) {
-  if (!q) return;
-  // Restore (or clear) the "replacing an existing reservation" link so it always matches
-  // the quote actually being edited - otherwise a stale _supersedesId from a previous,
-  // unrelated Change Reservation could delete the wrong guest's reservation once this one
-  // gets confirmed.
-  if (q.supersedes) {
-    _supersedesId = q.supersedes;
-    const r = _confirmedCache.find(x => x.id === q.supersedes);
-    const badge = document.getElementById('supersede-badge');
-    if (badge) {
-      badge.style.display = 'flex';
-      document.getElementById('supersede-badge-text').textContent = r
-        ? `🔁 Replacing ${r.guest}'s reservation (${r.check_in} → ${r.check_out}) - once this new contract is signed, the old one is automatically canceled.`
-        : `🔁 This will replace an existing reservation once signed.`;
+  try {
+    const r = await fetch('/.netlify/functions/reservations-upsert', {
+      method: 'POST',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: _editingCode || undefined,
+        guest, email, phone, prop: _prop, ci, co, nights: _nights || 0,
+        total: _total, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales,
+        url: _generatedUrl, exp, privateNote, credit, contactPref: _contactPref || ''
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (j.ok && j.code) {
+      _editingCode = j.code;
+      loadReservations();
     }
-  } else {
-    _clearSupersede();
-  }
-  _contactPref = q.contactPref || '';
-  _updateContactPrefUI();
-  switchAdmTab('booking');
-  const parts = (q.guest || '').split(' ');
-  document.getElementById('f-first').value = parts[0] || '';
-  document.getElementById('f-last').value = parts.slice(1).join(' ') || '';
-  document.getElementById('f-email').value = q.email || '';
-  if (q.prop && PROPS[q.prop]) selectProp(q.prop);
-  document.getElementById('f-ci').value = q.ci || '';
-  document.getElementById('f-co').value = q.co || '';
-  calcNights();
-  document.getElementById('f-rate').value = q.rate || '';
-  if (q.exp) document.getElementById('f-exp').value = q.exp;
-  const noteEl = document.getElementById('f-private-note');
-  if (noteEl) noteEl.value = q.privateNote || '';
-  calcTotal();
-  generate();
-  _checkDateConflict();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) { console.error('Save quote failed:', e); }
+  return _editingCode;
 }
 
 async function resendQuote(q, btn) {
@@ -2492,7 +2323,7 @@ async function resendQuote(q, btn) {
   if (!q.email) { alert('No email on file for this guest - opening link instead.'); if (q.url) window.open(q.url, '_blank'); return; }
   if (!q.url) { alert('No booking link saved for this quote.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
-  const propName = PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
+  const propName = q.prop_label || PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
   const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
@@ -2509,8 +2340,8 @@ async function resendQuote(q, btn) {
     <p>Hi ${q.guest},</p>
     <p>Here's your booking link for <strong>${propName}</strong>:</p>
     <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
-      <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(q.ci)}</div>
-      <div><strong>Check-out:</strong> ${fmtD(q.co)}</div>
+      <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(q.check_in)}</div>
+      <div><strong>Check-out:</strong> ${fmtD(q.check_out)}</div>
     </div>
     <div style="text-align:center;margin:24px 0;">
       <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View &amp; Complete Your Booking</a>
@@ -2560,30 +2391,17 @@ async function _cloudRead() {
 }
 
 async function _cloudWrite() {
-  const quotes    = JSON.parse(localStorage.getItem('thocb_quotes')    || '[]');
-  const inquiries = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
   try {
     await fetch('/.netlify/functions/cloud-sync', {
       method: 'PUT',
       headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quotes, inquiries, pricing: { baseRates: _pricingData.baseRates, overrides: _pricingData.overrides, restrictions: _pricingData.restrictions, actuals: _pricingData.actuals } })
+      body: JSON.stringify({ pricing: { baseRates: _pricingData.baseRates, overrides: _pricingData.overrides, restrictions: _pricingData.restrictions, actuals: _pricingData.actuals } })
     });
   } catch(e) { console.warn('Cloud sync write failed:', e); }
 }
 
 function _mergeCloudData(cloudData) {
   if (!cloudData) return;
-  // Cloud is the source of truth - REPLACE local with it, don't merge. This used to union
-  // local+cloud (deduped by ts), which sounded safe but meant any tab/device that still had
-  // old data cached - easy to end up with after hours of testing, or just a tab left open from
-  // earlier - would silently add its stale data back in every time it synced, undoing a clear
-  // done anywhere else. A save always pushes to the cloud right after it happens, so trusting
-  // the cloud here is safe in the normal case and far more predictable in the broken-cache case.
-  localStorage.setItem('thocb_quotes', JSON.stringify(cloudData.quotes || []));
-  localStorage.setItem('thocb_inquiries', JSON.stringify(cloudData.inquiries || []));
-
-  renderRecent();
-  loadInquiries();
   _loadPricingFromCloud(cloudData);
   _updateSyncStatus('✅ Synced');
 }
@@ -2591,37 +2409,6 @@ function _mergeCloudData(cloudData) {
 function _updateSyncStatus(msg) {
   const el = document.getElementById('cloud-sync-status');
   if (el) { el.textContent = msg; setTimeout(() => { el.textContent = ''; }, 3000); }
-}
-
-async function refreshInquiries(btn) {
-  const orig = btn.textContent;
-  btn.textContent = '⏳ Syncing…';
-  btn.disabled = true;
-  const data = await _cloudRead();
-  if (data) {
-    _mergeCloudData(data);
-    btn.textContent = '✅ Done';
-  } else {
-    btn.textContent = '⚠️ Failed';
-  }
-  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
-}
-
-// Wipes all saved inquiries and quotes - reservations are untouched. Writes the empty state to
-// the cloud immediately so every device converges on it next sync, instead of just clearing
-// this browser's local copy and leaving other devices to silently resurrect the old data.
-async function clearAllInquiriesAndQuotes(btn) {
-  if (!confirm('Permanently delete ALL saved inquiries and quotes on every device? Reservations are not affected. This cannot be undone.')) return;
-  const orig = btn.textContent;
-  btn.textContent = '⏳ Clearing…';
-  btn.disabled = true;
-  localStorage.setItem('thocb_inquiries', '[]');
-  localStorage.setItem('thocb_quotes', '[]');
-  loadInquiries();
-  renderRecent();
-  await _cloudWrite();
-  btn.textContent = '✅ Cleared';
-  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
 }
 
 async function refreshFromCloud() {
@@ -2647,39 +2434,34 @@ function _sbNights(ci, co) {
   return Math.round((new Date(co+'T12:00:00') - new Date(ci+'T12:00:00')) / 86400000);
 }
 
-let _confirmedCache = [];
-let _confFilter = 'upcoming';
+let _reservationsCache = [];
+let _resFilter = 'all';
 
-async function loadConfirmed(btn) {
-  const el = document.getElementById('confirmed-res-list');
-  el.className = 'conf-loading';
-  el.textContent = 'Loading…';
+async function loadReservations(btn) {
+  const el = document.getElementById('reservations-list');
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
     const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
     if (!r.ok) throw new Error(await r.text());
-    const list = await r.json();
-    _confirmedCache = list;
-    el.className = '';
-    renderConfirmed();
+    _reservationsCache = await r.json();
+    renderReservations();
     _renderConflictBanner();
   } catch(e) {
-    el.className = 'conf-error';
-    el.textContent = '⚠️ Could not load reservations. Check Supabase connection.';
+    el.innerHTML = '<div class="no-bookings">⚠️ Could not load reservations. Check Supabase connection.</div>';
     console.error('Supabase load error:', e);
   }
   if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
 }
 
-// Retroactive self-audit: scans reservations ALREADY in Supabase against each other, for the
-// same property, looking for any pair whose date ranges overlap. Catches the case where the
+// Retroactive self-audit: scans CONFIRMED reservations against each other, for the same
+// property, looking for any pair whose date ranges overlap. Catches the case where the
 // calendar-block step got missed and two guests ended up confirmed for the same dates - separate
 // from _checkDateConflict() in the quote-builder, which only guards NEW quotes going forward.
 function _detectReservationConflicts() {
   const conflicts = [];
   const today = new Date().toISOString().split('T')[0];
   const byProp = {};
-  _confirmedCache.filter(r => r.check_out >= today).forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
+  _reservationsCache.filter(r => r.status === 'confirmed' && r.check_out >= today).forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
   Object.values(byProp).forEach(group => {
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
@@ -2694,7 +2476,7 @@ function _detectReservationConflicts() {
 }
 
 function _renderConflictBanner() {
-  const banner = document.getElementById('conf-conflict-banner');
+  const banner = document.getElementById('res-conflict-banner');
   if (!banner) return;
   const conflicts = _detectReservationConflicts();
   if (!conflicts.length) { banner.style.display = 'none'; return; }
@@ -2706,60 +2488,74 @@ function _renderConflictBanner() {
   banner.style.display = 'block';
 }
 
-function _setConfFilter(filter) {
-  _confFilter = filter;
-  document.getElementById('conf-filter-upcoming').classList.toggle('active', filter === 'upcoming');
-  document.getElementById('conf-filter-past').classList.toggle('active', filter === 'past');
-  renderConfirmed();
+function _setResFilter(filter) {
+  _resFilter = filter;
+  ['all','inquiry','quoted','signed','confirmed','cancelled'].forEach(f => {
+    const btn = document.getElementById('res-filter-' + f);
+    if (!btn) return;
+    const active = f === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'var(--navy)' : 'var(--sand2)';
+    btn.style.color = active ? '#fff' : 'var(--navy)';
+  });
+  renderReservations();
 }
 
-// Pulls the original booking URL out of notes ("url:https://...") and turns it into the
-// one-click confirm link - same link the "Payment Sent" email itself uses.
+const _STATUS_LABEL = { inquiry: '📥 Inquiry', quoted: '🕐 Quoted', signed: '✍️ Signed', confirmed: '✅ Confirmed', cancelled: '🚫 Cancelled' };
+const _STATUS_COLOR = { inquiry: '#6b7280', quoted: '#b8882a', signed: '#1d4e89', confirmed: '#166534', cancelled: '#7a1f1f' };
+
+// The row's own `url` (set once a quote is first saved) is the guest-facing booking link -
+// read-only once signed (it carries signed=1 from signing time, rendering the signed-agreement
+// view with no action buttons), so that's the one guests should get via Copy Link/Text Guest.
+// Appending &action=confirm turns it into Jesse's one-click "Send Confirmation" trigger -
+// never hand that version to a guest.
 function _reservationLinks(r) {
-  const rawUrl = (r.notes || '').replace(/^url:/, '').trim();
-  // confirmUrl (&action=confirm) opens Jesse's one-click "Send Confirmation" trigger - never
-  // give this to a guest. rawUrl itself already opens read-only (it carries signed=1 from
-  // signing time, which renders the signed-agreement view with no action buttons), so that's
-  // the one guests should get via Copy Link / Text Guest.
   let confirmUrl = '', viewUrl = '', phone = '';
-  if (rawUrl) {
+  if (r.url) {
     try {
-      const u = new URL(rawUrl);
+      const u = new URL(r.url);
       viewUrl = u.toString();
-      phone = u.searchParams.get('phone') || '';
+      phone = u.searchParams.get('phone') || r.phone || '';
       u.searchParams.set('action', 'confirm');
       confirmUrl = u.toString();
-    } catch { /* malformed/old url - leave blank, buttons hide themselves */ }
+    } catch { /* malformed url - leave blank, buttons hide themselves */ }
   }
   return { confirmUrl, viewUrl, phone };
 }
 
-function renderConfirmed() {
-  const el = document.getElementById('confirmed-res-list');
-  const today = new Date().toISOString().split('T')[0];
-  const list = _confirmedCache
-    .filter(r => _confFilter === 'upcoming' ? r.check_out >= today : r.check_out < today)
-    .sort((a, b) => _confFilter === 'upcoming' ? a.check_in.localeCompare(b.check_in) : b.check_in.localeCompare(a.check_in));
+function renderReservations() {
+  const el = document.getElementById('reservations-list');
+  const list = _reservationsCache
+    .filter(r => _resFilter === 'all' || r.status === _resFilter)
+    .sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
 
   if (!list.length) {
-    el.innerHTML = _confFilter === 'upcoming'
-      ? '<div class="no-bookings">No upcoming reservations. Use "✓ Confirm" on any recent quote to add one.</div>'
-      : '<div class="no-bookings">No past reservations on file.</div>';
+    el.innerHTML = '<div class="no-bookings">Nothing here yet.</div>';
     return;
   }
-  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '?';
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
-  el.innerHTML = list.map(r => `
-    <div class="conf-row" onclick="openReservationDetail('${r.id}')">
-      <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
-      <div class="conf-row-info">
-        <div class="conf-row-guest">${_esc(r.guest)}</div>
-        <div class="conf-row-detail">${PROPS[r.prop]?.name || _esc(r.prop) || '-'} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
+  el.innerHTML = list.map(r => {
+    const dates = r.check_in ? `${fmtD(r.check_in)}${r.check_out ? ' → ' + fmtD(r.check_out) : ''}` : 'No dates';
+    const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
+      ? `openReservationDetail('${r.code}')` : `_loadIntoForm('${r.code}')`;
+    return `
+    <div class="recent-item" style="cursor:pointer;border-left:3px solid ${_STATUS_COLOR[r.status] || '#ccc'};padding-left:.8rem;margin-bottom:.6rem;" onclick="${clickable}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+        <div>
+          <div style="font-weight:600;color:var(--navy);">${PROPS[r.prop]?.icon || '🏠'} ${_esc(r.guest)}</div>
+          <div style="font-size:.8rem;color:var(--muted);">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '')} · ${dates}${r.total ? ' · ' + fmt$(r.total) : ''}</div>
+          ${r.email ? `<div style="font-size:.75rem;color:var(--muted);">${_esc(r.email)}${r.phone ? ' · ' + _esc(r.phone) : ''}</div>` : ''}
+          ${r.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem;">"${_esc(r.message.slice(0,80))}${r.message.length>80?'…':''}"</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
+          <span style="font-size:.7rem;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};white-space:nowrap;">${_STATUS_LABEL[r.status] || r.status}</span>
+          ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm</button>` : ''}
+        </div>
       </div>
-      <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function _closeReservationDetail() {
@@ -2767,14 +2563,18 @@ function _closeReservationDetail() {
   if (el) el.remove();
 }
 
-function openReservationDetail(id) {
-  const r = _confirmedCache.find(x => x.id === id);
+// Detail/manage modal - only for confirmed and cancelled reservations. Earlier lifecycle
+// stages (inquiry/quoted/signed) go through _loadIntoForm instead, since the thing to do with
+// them is edit-and-resend, not view-and-manage.
+function openReservationDetail(code) {
+  const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
-  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '-';
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
   const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${viewUrl}`);
+  const isCancelled = r.status === 'cancelled';
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -2784,43 +2584,46 @@ function openReservationDetail(id) {
   backdrop.innerHTML = `
     <div class="conf-modal">
       <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
-      <h3>${_esc(r.guest)}</h3>
-      <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)}</div>
+      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${_STATUS_COLOR[r.status]};">${_STATUS_LABEL[r.status] || r.status}</span></h3>
+      <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)} · Code ${_esc(r.code)}</div>
       <div class="conf-modal-rows">
-        <div><b>Property:</b> ${PROPS[r.prop]?.name || _esc(r.prop) || '-'}</div>
+        <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div><b>Total:</b> ${fmt$(r.total)}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
-        ${r.payment_method ? `<div><b>Paid via:</b> ${_esc(r.payment_method)}</div>` : ''}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
         ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
+        ${r.signed_name ? `<div><b>Signed:</b> ${_esc(r.signed_name)}${r.signed_at ? ' · ' + fmtBooked(r.signed_at) : ''}</div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
+        ${r.cancelled_at ? `<div><b>Cancelled:</b> ${fmtBooked(r.cancelled_at)}</div>` : ''}
       </div>
       <label>Private Note - only visible to you</label>
-      <textarea class="conf-notes-box" id="conf-notes-${r.id}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
-      <div class="conf-notes-status" id="conf-notes-status-${r.id}"></div>
+      <textarea class="conf-notes-box" id="conf-notes-${r.code}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
+      <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions">
         ${confirmUrl ? `
         <button class="conf-btn" onclick="window.open('${confirmUrl}','_blank')">📧 Send Full Confirmation</button>
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
-        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link - this reservation predates this feature.</span>`}
-        <button class="conf-btn" onclick="_changeReservation('${r.id}')">✏️ Change Reservation</button>
-        <button class="conf-btn" onclick="sendCancellationEmail('${r.id}', this)">✉️ Send Cancellation Email</button>
-        <button class="conf-btn" onclick="sendCancellationText('${r.id}')">💬 Send Cancellation Text</button>
-        <button class="conf-btn del" onclick="deleteConfirmed('${r.id}')">🚫 Cancel Reservation</button>
+        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
+        <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
+        ${!isCancelled ? `
+        <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
+        <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
+        <button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>
+        ` : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
       </div>
     </div>`;
   document.body.appendChild(backdrop);
 
   let notesTimer = null;
-  document.getElementById(`conf-notes-${r.id}`).addEventListener('input', (e) => {
-    const status = document.getElementById(`conf-notes-status-${r.id}`);
+  document.getElementById(`conf-notes-${r.code}`).addEventListener('input', (e) => {
+    const status = document.getElementById(`conf-notes-status-${r.code}`);
     status.textContent = 'Saving…';
     clearTimeout(notesTimer);
     notesTimer = setTimeout(async () => {
       try {
-        const resp = await fetch(`/.netlify/functions/reservations-update?id=${r.id}`, {
+        const resp = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(r.code)}`, {
           method: 'PATCH',
           headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ host_notes: e.target.value })
@@ -2833,29 +2636,19 @@ function openReservationDetail(id) {
   });
 }
 
-// Resend/Copy Link/Text buttons for confirmed reservations now just reopen the
-// saved booking URL with &action=confirm - same full "You're Confirmed" email,
-// no separate stripped-down template to maintain. See renderConfirmed().
-
-async function confirmFromQuote(q, btn) {
-  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
+async function confirmFromQuote(code, btn) {
+  const q = _reservationsCache.find(x => x.code === code);
+  if (!q) { alert('Could not find that reservation - try refreshing.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
-  const nights = q.nights || _sbNights(q.ci, q.co);
   const payload = {
-    guest: q.guest,
-    email: q.email || '',
-    prop:  q.prop,
-    check_in:  q.ci,
-    check_out: q.co,
-    nights,
+    code: q.code, guest: q.guest, email: q.email || '',
+    check_in: q.check_in, check_out: q.check_out,
     total: parseFloat(q.total) || 0,
     rate: q.rate != null ? parseFloat(q.rate) || 0 : null,
-    tax_occ: q.taxOcc != null ? parseFloat(q.taxOcc) || 0 : null,
-    tax_sales: q.taxSales != null ? parseFloat(q.taxSales) || 0 : null,
-    host_notes: q.privateNote || '',
-    notes: q.url ? `url:${q.url}` : '',
-    supersedes: q.supersedes || undefined,
-    contact_pref: q.contactPref || undefined
+    tax_occ: q.tax_occ != null ? parseFloat(q.tax_occ) || 0 : null,
+    tax_sales: q.tax_sales != null ? parseFloat(q.tax_sales) || 0 : null,
+    host_notes: q.host_notes || '',
+    contact_pref: q.contact_pref || undefined
   };
   try {
     const r = await fetch('/.netlify/functions/reservations-confirm', {
@@ -2864,27 +2657,13 @@ async function confirmFromQuote(q, btn) {
       body: JSON.stringify(payload)
     });
     if (r.ok) {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = '✓ Confirmed';
-        btn.classList.add('is-confirmed');
-      }
-      const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-      const match = saved.find(s => s.ts === q.ts && s.guest === q.guest);
-      if (match) {
-        match.confirmed = true;
-        localStorage.setItem('thocb_quotes', JSON.stringify(saved));
-        _recentQuotesCache = saved;
-      }
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Confirmed'; btn.classList.add('is-confirmed'); }
+      loadReservations();
     } else {
       const txt = await r.text();
       if (btn) { btn.disabled = false; btn.textContent = '✓ Confirm'; }
-      if (txt.includes('already exists') || txt.includes('duplicate')) {
-        alert('This reservation may already be confirmed.');
-      } else {
-        alert('Save failed - check console.');
-        console.error('Supabase error:', txt);
-      }
+      alert('Save failed - check console.');
+      console.error('Supabase error:', txt);
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Confirm'; }
@@ -2893,17 +2672,20 @@ async function confirmFromQuote(q, btn) {
   }
 }
 
-async function deleteConfirmed(id) {
-  if (!confirm('Cancel this reservation? This cannot be undone. (The matching quote will move back to "not confirmed" so you can edit and resend it if needed.)')) return;
+// Soft-cancel - the row stays (status 'cancelled'), so it's still visible under the Cancelled
+// filter with its full history intact. A true permanent delete is a separate, rarely-used
+// cleanup action (see permanentlyDeleteReservation), reached from the same modal once cancelled.
+async function cancelReservation(code) {
+  if (!confirm('Cancel this reservation? The guest will need a new confirmation if this was a mistake.')) return;
   try {
-    const r = await fetch(`/.netlify/functions/reservations-delete?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: _adminAuthHeader()
+    const r = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' })
     });
     if (r.ok) {
-      _confirmedCache = _confirmedCache.filter(x => x.id !== id);
       _closeReservationDetail();
-      renderConfirmed();
+      loadReservations();
     } else {
       alert('Cancel failed - check console.');
       console.error(await r.text());
@@ -2914,9 +2696,30 @@ async function deleteConfirmed(id) {
   }
 }
 
+async function permanentlyDeleteReservation(code) {
+  if (!confirm('Permanently delete this reservation? This cannot be undone.')) return;
+  try {
+    const r = await fetch(`/.netlify/functions/reservations-delete?code=${encodeURIComponent(code)}`, {
+      method: 'DELETE',
+      headers: _adminAuthHeader()
+    });
+    if (r.ok) {
+      _reservationsCache = _reservationsCache.filter(x => x.code !== code);
+      _closeReservationDetail();
+      renderReservations();
+    } else {
+      alert('Delete failed - check console.');
+      console.error(await r.text());
+    }
+  } catch(e) {
+    alert('Network error.');
+    console.error(e);
+  }
+}
+
 // ── CANCELLATION EMAIL ──
-async function sendCancellationEmail(id, btn) {
-  const r = _confirmedCache.find(x => x.id === id);
+async function sendCancellationEmail(code, btn) {
+  const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
   if (!confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
@@ -2962,8 +2765,8 @@ async function sendCancellationEmail(id, btn) {
 }
 
 // Text version of the cancellation notice - same info, opened as a text message.
-function sendCancellationText(id) {
-  const r = _confirmedCache.find(x => x.id === id);
+function sendCancellationText(code) {
+  const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   const { phone } = _reservationLinks(r);
   const firstName = (r.guest || '').split(' ')[0] || r.guest;
@@ -2973,200 +2776,48 @@ function sendCancellationText(id) {
 }
 
 // ── CHANGE RESERVATION ──
-// Loads this reservation's info into the Booking-tab quote builder as a brand-new quote,
-// so Jesse can adjust dates/price and send the guest a fresh link to sign a new agreement.
-// The old reservation is left in place - cancel it separately once the new one is signed.
-function _changeReservation(id) {
-  const r = _confirmedCache.find(x => x.id === id);
-  if (!r) return;
+// Editing a confirmed reservation is now just loading it into the form by its code - saving
+// updates the SAME row in place (reservations-upsert.js), so there's never a window where two
+// rows exist for one booking. No more create-new-then-delete-old dance.
+function _changeReservation(code) {
   _closeReservationDetail();
-  switchAdmTab('booking');
-  const parts = (r.guest || '').split(' ');
-  document.getElementById('f-first').value = parts[0] || '';
-  document.getElementById('f-last').value = parts.slice(1).join(' ') || '';
-  document.getElementById('f-email').value = r.email || '';
-  const propKey = Object.keys(PROPS).find(k => PROPS[k].name === r.prop) || r.prop;
-  if (PROPS[propKey]) selectProp(propKey);
-  document.getElementById('f-ci').value = r.check_in || '';
-  document.getElementById('f-co').value = r.check_out || '';
-  calcNights();
-  if (r.rate != null) document.getElementById('f-rate').value = r.rate;
-  document.getElementById('f-credit').value = parseFloat(r.total || 0).toFixed(2);
-  _contactPref = r.contact_pref || '';
-  _updateContactPrefUI();
-  const noteEl = document.getElementById('f-private-note');
-  if (noteEl) {
-    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
-    noteEl.value = `CHANGE to existing reservation - was ${fmtD(r.check_in)}–${fmtD(r.check_out)}, $${parseFloat(r.total||0).toFixed(2)} total.`;
-  }
-  _supersedesId = id;
-  const badge = document.getElementById('supersede-badge');
-  badge.style.display = 'flex';
-  document.getElementById('supersede-badge-text').textContent =
-    `🔁 Replacing ${r.guest}'s reservation (${document.getElementById('f-ci').value || r.check_in} → ${r.check_out}) - once this new contract is signed, the old one is automatically canceled. Credit pre-filled with what they already paid - adjust if needed.`;
-  calcTotal();
-  generate();
-  _checkDateConflict();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  _loadIntoForm(code);
 }
 
 // Auto-refresh when tab becomes visible
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && document.getElementById('app')?.classList.contains('show')) {
     _cloudRead().then(_mergeCloudData);
+    if (document.getElementById('adm-panel-booking').style.display !== 'none') loadReservations();
   }
 });
 
-// ── SYNC EXPORT / IMPORT ──
-function _applySyncData(data) {
-  if (data.quotes)    localStorage.setItem('thocb_quotes',    JSON.stringify(data.quotes));
-  if (data.inquiries) localStorage.setItem('thocb_inquiries', JSON.stringify(data.inquiries));
-  renderRecent();
-  loadInquiries();
-  _cloudWrite();
-}
-
-function exportQuotes() {
-  const quotes    = localStorage.getItem('thocb_quotes')    || '[]';
-  const inquiries = localStorage.getItem('thocb_inquiries') || '[]';
-  const code = btoa(unescape(encodeURIComponent(JSON.stringify({ quotes: JSON.parse(quotes), inquiries: JSON.parse(inquiries) }))));
-  const url  = window.location.origin + window.location.pathname + '#sync=' + code;
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById('export-btn');
-    if (btn) { const orig = btn.textContent; btn.textContent = '✅ Link copied!'; setTimeout(() => btn.textContent = orig, 2500); }
-  }).catch(() => {
-    prompt('Copy this sync link and open it on your other device:', url);
-  });
-}
-
 function _checkSyncHash() {
   const hash = window.location.hash;
-  if (!hash.startsWith('#sync=') && !hash.startsWith('#inq=')) return false;
-  try {
-    if (hash.startsWith('#sync=')) {
-      const data = JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
-      _applySyncData(data);
-      history.replaceState(null, '', window.location.pathname);
-      return true;
-    }
-    if (hash.startsWith('#inq=')) {
-      const inq = JSON.parse(decodeURIComponent(escape(atob(hash.slice(5)))));
-      // This link gets clicked from "New Inquiry" notification emails, sometimes long after
-      // the fact and from a browser context whose local storage was never synced/cleared -
-      // blindly trusting that stale local list here (and pushing it to the cloud) was exactly
-      // what kept resurrecting old cleared-out inquiries. Always build on the real current
-      // cloud state instead, so a stale tab can never clobber it.
-      (async () => {
-        let cloudInquiries = null;
-        try { cloudInquiries = (await _cloudRead())?.inquiries; } catch {}
-        const existing = cloudInquiries || JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-        const isDup = existing.some(e => e.email === inq.email && e.ci === inq.ci);
-        if (!isDup) existing.unshift(inq);
-        localStorage.setItem('thocb_inquiries', JSON.stringify(existing.slice(0, 50)));
-        if (!isDup) await _cloudWrite();
-        loadInquiries();
-        fillFromInquiry(0);
-      })();
-      history.replaceState(null, '', window.location.pathname);
-      return true;
-    }
-  } catch(e) { console.warn('Sync hash parse error', e); }
-  return false;
+  if (!hash.startsWith('#code=')) return false;
+  const code = decodeURIComponent(hash.slice(6));
+  history.replaceState(null, '', window.location.pathname);
+  // The reservations list may not have loaded yet (this runs right after login) - wait for it.
+  loadReservations().then(() => _loadIntoForm(code));
+  return true;
 }
-
-function showImport() {
-  const box = document.getElementById('import-box');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-}
-
-function importQuotes() {
-  const raw = document.getElementById('import-text').value.trim();
-  if (!raw) return;
-  try {
-    // Accept either raw base64 code or a full URL containing #sync=
-    const code = raw.includes('#sync=') ? raw.split('#sync=')[1] : raw;
-    const data = JSON.parse(decodeURIComponent(escape(atob(code))));
-    _applySyncData(data);
-    document.getElementById('import-box').style.display = 'none';
-    document.getElementById('import-text').value = '';
-    const btn = document.querySelector('[onclick="importQuotes()"]');
-    if (btn) { btn.textContent = '✅ Imported!'; setTimeout(() => btn.textContent = 'Apply', 2000); }
-  } catch(e) {
-    alert('❌ Invalid sync link or code - copy it again from the other device.');
-  }
-}
-
-// Init
-renderRecent();
 
 // ── ADMIN TAB SWITCHING ──
 function switchAdmTab(tab) {
   const leavingPhotos = tab !== 'photos' && document.getElementById('adm-panel-photos').style.display !== 'none';
   if (leavingPhotos && _photosDirty && !confirm('You have unsaved photo changes. Leave without saving?')) return;
   document.getElementById('adm-panel-booking').style.display   = tab === 'booking'   ? '' : 'none';
-  document.getElementById('adm-panel-quotes').style.display    = tab === 'quotes'    ? '' : 'none';
   document.getElementById('adm-panel-pricing').style.display   = tab === 'pricing'   ? '' : 'none';
   document.getElementById('adm-panel-stats').style.display     = tab === 'stats'     ? '' : 'none';
   document.getElementById('adm-panel-photos').style.display    = tab === 'photos'    ? '' : 'none';
-  document.getElementById('adm-panel-confirmed').style.display = tab === 'confirmed' ? '' : 'none';
   document.getElementById('adm-tab-btn-booking').classList.toggle('active',   tab === 'booking');
-  document.getElementById('adm-tab-btn-quotes').classList.toggle('active',    tab === 'quotes');
   document.getElementById('adm-tab-btn-pricing').classList.toggle('active',   tab === 'pricing');
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
-  document.getElementById('adm-tab-btn-confirmed').classList.toggle('active', tab === 'confirmed');
   if (tab === 'pricing')   { renderBaseRates(); }
   if (tab === 'stats')     { _renderStats(); }
   if (tab === 'photos')    { _photosInit(); }
-  if (tab === 'confirmed') { loadConfirmed(); }
-  if (tab === 'quotes')    { _refreshQuotesConfirmedStatus(); }
-}
-
-// A quote confirmed via the one-click email link (not the "✓ Confirm" button here) never
-// touches thocb_quotes, so its confirmed flag can go stale. Cross-check against the real
-// reservations list whenever this tab opens and self-heal anything out of sync.
-async function _refreshQuotesConfirmedStatus() {
-  renderRecent();
-  try {
-    const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
-    if (!r.ok) return;
-    const reservations = await r.json();
-    const saved = JSON.parse(localStorage.getItem('thocb_quotes') || '[]');
-    let changed = false;
-    saved.forEach(q => {
-      // Match on the reservation's saved booking URL (its notes field, minus the "url:"
-      // prefix), not just email+date - two different quotes can share the same guest and
-      // check-in (a reprice, a redo, testing), and matching on email+date alone marked BOTH
-      // as confirmed off of one real reservation, overwriting the other's total to match.
-      // A reservation's notes URL is always either exactly the quote's saved url, or that url
-      // with signing params appended after it (&signed=1&signame=...), so a prefix check here
-      // is exact - never a partial/coincidental match.
-      let match = null;
-      if (q.url) {
-        match = reservations.find(res => {
-          const notesUrl = (res.notes || '').replace(/^url:/, '');
-          return notesUrl && (notesUrl === q.url || notesUrl.startsWith(q.url + '&'));
-        });
-      }
-      if (!match && !q.url) {
-        // Only fall back to the loose match for old quotes saved before urls were recorded.
-        match = reservations.find(res => res.email && q.email && res.email === q.email && res.check_in === q.ci);
-      }
-      // Sync both directions: mark confirmed (and pull the real total) when a matching
-      // reservation exists, but also un-mark it if that reservation is gone - e.g. deleted -
-      // so a stale "Confirmed" badge doesn't linger and disagree with the real total.
-      if (match) {
-        if (!q.confirmed || q.total !== match.total) { q.confirmed = true; q.total = match.total; changed = true; }
-      } else if (q.confirmed) {
-        q.confirmed = false; changed = true;
-      }
-    });
-    if (changed) {
-      localStorage.setItem('thocb_quotes', JSON.stringify(saved));
-      _cloudWrite();
-      renderRecent();
-    }
-  } catch (e) { console.error('Quote confirm-status sync failed:', e); }
+  if (tab === 'booking')   { loadReservations(); }
 }
 
 // ══════════════════════════════════════════
