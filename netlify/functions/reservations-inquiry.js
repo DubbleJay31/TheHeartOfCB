@@ -15,6 +15,9 @@ exports.handler = async function(event) {
   if (!email || !ci || !first) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing first, email, or ci' }) };
   }
+  if (co && co <= ci) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Check-out must be after check-in' }) };
+  }
 
   try {
     // Guards only against a true accidental double-submit (double-click, a flaky connection
@@ -25,9 +28,13 @@ exports.handler = async function(event) {
     // a repeat guest, or a date that overlaps a reservation that just hasn't been blocked on
     // Airbnb yet. Overlap gets surfaced as a warning (see _detectReservationConflicts in
     // admin.html), never as a silently-dropped inquiry.
+    // check_out is included here too - it used to only match on check_in, so a guest who
+    // immediately resubmitted to correct a wrong checkout date got matched as a "duplicate" of
+    // their own first (wrong-date) submission and the correction was silently dropped.
     const recentCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const coFilter = co ? `check_out=eq.${encodeURIComponent(co)}` : 'check_out=is.null';
     const checkResp = await sbReservations(
-      `?email=eq.${encodeURIComponent(email)}&check_in=eq.${encodeURIComponent(ci)}&created_at=gte.${encodeURIComponent(recentCutoff)}&select=code`
+      `?email=eq.${encodeURIComponent(email)}&check_in=eq.${encodeURIComponent(ci)}&${coFilter}&created_at=gte.${encodeURIComponent(recentCutoff)}&select=code`
     );
     const existing = checkResp.ok ? await checkResp.json() : [];
     if (existing.length > 0) {

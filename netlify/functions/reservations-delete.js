@@ -17,8 +17,21 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing code' }) };
   }
 
-  const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
-    method: 'DELETE'
-  });
-  return { statusCode: r.ok ? 204 : r.status, body: '' };
+  try {
+    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+      method: 'DELETE',
+      headers: { Prefer: 'return=representation' }
+    });
+    if (!r.ok) {
+      const err = await r.text();
+      return { statusCode: 500, body: JSON.stringify({ message: err }) };
+    }
+    const deleted = await r.json().catch(() => []);
+    if (!deleted.length) {
+      return { statusCode: 404, body: JSON.stringify({ message: 'No reservation found for that code' }) };
+    }
+    return { statusCode: 204, body: '' };
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ message: String(e) }) };
+  }
 };

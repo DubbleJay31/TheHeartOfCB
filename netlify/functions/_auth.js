@@ -13,6 +13,11 @@ function sign(payload) {
 
 function verify(token) {
   const secret = process.env.ADMIN_SESSION_SECRET;
+  // Every admin-gated function calls requireAdmin() -> verify() without checking this env var
+  // itself first (only admin-login.js does) - without this guard, a misconfigured deploy throws
+  // a raw TypeError out of crypto.createHmac(undefined) instead of a clean 401, for every one of
+  // those functions at once.
+  if (!secret) return null;
   if (!token || typeof token !== 'string' || !token.includes('.')) return null;
   const [body, mac] = token.split('.');
   const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');

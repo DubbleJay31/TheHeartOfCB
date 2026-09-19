@@ -12,11 +12,15 @@ exports.handler = async function(event) {
   const status = (event.queryStringParameters || {}).status;
   const statusFilter = status ? `&status=eq.${encodeURIComponent(status)}` : '';
 
-  const r = await sbReservations(`?order=check_in.asc&select=*${statusFilter}`);
-  const body = await r.text();
-  return {
-    statusCode: r.status,
-    headers: { 'Content-Type': 'application/json' },
-    body
-  };
+  try {
+    const r = await sbReservations(`?order=check_in.asc&select=*${statusFilter}`);
+    const body = await r.text();
+    return {
+      statusCode: r.status,
+      headers: { 'Content-Type': 'application/json' },
+      body
+    };
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ message: String(e) }) };
+  }
 };
