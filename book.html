@@ -1068,7 +1068,7 @@ if (refundDue > 0) {
   if (cashMode) addRow('<span style="font-size:.72rem;color:#166534;font-weight:600;">or ' + fmt(cashTotal) + ' if paying 100% cash - see Cash option below</span>', '', '');
   if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</span>`, '', '');
 }
-if (dueRaw && !refundDue) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
+if (dueRaw && !refundDue) addRow(`Quote Expires`, fmtDate(dueRaw), 'pt-deposit');
 if (refundDue > 0) {
   const amtEl = document.getElementById('pay-refund-amount');
   if (amtEl) amtEl.textContent = fmt(refundDue);
