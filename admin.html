@@ -2718,9 +2718,9 @@ function openReservationDetail(code) {
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions">
         ${confirmUrl ? `
-        <button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">📧 Send Full Confirmation</button>
+        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">📧 Send Full Confirmation</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
-        ${phone ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
+        ${phone && !isCancelled ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
