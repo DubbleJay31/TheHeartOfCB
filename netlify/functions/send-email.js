@@ -15,9 +15,13 @@ exports.handler = async function(event) {
   // This endpoint has to stay reachable without a login (guests trigger it just by submitting
   // the inquiry form), so it can't be PIN-gated like the admin functions. An Origin check is a
   // real but partial mitigation - it stops casual scanning/browser-based abuse, not a determined
-  // attacker scripting requests directly, since Origin is just a header they could also fake.
+  // attacker scripting requests directly, since Origin is just a header they could also fake. It
+  // used to only check Origin when one was present, which meant a plain script/curl request with
+  // no Origin header at all - the default for any non-browser client - sailed through untouched,
+  // making this an effectively unauthenticated relay through Jesse's Resend account. Real browser
+  // fetch()/XHR POSTs always send Origin, so requiring it costs nothing for legitimate traffic.
   const origin = event.headers.origin || event.headers.Origin || '';
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (!ALLOWED_ORIGINS.includes(origin)) {
     return { statusCode: 403, body: JSON.stringify({ message: 'Origin not allowed' }) };
   }
 

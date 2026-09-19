@@ -1,6 +1,19 @@
+const crypto = require('crypto');
 const { sign } = require('./_auth');
 
 const SESSION_HOURS = 12;
+
+// Timing-safe compare needs equal-length buffers - pad/truncate is fine here since a length
+// mismatch alone already means "wrong PIN" and doesn't need to leak timing either way.
+function pinMatches(submitted, actual) {
+  const a = Buffer.from(String(submitted || ''));
+  const b = Buffer.from(String(actual));
+  if (a.length !== b.length) {
+    crypto.timingSafeEqual(Buffer.from(b).fill(0), Buffer.from(b).fill(0)); // constant-time no-op, keeps timing flat on length mismatch too
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
 
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
@@ -13,7 +26,7 @@ exports.handler = async function(event) {
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
 
-  if (body.pin !== process.env.ADMIN_PIN) {
+  if (!pinMatches(body.pin, process.env.ADMIN_PIN)) {
     // Small fixed delay to blunt trivial brute-forcing without needing external state.
     await new Promise(r => setTimeout(r, 600));
     return { statusCode: 401, body: JSON.stringify({ message: 'Incorrect PIN' }) };
