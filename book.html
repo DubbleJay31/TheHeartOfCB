@@ -941,9 +941,17 @@ const nights  = parseInt(get('nights')) || 0;
 const rate    = parseFloat(get('rate'))  || 0;
 const taxOcc   = parseFloat(get('tax_occ'))   || 0;
 const taxSales = parseFloat(get('tax_sales')) || 0;
-const ccFee    = parseFloat(get('cc_fee'))    || 0;
+// `cc_fee` used to be read straight from the URL and used to compute noFeeTotal (= total -
+// cc_fee) below - but only `total` is cryptographically signed and freshness-checked, never
+// cc_fee individually. A guest could inflate cc_fee in their own link to understate noFeeTotal,
+// which every non-card payment amount (Venmo/Cash App/Zelle/PayPal) is built from - letting them
+// underpay while total's own signature still checks out cleanly. The card fee is always a fixed,
+// known percentage (matches admin.html's CC_FEE), so it's derived from the one trusted value
+// instead of trusted as a separate unsigned parameter.
+const CC_FEE_RATE = 0.03;
 const totalRaw = get('total');
 const total   = parseFloat(totalRaw) || 0;
+const ccFee   = Math.max(0, total - total / (1 + CC_FEE_RATE));
 const qtok    = get('qtok') || '';
 const contactPref = get('contact_pref') || '';
 const refundDue = parseFloat(get('refund_due')) || 0;
@@ -954,7 +962,22 @@ const refundDue = parseFloat(get('refund_due')) || 0;
 const priorCredit = parseFloat(get('credit')) || 0;
 const fullTotal   = parseFloat(get('full_total')) || 0;
 const dueRaw  = get('due')     || '';
-const payUrl  = get('pay')     || '';
+// `pay` isn't part of the signed qtok payload or the freshness check - only guest/email/dates/
+// prop/total are. A link that's been intercepted and forwarded with a swapped `pay` value would
+// otherwise present a malicious payment destination with everything ELSE (guest, dates, total)
+// still displaying correctly, since those alone are what's actually verified. This doesn't require
+// widening the signing scheme - it just refuses to treat an unexpected domain as a live payment
+// link at all, since a legitimate value only ever came from Jesse pasting a real Square link.
+const _rawPayUrl = get('pay') || '';
+function _isTrustedPayUrl(u) {
+  if (!u) return false;
+  try {
+    const host = new URL(u).hostname.toLowerCase();
+    return host === 'squareup.com' || host.endsWith('.squareup.com')
+        || host === 'square.link' || host.endsWith('.square.link');
+  } catch { return false; }
+}
+const payUrl  = _isTrustedPayUrl(_rawPayUrl) ? _rawPayUrl : '';
 const cashMode = get('cash') === '1';
 const cashDisc = parseFloat(get('cdsc') || '0') || 0;
 const cashDep  = parseFloat(get('cdep') || '0') || 0;
@@ -1037,7 +1060,7 @@ const addRow = (label, val, cls = '') => {
   tr.innerHTML = `<td class="pt-label">${label}</td><td>${val}</td>`;
   rows.appendChild(tr);
 };
-addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(Math.round(rate/nights)|| 0)}/night)`, fmt(rate));
+addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(nights > 0 ? Math.round(rate/nights) : 0)}/night)`, fmt(rate));
 if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
@@ -1150,21 +1173,17 @@ function toggleCheck(e) {
   // Credit Card (Square)
   if (payUrl) {
     document.getElementById('pm-cc-card').style.display = '';
-    document.getElementById('pm-cc-btn').href = payUrl;
     document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
   }
 
   // PayPal
   document.getElementById('pm-pp-amount').textContent = `${fmtAmt(paypalTotal)} (incl. ${fmtAmt(paypalFee)} fee)`;
-  document.getElementById('pm-pp-btn').href = `https://paypal.me/jessejones430/${paypalTotal.toFixed(2)}`;
 
   // Venmo
   document.getElementById('pm-v-amount').textContent = noFeeLabel;
-  document.getElementById('pm-v-btn').href = `https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${noFee.toFixed(2)}&note=213+Harper+Stay`;
 
   // Cash App
   document.getElementById('pm-ca-amount').textContent = noFeeLabel;
-  document.getElementById('pm-ca-btn').href = `https://cash.app/$dubblejay31/${noFee.toFixed(2)}`;
 
   // Zelle
   document.getElementById('pm-z-amount').textContent = noFeeLabel;
@@ -1200,6 +1219,20 @@ function toggleCheck(e) {
     }
   }
 })();
+
+// Payment links stay at their static href="#" (see markup) until this runs. The .locked CSS
+// class on #pay-methods only blocks mouse clicks (pointer-events:none) - it never stops keyboard
+// Enter activation, and it can't hide a live href from "copy link address" or page source. A real
+// payment link sitting in the DOM before signing would let a guest pay (and skip the agreement,
+// and skip sign-link.js's price-freshness check) without ever calling submitAgreement(). Called
+// from unlockAndPay() - the same moment the .locked class actually comes off.
+function _activatePayLinks() {
+  const noFee = noFeeTotal > 0 ? noFeeTotal : total;
+  if (payUrl) document.getElementById('pm-cc-btn').href = payUrl;
+  document.getElementById('pm-pp-btn').href = `https://paypal.me/jessejones430/${paypalTotal.toFixed(2)}`;
+  document.getElementById('pm-v-btn').href = `https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${noFee.toFixed(2)}&note=213+Harper+Stay`;
+  document.getElementById('pm-ca-btn').href = `https://cash.app/$dubblejay31/${noFee.toFixed(2)}`;
+}
 
 // ── ENABLE SUBMIT BUTTON WHEN READY ──
 function checkReady() {
@@ -1290,6 +1323,7 @@ async function submitAgreement() {
 function unlockAndPay() {
   document.getElementById('success-overlay').classList.remove('show');
   document.getElementById('pay-lock-banner').style.display = 'none';
+  _activatePayLinks();
   if (refundDue > 0) {
     // Nothing to pay - show the refund card instead of the normal payment methods.
     document.getElementById('pay-refund-card').style.display = '';
@@ -1697,6 +1731,11 @@ function _setAgreementMethod(method) {
 }
 
 function handlePayClick(method, e) {
+  // The .locked CSS class (pointer-events:none) only blocks a mouse click - not keyboard Enter
+  // activation, and it never hides the underlying href from "copy link address" or page source.
+  // Without this check, a guest could pay via Square/PayPal/Venmo/Cash App before ever signing
+  // the agreement, which also means sign-link.js's price-freshness check never runs on this path.
+  if (!_agreementSent) { if (e) e.preventDefault(); return false; }
   const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
   if (expired) { if (e) e.preventDefault(); return false; }
   _setAgreementMethod(method);
@@ -1705,6 +1744,8 @@ function handlePayClick(method, e) {
 }
 
 function copyZelleNum(btn) {
+  // Same guard as handlePayClick() - see comment there.
+  if (!_agreementSent) return;
   navigator.clipboard.writeText('910-599-8118').then(() => {
     const orig = btn.textContent;
     btn.textContent = '✅ Copied!';
@@ -1959,6 +2000,12 @@ async function _notifyJesse(method) {
     if (!btn || btn.disabled || !phone) return;
     btn.disabled = true; btn.style.opacity = '.7';
     try {
+      // Confirm the reservation BEFORE handing off to the SMS app, not after - window.open('sms:')
+      // backgrounds this tab immediately, and a backgrounded tab's in-flight fetch can get
+      // silently suspended/dropped (iOS Safari in particular) before it ever completes. Doing the
+      // database write first means it's done by the time anything could interrupt the page.
+      const resv = await _confirmReservation();
+
       const bookUrl = window.location.href.replace(/&action=confirm.*$/, '');
       const firstName = guest.split(' ')[0];
       const msg = `Hi ${firstName}! It's Jesse - you're officially confirmed for ${fmtDate(ciRaw)} - ${fmtDate(coRaw)} at The Heart Of CB. Full details, door code instructions, and house rules: ${bookUrl}\n\nSee you soon!`;
@@ -1966,7 +2013,6 @@ async function _notifyJesse(method) {
       btn.textContent = '✅ Text App Opened';
       btn.style.background = '#0f1e3d'; btn.style.opacity = '';
 
-      const resv = await _confirmReservation();
       if (resv.ok) {
         const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
         if (status) status.innerHTML = `<span style="color:#16a34a;">Text opened for ${_esc(phone)}${note}</span>`;
