@@ -24,7 +24,7 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { code, guest, email, check_in, check_out, total, rate, tax_occ, tax_sales, signed_ip, host_notes, contact_pref } = body;
+  const { code, guest, email, check_in, check_out, total, rate, tax_occ, tax_sales, signed_ip, host_notes, contact_pref, payment_method } = body;
   if (!code || !guest || !check_in || !check_out) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing code, guest, check_in, or check_out' }) };
   }
@@ -87,6 +87,7 @@ exports.handler = async function(event) {
       contact_pref: contact_pref || null
     };
     if (host_notes) row.host_notes = host_notes;
+    if (payment_method) row.payment_method = payment_method;
 
     const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
       method: 'PATCH',

@@ -899,7 +899,7 @@ a { color: inherit; text-decoration: none; }
     <h2>Agreement Received!</h2>
     <p style="font-size:.95rem;font-weight:600;color:var(--navy);">You're not done yet - payment is the next required step.</p>
     <p style="margin-top:.75rem;font-weight:700;color:#dc2626;">⚠️ Your booking is NOT confirmed and your dates are NOT blocked until payment is received. Anyone can still book them.</p>
-    <button onclick="unlockAndPay()" style="margin-top:1.5rem;width:100%;padding:1rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Submit Payment Now →</button>
+    <button onclick="unlockAndPay()" style="margin-top:1.5rem;width:100%;padding:1rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Take Me to the Payment Screen →</button>
   </div>
 </div>
 
@@ -1528,6 +1528,9 @@ async function _sendAgreementCopy(sigData) {
     // involved, so these are split out for Cash specifically.
     const _confIsCash = sigData.paymentMethod === 'Cash';
     const _confRecvNow = _confIsCash ? (sigData.cashDep || 0) : _amountForMethod(sigData.paymentMethod);
+    // _amountForMethod() above needs the raw method key ('stripe') to pick the right fee logic -
+    // this is purely the guest-facing label shown in the "Payment via" row.
+    const _confMethodLabel = sigData.paymentMethod === 'stripe' ? 'Credit/Debit Card' : sigData.paymentMethod;
     // The deposit is a fully-refundable hold, not a partial payment - the guest still brings
     // the full cash price at check-in and Jesse refunds the deposit the moment it's in hand.
     const _confDueAtCheckin = _confIsCash ? (sigData.cashTotal || noFee) : 0;
@@ -1616,7 +1619,7 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Check-Out', fmtDate(sigData.co) + ' at 11:00 AM', '#f2ede3')}
     ${ROW('Nights', String(sigData.nights), '#f9f6f0')}
     ${priorCredit > 0 ? ROW('Full Stay Total', fmt2(fullTotal || (total + priorCredit)), '#f9f6f0') + ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f2ede3') : ''}
-    ${sigData.paymentMethod ? ROW('Payment via', sigData.paymentMethod, '#f2ede3') : ''}
+    ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, '#f2ede3') : ''}
     ${_confRecvNow > 0 ? `<tr>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</td>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_confRecvNow)}</td>
@@ -1953,7 +1956,7 @@ async function _notifyJesse(method) {
 }
 
 // ── ACTION=CONFIRM - Jesse one-click confirmation sender ──
-(function() {
+(async function() {
   if (get('action') !== 'confirm') return;
   // Hide all regular booking UI
   ['bk-hero', 'bk-main', 'agreement-print-view'].forEach(id => {
@@ -1963,12 +1966,44 @@ async function _notifyJesse(method) {
   document.querySelector('.bk-hero') && (document.querySelector('.bk-hero').style.display = 'none');
   document.querySelector('.bk-main') && (document.querySelector('.bk-main').style.display = 'none');
 
-  const sigName    = decodeURIComponent(get('signame') || '');
-  const sigTs      = get('ts') ? decodeURIComponent(get('ts')) : '';
-  const sigTok     = get('tok') ? decodeURIComponent(get('tok')) : '';
-  const sigIp      = get('sip') ? decodeURIComponent(get('sip')) : '';
-  const methodName = decodeURIComponent(get('method') || '');
+  let sigName    = decodeURIComponent(get('signame') || '');
+  let sigTs      = get('ts') ? decodeURIComponent(get('ts')) : '';
+  let sigTok     = get('tok') ? decodeURIComponent(get('tok')) : '';
+  let sigIp      = get('sip') ? decodeURIComponent(get('sip')) : '';
+  let methodName = decodeURIComponent(get('method') || '');
+  // Reached via admin.html's "Send Full Confirmation" for a Stripe-auto-confirmed reservation -
+  // that link is built from the reservation's original quote URL, which never carries any of the
+  // above (they only ever existed in the guest's own browser at signing time, for the manual
+  // one-click-link path). Backfill from the DB in that case.
+  let _backfilled = false;
+  if (!sigName && code) {
+    try {
+      const infoR = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
+      if (infoR.ok) {
+        const info = await infoR.json();
+        if (info.signed_name) { sigName = info.signed_name; _backfilled = true; }
+        if (info.signed_at) sigTs = info.signed_at;
+        if (info.tok) sigTok = info.tok;
+        if (info.signed_ip) sigIp = info.signed_ip;
+        if (info.payment_method) methodName = info.payment_method === 'stripe' ? 'stripe' : info.payment_method;
+      }
+    } catch (e) { console.error('Failed to backfill signing info:', e); }
+  }
   const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // The guest confirmation email's "View & Print Your Signed Agreement" link, and this page's own
+  // URL, need to actually carry signed=1/signame/ts/tok for that link to land on the real signed
+  // view instead of the plain pre-payment quote page - append them when they were backfilled
+  // rather than already present in the URL.
+  function _signedBookUrl(stripped) {
+    if (!_backfilled) return stripped;
+    return stripped
+      + '&signed=1'
+      + '&signame=' + encodeURIComponent(sigName)
+      + '&ts=' + encodeURIComponent(sigTs)
+      + (sigTok ? '&tok=' + encodeURIComponent(sigTok) : '')
+      + (sigIp ? '&sip=' + encodeURIComponent(sigIp) : '');
+  }
 
   async function _confirmReservation() {
     try {
@@ -1984,7 +2019,8 @@ async function _notifyJesse(method) {
           rate, tax_occ: taxOcc, tax_sales: taxSales,
           signed_ip: sigIp,
           tok: sigTok,
-          contact_pref: contactPref || undefined
+          contact_pref: contactPref || undefined,
+          payment_method: methodName || undefined
         })
       });
       const j = await r.json().catch(() => ({}));
@@ -2005,6 +2041,8 @@ async function _notifyJesse(method) {
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
       ${methodName === 'Refund' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${refundDue ? fmt2(refundDue) : ''} refund, then send confirmation.
+      </div>` : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
+        💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
@@ -2035,7 +2073,7 @@ async function _notifyJesse(method) {
     if (!btn || btn.disabled) return;
     btn.textContent = 'Sending…'; btn.disabled = true; btn.style.opacity = '.7';
     try {
-      const bookUrl = window.location.href.replace(/&action=confirm/, '');
+      const bookUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
       await _sendAgreementCopy({
         guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
         noFeeTotal, taxOcc, taxSales, ccFee,
@@ -2108,19 +2146,52 @@ async function _notifyJesse(method) {
 (function() {
   if (get('stripe_paid') !== '1' && get('stripe_cancel') !== '1') return;
   const paid = get('stripe_paid') === '1';
+
+  if (paid) {
+    // Clean, dedicated summary instead of stacking a banner on top of the full quote/agreement
+    // form - the guest already filled that out and signed it, and it's stale/irrelevant now that
+    // payment is done. Same hide-and-replace pattern as _showQuoteBlockedPage().
+    ['bk-hero', 'bk-main'].forEach(id => {
+      const el = document.getElementById(id) || document.querySelector('.' + id);
+      if (el) el.style.display = 'none';
+    });
+    const expiryBanner = document.getElementById('expiry-banner');
+    if (expiryBanner) expiryBanner.style.display = 'none';
+    const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const div = document.createElement('div');
+    div.style.cssText = 'max-width:520px;margin:3rem auto;padding:0 1.25rem;font-family:Inter,sans-serif;';
+    div.innerHTML = `
+      <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2.5rem 2rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:.5rem;">✅</div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;color:#166534;font-size:1.5rem;margin-bottom:.4rem;">Payment Received!</h2>
+        <p style="color:#4b5563;font-size:.92rem;line-height:1.6;margin-bottom:1.5rem;">Thanks, ${_esc(guest.split(' ')[0])} - your card was charged successfully and your booking is on its way to being confirmed.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.9rem;text-align:left;margin-bottom:1.5rem;">
+          <tr><td style="padding:8px 0;color:#6b7280;width:110px;">Property</td><td style="padding:8px 0;color:#0f1e3d;font-weight:600;">${_esc(propShort)}</td></tr>
+          <tr style="border-top:1px solid #f0ede4;"><td style="padding:8px 0;color:#6b7280;">Check-In</td><td style="padding:8px 0;color:#0f1e3d;font-weight:600;">${fmtDate(ciRaw)}</td></tr>
+          <tr style="border-top:1px solid #f0ede4;"><td style="padding:8px 0;color:#6b7280;">Check-Out</td><td style="padding:8px 0;color:#0f1e3d;font-weight:600;">${fmtDate(coRaw)}</td></tr>
+          <tr style="border-top:1px solid #f0ede4;"><td style="padding:8px 0;color:#6b7280;">Nights</td><td style="padding:8px 0;color:#0f1e3d;font-weight:600;">${nights}</td></tr>
+          <tr style="border-top:2px solid #e8e3d8;"><td style="padding:8px 0;color:#6b7280;font-weight:700;">Amount Charged</td><td style="padding:8px 0;color:#166534;font-weight:700;font-size:1.05rem;">${fmt2(total)}</td></tr>
+        </table>
+        <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.9rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#166534;line-height:1.6;text-align:left;">
+          📧 A full confirmation email is on its way from Jesse with check-in details, door code instructions, and house rules.
+        </div>
+        <p style="font-size:.85rem;color:#6b7280;line-height:1.7;">
+          Questions in the meantime? 📞 <a href="tel:9105998118" style="color:#b8882a;font-weight:600;">(910) 599-8118</a>
+        </p>
+      </div>`;
+    document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+    return;
+  }
+
+  // Checkout canceled - leave the normal booking page showing underneath so the guest can try
+  // again or pick a different payment method right there, unlike the paid case above.
   const div = document.createElement('div');
   div.style.cssText = 'max-width:520px;margin:2rem auto 0;padding:0 1.25rem;font-family:Inter,sans-serif;';
-  div.innerHTML = paid
-    ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
-         <div style="font-size:2rem;">✅</div>
-         <h3 style="font-family:'Playfair Display',Georgia,serif;color:#166534;margin:.4rem 0;">Payment Received!</h3>
-         <p style="color:#166534;font-size:.9rem;margin:0;">Thanks, ${_esc(guest.split(' ')[0])} - your card was charged successfully. Jesse will send your full confirmation shortly.</p>
-       </div>`
-    : `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
-         <div style="font-size:2rem;">↩️</div>
-         <h3 style="font-family:'Playfair Display',Georgia,serif;color:#92400e;margin:.4rem 0;">Checkout Canceled</h3>
-         <p style="color:#92400e;font-size:.9rem;margin:0;">No charge was made. You can try again below, or choose a different payment method.</p>
-       </div>`;
+  div.innerHTML = `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
+       <div style="font-size:2rem;">↩️</div>
+       <h3 style="font-family:'Playfair Display',Georgia,serif;color:#92400e;margin:.4rem 0;">Checkout Canceled</h3>
+       <p style="color:#92400e;font-size:.9rem;margin:0;">No charge was made. You can try again below, or choose a different payment method.</p>
+     </div>`;
   document.body.insertBefore(div, document.body.firstChild);
 })();
 

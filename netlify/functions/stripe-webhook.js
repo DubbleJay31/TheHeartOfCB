@@ -143,7 +143,8 @@ exports.handler = async function(event) {
       body: JSON.stringify({
         status: 'confirmed',
         updated_at: new Date().toISOString(),
-        host_notes: hostNotes
+        host_notes: hostNotes,
+        payment_method: 'stripe'
       })
     });
     if (!r.ok) {
