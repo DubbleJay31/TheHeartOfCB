@@ -938,7 +938,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <!-- Invoice Title generator -->
           <div class="field" style="margin-bottom:1rem;">
             <label style="display:flex;align-items:center;justify-content:space-between;">
-              <span>Invoice Title <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- copy into Square</span></span>
+              <span>Invoice Title <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- only needed if manually creating a legacy Square link below</span></span>
               <button type="button" id="copy-inv-btn" onclick="copyInvoiceTitle()" style="background:var(--gold);color:#fff;border:none;border-radius:6px;padding:.25rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer;">📋 Copy</button>
             </label>
             <input type="text" id="invoice-title-display" readonly
@@ -948,17 +948,17 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
           <!-- Payment link URL -->
           <div class="field" id="square-link-field">
-            <label>Square Payment Link URL <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- from Square "Share" after creating invoice · not required if cash</span></label>
-            <input type="url" id="f-pay" placeholder="https://squareup.com/pay/..." oninput="generate()" />
+            <label>Square Payment Link URL <span style="color:var(--muted);font-weight:400;font-size:.75rem;">- optional, legacy override. Leave blank and card payment happens automatically via Stripe.</span></label>
+            <input type="url" id="f-pay" placeholder="https://squareup.com/pay/... (only if you want to bypass Stripe)" oninput="generate()" />
           </div>
 
-          <!-- Override CC - send without Square link and without checking Cash -->
+          <!-- Override CC - explicitly disable the card option -->
           <div class="field" style="margin-top:.5rem;">
             <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:600;color:#b45309;">
               <input type="checkbox" id="f-override-cc" onchange="generate()" style="width:16px;height:16px;cursor:pointer;" />
-              ⚠️ Override - send without Square link
+              ⚠️ No Card Option
             </label>
-            <span class="field-hint" style="color:#92400e;">Guest pays Venmo / Cash App / Zelle only. Use if you intentionally want no card option.</span>
+            <span class="field-hint" style="color:#92400e;">Guest pays Venmo / Cash App / Zelle / Cash only - card (Stripe) is hidden entirely. Use only if you intentionally don't want to offer card for this booking.</span>
           </div>
 
           <!-- Cash option -->
@@ -1437,12 +1437,13 @@ function _loadIntoForm(code) {
   _editingCode = code;
   _generatedUrl = r.url || ''; _qtok = _generatedUrl.includes('qtok=') ? '1' : '';
 
-  // Payment method (Square link/Cash/Override), due date, and the guest-facing note aren't
-  // separate DB columns - they only ever lived inside the previously-generated link's own query
-  // string. generate() (called at the end of this function) refuses to build a link unless one
-  // of Square/Cash/Override is set, so without restoring these from the saved url, re-opening
-  // ANY existing reservation to edit it silently blanked _generatedUrl back to '' - "Change
-  // Reservation" on a real booking deleted its own link.
+  // Payment method (legacy Square link/Cash/no-card override), due date, and the guest-facing
+  // note aren't separate DB columns - they only ever lived inside the previously-generated link's
+  // own query string, so without restoring these from the saved url, re-opening an existing
+  // reservation to edit it would silently drop them (this is what used to blank _generatedUrl
+  // back to '' entirely, back when generate() required one of these to be set before it would
+  // build a link at all - no longer true now that Stripe makes card available by default, but
+  // still restoring them here so an edit doesn't silently change what was already agreed).
   const payEl = document.getElementById('f-pay');
   const cashEl = document.getElementById('f-cash');
   const overrideEl = document.getElementById('f-override-cc');
@@ -1479,9 +1480,10 @@ function _loadIntoForm(code) {
       if (guestNoteEl) guestNoteEl.value = qp.get('note') || '';
       if (cashDiscEl) cashDiscEl.value = qp.get('cdsc') || '';
       if (cashDepEl) cashDepEl.value = qp.get('cdep') || '';
-      // Neither Square nor Cash was set on the original quote - the only way it could have
-      // generated at all is Override CC, so restore that too or generate() refuses again.
-      if (overrideEl && !qp.get('pay') && qp.get('cash') !== '1') overrideEl.checked = true;
+      // Restore from the actual no_card flag the original quote was generated with - card is
+      // available by default now (Stripe), so this can no longer be inferred from "neither pay
+      // nor cash was set" the way it could when a payment method was required to generate at all.
+      if (overrideEl) overrideEl.checked = qp.get('no_card') === '1';
     } catch { /* malformed saved url - leave payment fields blank, Jesse re-enters them */ }
   }
   // Unconditional (not just when checked) - toggleCashOptions() already branches correctly on
@@ -2044,12 +2046,17 @@ function generate() {
     }
   }
 
-  const ready = guest && lastName && email && ci && co && _nights > 0 && subtotal > 0 && (pay || cash || overrideCc);
+  // Card payment no longer needs a pasted Square link to be available - book.html creates a
+  // Stripe Checkout Session on demand instead (see create-stripe-checkout.js), so it's always a
+  // valid payment path by default. `pay`/`cash`/`overrideCc` are no longer required for the link
+  // to be considered ready; `overrideCc` now only controls whether card is explicitly disabled
+  // (see no_card below), not whether SOME payment method exists at all.
+  const ready = guest && lastName && email && ci && co && _nights > 0 && subtotal > 0;
   if (!ready) {
     _generatedUrl = '';
     _qtok = '';
     linkEl.className = 'link-url empty';
-    linkEl.textContent = 'Fill in required fields (last name, email, dates, rate - plus Square link, check Cash, or check Override)…';
+    linkEl.textContent = 'Fill in required fields (last name, email, dates, rate)…';
     copyBtn.disabled = true;
     prevBtn.disabled = true;
     return;
@@ -2088,7 +2095,10 @@ function generate() {
   }
   if (refundDue > 0) p.set('refund_due', refundDue.toFixed(2));
   if (due)  p.set('due',  due);
+  // `pay` only ever needs to be set for the legacy manual-Square-link path now - Stripe doesn't
+  // need anything embedded in the URL, it's created fresh when the guest actually clicks pay.
   if (pay)  p.set('pay',  pay);
+  if (overrideCc) p.set('no_card', '1');
   if (cash) p.set('cash', '1');
   if (cash && cashDisc > 0) p.set('cdsc', cashDisc.toFixed(2));
   if (cash && cashDep  > 0) p.set('cdep', cashDep.toFixed(2));

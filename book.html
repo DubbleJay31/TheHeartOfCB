@@ -774,7 +774,8 @@ a { color: inherit; text-decoration: none; }
 
       <div id="pay-methods" class="pay-methods locked">
 
-        <!-- Credit Card (Square) - only shown if payUrl provided -->
+        <!-- Credit Card - shown by default (Stripe checkout is created on demand); hidden only
+             when Jesse explicitly checks "Override - no card option" in admin.html -->
         <div class="pay-method-card" id="pm-cc-card" style="display:none;">
           <div class="pm-icon">💳</div>
           <div class="pm-info">
@@ -978,6 +979,10 @@ function _isTrustedPayUrl(u) {
   } catch { return false; }
 }
 const payUrl  = _isTrustedPayUrl(_rawPayUrl) ? _rawPayUrl : '';
+// Set when Jesse checks "Override - no card option" in admin.html - lets him intentionally leave
+// card payment off a specific quote (e.g. cash/Venmo-only arrangement), now that Stripe would
+// otherwise make the card option available by default on every quote.
+const noCardOption = get('no_card') === '1';
 const cashMode = get('cash') === '1';
 const cashDisc = parseFloat(get('cdsc') || '0') || 0;
 const cashDep  = parseFloat(get('cdep') || '0') || 0;
@@ -1170,8 +1175,11 @@ function toggleCheck(e) {
   const noFee = noFeeTotal > 0 ? noFeeTotal : total;
   const noFeeLabel = `${fmtAmt(noFee)} - no fee`;
 
-  // Credit Card (Square)
-  if (payUrl) {
+  // Credit Card - Stripe checkout is created on demand (see payWithStripe()) so this no longer
+  // needs a pre-minted payUrl to be worth showing; only Jesse explicitly disabling the card
+  // option (no_card=1, set by admin.html's "Override" checkbox) hides it now. A legacy payUrl
+  // from an older, already-sent link still works as a static fallback (see payWithStripe()).
+  if (!noCardOption) {
     document.getElementById('pm-cc-card').style.display = '';
     document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
   }
@@ -1730,7 +1738,7 @@ function _setAgreementMethod(method) {
   _agreementUrl = _agreementUrl.replace(/&method=[^&]*/, '') + '&method=' + encodeURIComponent(method);
 }
 
-function handlePayClick(method, e) {
+async function handlePayClick(method, e) {
   // The .locked CSS class (pointer-events:none) only blocks a mouse click - not keyboard Enter
   // activation, and it never hides the underlying href from "copy link address" or page source.
   // Without this check, a guest could pay via Square/PayPal/Venmo/Cash App before ever signing
@@ -1738,6 +1746,41 @@ function handlePayClick(method, e) {
   if (!_agreementSent) { if (e) e.preventDefault(); return false; }
   const expired = document.getElementById('pay-methods').getAttribute('data-expired') === '1';
   if (expired) { if (e) e.preventDefault(); return false; }
+
+  // Credit Card with no pre-set legacy Square link (the normal case for any quote generated after
+  // Stripe was added) - create a fresh Checkout Session on demand instead of following a static
+  // href. The charge amount always comes from the reservation's own current, trusted total (looked
+  // up server-side in create-stripe-checkout.js), so a session created this way can't go stale and
+  // can't be tampered with the way a URL-embedded price could.
+  if (method === 'square' && !payUrl) {
+    if (e) e.preventDefault();
+    const btn = document.getElementById('pm-cc-btn');
+    if (btn.disabled) return;
+    const origText = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Redirecting…'; btn.style.opacity = '.7';
+    try {
+      const cleanUrl = window.location.href.replace(/&stripe_(paid|cancel)=1/g, '');
+      const r = await fetch('/.netlify/functions/create-stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code, guest, email, check_in: ciRaw, check_out: coRaw,
+          success_url: cleanUrl + '&stripe_paid=1',
+          cancel_url: cleanUrl + '&stripe_cancel=1'
+        })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.url) throw new Error(j.message || 'Could not start checkout');
+      _setAgreementMethod(method);
+      window.location.href = j.url;
+    } catch (err) {
+      console.error('Stripe checkout failed:', err);
+      btn.disabled = false; btn.textContent = origText; btn.style.opacity = '';
+      alert('Could not start checkout - please try again or contact Jesse.');
+    }
+    return;
+  }
+
   _setAgreementMethod(method);
   _showPaymentSentSection(method);
   // Let the <a href target="_blank"> navigate naturally
@@ -2026,6 +2069,30 @@ async function _notifyJesse(method) {
       console.error('Text confirmation failed:', err);
     }
   };
+})();
+
+// ── STRIPE RETURN STATE ── guest lands back here after completing or canceling Stripe Checkout.
+// Payment confirmation itself doesn't depend on this running (stripe-webhook.js already confirmed
+// the reservation server-to-server by the time this redirect even happens) - this is purely a
+// friendly "here's what just happened" banner, added on top of whatever else the page is already
+// showing rather than replacing it.
+(function() {
+  if (get('stripe_paid') !== '1' && get('stripe_cancel') !== '1') return;
+  const paid = get('stripe_paid') === '1';
+  const div = document.createElement('div');
+  div.style.cssText = 'max-width:520px;margin:2rem auto 0;padding:0 1.25rem;font-family:Inter,sans-serif;';
+  div.innerHTML = paid
+    ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
+         <div style="font-size:2rem;">✅</div>
+         <h3 style="font-family:'Playfair Display',Georgia,serif;color:#166534;margin:.4rem 0;">Payment Received!</h3>
+         <p style="color:#166534;font-size:.9rem;margin:0;">Thanks, ${_esc(guest.split(' ')[0])} - your card was charged successfully. Jesse will send your full confirmation shortly.</p>
+       </div>`
+    : `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
+         <div style="font-size:2rem;">↩️</div>
+         <h3 style="font-family:'Playfair Display',Georgia,serif;color:#92400e;margin:.4rem 0;">Checkout Canceled</h3>
+         <p style="color:#92400e;font-size:.9rem;margin:0;">No charge was made. You can try again below, or choose a different payment method.</p>
+       </div>`;
+  document.body.insertBefore(div, document.body.firstChild);
 })();
 
 // ── AGREEMENT PRINT VIEW ──
