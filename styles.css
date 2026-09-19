@@ -1708,6 +1708,10 @@ body.timeline-mode .stay-sticky-toggle  { position: relative; top: auto; }
 .mobile-nav-inline { display: none; }
 @media (max-width: 900px) {
   .hamburger { display: none !important; }
+  /* main's 150px padding-top (below) is sized for desktop's taller header/logo - the mobile
+     header is only ~82px, so without this every page left a large blank gap below it. The
+     home page's own taller header (Book Now bar) overrides this again at higher specificity. */
+  main { padding-top: 82px; }
   .nav-inner {
     display: flex; align-items: center; padding: 0 .75rem; gap: 0;
   }
