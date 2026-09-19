@@ -29,39 +29,49 @@ exports.handler = async function(event) {
 
   const results = [];
   for (const res of reservations) {
-    const recipients = [res.email].filter(Boolean);
-    if (!recipients.length) {
-      console.log(`Skipping ${res.guest} - no email on file`);
-      continue;
-    }
+    // Each reservation is isolated in its own try/catch - a thrown exception (network blip, DNS
+    // hiccup, Resend outage) used to propagate straight out of this loop and abort the entire
+    // run, silently skipping every reservation later in the batch with no catch-up mechanism
+    // (tomorrow's run only looks at tomorrow's date). One guest's failed send should never cost
+    // every other guest in the same batch their reminder.
+    try {
+      const recipients = [res.email].filter(Boolean);
+      if (!recipients.length) {
+        console.log(`Skipping ${res.guest} - no email on file`);
+        continue;
+      }
 
-    const html = buildReminderHtml(res);
+      const html = buildReminderHtml(res);
 
-    const emailResp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'The Heart Of CB <stay@theheartofcb.com>',
-        to: recipients,
-        subject: `Your stay is 7 days away - ${propLabel(res.prop)}`,
-        html
-      })
-    });
+      const emailResp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'The Heart Of CB <stay@theheartofcb.com>',
+          to: recipients,
+          subject: `Your stay is 7 days away - ${propLabel(res.prop)}`,
+          html
+        })
+      });
 
-    const result = await emailResp.json().catch(() => ({}));
-    const status = emailResp.ok ? 'sent' : 'failed';
-    console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
-    results.push(status);
+      await emailResp.json().catch(() => ({}));
+      const status = emailResp.ok ? 'sent' : 'failed';
+      console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
+      results.push(status);
 
-    if (emailResp.ok) {
-      await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ reminder_sent_at: new Date().toISOString() })
-      }).catch(err => console.error(`Failed to mark reminder_sent_at for ${res.code}:`, err));
+      if (emailResp.ok) {
+        await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ reminder_sent_at: new Date().toISOString() })
+        }).catch(err => console.error(`Failed to mark reminder_sent_at for ${res.code}:`, err));
+      }
+    } catch (e) {
+      console.error(`Reminder failed for ${res.code}:`, e);
+      results.push('failed');
     }
   }
 

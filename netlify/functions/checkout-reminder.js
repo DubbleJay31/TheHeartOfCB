@@ -28,32 +28,39 @@ exports.handler = async function(event) {
 
   const results = [];
   for (const res of reservations) {
-    const recipients = [res.email].filter(Boolean);
-    if (!recipients.length) {
-      console.log(`Skipping ${res.guest} - no email on file`);
-      continue;
-    }
-    const emailResp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'The Heart Of CB <stay@theheartofcb.com>',
-        to: recipients,
-        subject: 'Checkout today at 11:00 AM - thank you for staying!',
-        html: _buildCheckoutHtml(res)
-      })
-    });
-    const result = await emailResp.json().catch(() => ({}));
-    const status = emailResp.ok ? 'sent' : 'failed';
-    console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
-    results.push(status);
+    // Isolated per-reservation, same reasoning as reminder.js: an unhandled exception used to
+    // abort the whole run and silently skip every guest checking out later in the same batch.
+    try {
+      const recipients = [res.email].filter(Boolean);
+      if (!recipients.length) {
+        console.log(`Skipping ${res.guest} - no email on file`);
+        continue;
+      }
+      const emailResp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'The Heart Of CB <stay@theheartofcb.com>',
+          to: recipients,
+          subject: 'Checkout today at 11:00 AM - thank you for staying!',
+          html: _buildCheckoutHtml(res)
+        })
+      });
+      await emailResp.json().catch(() => ({}));
+      const status = emailResp.ok ? 'sent' : 'failed';
+      console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
+      results.push(status);
 
-    if (emailResp.ok) {
-      await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
-      }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.code}:`, err));
+      if (emailResp.ok) {
+        await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
+        }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.code}:`, err));
+      }
+    } catch (e) {
+      console.error(`Checkout reminder failed for ${res.code}:`, e);
+      results.push('failed');
     }
   }
 
