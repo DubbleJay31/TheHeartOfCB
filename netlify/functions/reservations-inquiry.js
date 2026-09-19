@@ -35,7 +35,11 @@ exports.handler = async function(event) {
       check_in: ci, check_out: co || null,
       guests_count: guests || '', pets: pets || '', message: message || '',
       contact_pref: contactPref || null,
-      rate: rate != null ? parseFloat(rate) || 0 : null
+      // An inquiry has no price yet, but total/nights/tax_occ/tax_sales were NOT NULL columns
+      // before tonight's schema change (every prior insert was a fully-priced confirmation) -
+      // default them to 0 rather than risk the insert failing if that constraint is still there.
+      rate: rate != null ? parseFloat(rate) || 0 : null,
+      total: 0, nights: 0, tax_occ: 0, tax_sales: 0
     };
 
     const r = await sbReservations('', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(row) });
