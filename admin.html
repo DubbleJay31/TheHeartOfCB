@@ -1432,6 +1432,44 @@ function _loadIntoForm(code) {
   _editingCode = code;
   _generatedUrl = r.url || ''; _qtok = _generatedUrl.includes('qtok=') ? '1' : '';
 
+  // Payment method (Square link/Cash/Override), due date, and the guest-facing note aren't
+  // separate DB columns - they only ever lived inside the previously-generated link's own query
+  // string. generate() (called at the end of this function) refuses to build a link unless one
+  // of Square/Cash/Override is set, so without restoring these from the saved url, re-opening
+  // ANY existing reservation to edit it silently blanked _generatedUrl back to '' - "Change
+  // Reservation" on a real booking deleted its own link.
+  const payEl = document.getElementById('f-pay');
+  const cashEl = document.getElementById('f-cash');
+  const overrideEl = document.getElementById('f-override-cc');
+  const dueEl = document.getElementById('f-due');
+  const guestNoteEl = document.getElementById('f-note');
+  const cashDiscEl = document.getElementById('f-cash-disc-amt');
+  const cashDepEl = document.getElementById('f-cash-dep-amt');
+  if (payEl) payEl.value = '';
+  if (cashEl) cashEl.checked = false;
+  if (overrideEl) overrideEl.checked = false;
+  if (dueEl) dueEl.value = '';
+  if (guestNoteEl) guestNoteEl.value = '';
+  if (_generatedUrl) {
+    try {
+      const qp = new URL(_generatedUrl).searchParams;
+      if (payEl) payEl.value = qp.get('pay') || '';
+      if (cashEl) cashEl.checked = qp.get('cash') === '1';
+      if (dueEl) dueEl.value = qp.get('due') || '';
+      if (guestNoteEl) guestNoteEl.value = qp.get('note') || '';
+      if (cashDiscEl) cashDiscEl.value = qp.get('cdsc') || '';
+      if (cashDepEl) cashDepEl.value = qp.get('cdep') || '';
+      if (cashEl?.checked) toggleCashOptions();
+      // Neither Square nor Cash was set on the original quote - the only way it could have
+      // generated at all is Override CC, so restore that too or generate() refuses again.
+      if (overrideEl && !qp.get('pay') && qp.get('cash') !== '1') overrideEl.checked = true;
+    } catch { /* malformed saved url - leave payment fields blank, Jesse re-enters them */ }
+  }
+  const expEl = document.getElementById('f-exp');
+  if (expEl) expEl.value = r.exp || '';
+  const creditEl = document.getElementById('f-credit');
+  if (creditEl) creditEl.value = r.credit || '';
+
   const badge = document.getElementById('editing-badge');
   if (badge) {
     badge.style.display = 'flex';
