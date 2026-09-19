@@ -841,7 +841,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             <div class="field">
               <label>Quote Expires (optional)</label>
               <input type="date" id="f-exp" oninput="generate()" />
-              <span class="field-hint">Leave blank for no expiry</span>
+              <span class="field-hint">Also shown to guest as "Payment Due." Leave blank for no expiry.</span>
             </div>
           </div>
           <div class="field" style="margin-top:.6rem;">
@@ -879,14 +879,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
               <label>Room Fare *</label>
               <span>$</span>
               <input type="number" id="f-rate" placeholder="auto-fills from inquiry" min="0" step="1" oninput="calcTotal(); generate()" />
-            </div>
-            <div class="field">
-              <label>Payment Due Date <span style="font-weight:400;color:var(--muted);font-size:.75rem;">- optional</span></label>
-              <div style="display:flex;gap:.4rem;align-items:center;">
-                <input type="date" id="f-due" oninput="generate()" style="flex:1;" />
-                <button type="button" onclick="document.getElementById('f-due').value='';generate();" title="Clear date" style="padding:.45rem .65rem;border:1px solid var(--border);border-radius:6px;background:var(--sand);color:var(--muted);cursor:pointer;font-size:.8rem;">✕</button>
-              </div>
-              <span class="field-hint">Leave blank if no due date needed</span>
             </div>
           </div>
           <!-- Guest Total (reverse calc) -->
@@ -1365,10 +1357,6 @@ function _esc(s) {
 // inquiry) applies the same defaults - these used to only ever get set once, at login, so
 // starting any subsequent quote in the same session left the guest-facing note blank and the
 // expiry date carried over from whatever the previous reservation had.
-function _defaultDueDate() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
 function _defaultExpDate() {
   const d = new Date(); d.setDate(d.getDate() + 2);
   return d.toISOString().slice(0, 10);
@@ -1378,7 +1366,6 @@ const _DEFAULT_GUEST_NOTE = 'Let me know if you have any questions. Thank you!';
 function _enterAdminApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('show');
-  document.getElementById('f-due').value = _defaultDueDate();
   document.getElementById('f-exp').value = _defaultExpDate();
   document.getElementById('f-note').value = _DEFAULT_GUEST_NOTE;
   calcTotal();
@@ -1428,7 +1415,6 @@ function _loadIntoForm(code) {
   // silently drop them.
   const cashEl = document.getElementById('f-cash');
   const overrideEl = document.getElementById('f-override-cc');
-  const dueEl = document.getElementById('f-due');
   const guestNoteEl = document.getElementById('f-note');
   const cashDiscEl = document.getElementById('f-cash-disc-amt');
   const cashDepEl = document.getElementById('f-cash-dep-amt');
@@ -1444,7 +1430,6 @@ function _loadIntoForm(code) {
   const cashDepPctEl = document.getElementById('f-cash-dep-pct');
   if (cashEl) cashEl.checked = false;
   if (overrideEl) overrideEl.checked = false;
-  if (dueEl) dueEl.value = '';
   if (guestNoteEl) guestNoteEl.value = '';
   if (cashDiscEl) cashDiscEl.value = '';
   if (cashDepEl) cashDepEl.value = '';
@@ -1455,7 +1440,6 @@ function _loadIntoForm(code) {
     try {
       const qp = new URL(_generatedUrl).searchParams;
       if (cashEl) cashEl.checked = qp.get('cash') === '1';
-      if (dueEl) dueEl.value = qp.get('due') || '';
       if (guestNoteEl) guestNoteEl.value = qp.get('note') || '';
       if (cashDiscEl) cashDiscEl.value = qp.get('cdsc') || '';
       if (cashDepEl) cashDepEl.value = qp.get('cdep') || '';
@@ -1465,10 +1449,9 @@ function _loadIntoForm(code) {
       if (overrideEl) overrideEl.checked = qp.get('no_card') === '1';
     } catch { /* malformed saved url - leave payment fields blank, Jesse re-enters them */ }
   }
-  // A never-quoted inquiry (no _generatedUrl yet) or an existing quote that predates these
-  // fields falls back to the same defaults a brand-new quote gets, instead of staying blank -
-  // this is what "New Instead" and a fresh login already do (_defaultDueDate() etc.).
-  if (dueEl && !dueEl.value) dueEl.value = _defaultDueDate();
+  // A never-quoted inquiry (no _generatedUrl yet) or an existing quote that predates this field
+  // falls back to the same default a brand-new quote gets, instead of staying blank - this is
+  // what "New Instead" and a fresh login already do (_DEFAULT_GUEST_NOTE).
   if (guestNoteEl && !guestNoteEl.value) guestNoteEl.value = _DEFAULT_GUEST_NOTE;
   // Unconditional (not just when checked) - toggleCashOptions() already branches correctly on
   // whether cash is checked, but only calling it in the checked case meant the panel stayed
@@ -1983,9 +1966,8 @@ function _clearEditing() {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
-  // These three default to something useful for a fresh quote rather than blank - see
-  // _defaultDueDate()/_defaultExpDate()/_DEFAULT_GUEST_NOTE.
-  document.getElementById('f-due').value = _defaultDueDate();
+  // These default to something useful for a fresh quote rather than blank - see
+  // _defaultExpDate()/_DEFAULT_GUEST_NOTE.
   document.getElementById('f-exp').value = _defaultExpDate();
   document.getElementById('f-note').value = _DEFAULT_GUEST_NOTE;
   _contactPref = '';
@@ -2009,13 +1991,16 @@ function generate() {
   const ci    = document.getElementById('f-ci').value;
   const co    = document.getElementById('f-co').value;
   const subtotal = parseFloat(document.getElementById('f-rate').value) || 0;
-  const due   = document.getElementById('f-due').value;
   const cash     = document.getElementById('f-cash').checked;
   const overrideCc = document.getElementById('f-override-cc')?.checked;
   const cashDisc = parseFloat(document.getElementById('f-cash-disc-amt')?.value) || 0;
   const cashDep  = parseFloat(document.getElementById('f-cash-dep-amt')?.value) || 0;
   const note  = document.getElementById('f-note').value.trim();
   const exp   = document.getElementById('f-exp').value;
+  // "Payment Due" shown to the guest is just Quote Expires now - having two separate dates for
+  // "when I'd like payment" vs "when this offer is void" was needless complexity nobody used
+  // differently in practice.
+  const due   = exp;
   const phone = document.getElementById('f-phone').value.trim();
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
 
@@ -2122,7 +2107,8 @@ function sendEmail() {
   const email     = document.getElementById('f-email').value.trim();
   const ci        = document.getElementById('f-ci').value;
   const co        = document.getElementById('f-co').value;
-  const due       = document.getElementById('f-due').value;
+  // "Payment Due" shown to the guest is just Quote Expires now - see generate()'s comment.
+  const due       = document.getElementById('f-exp').value;
   const note      = document.getElementById('f-note').value.trim();
   const fmtD      = s => { const d = new Date(s+'T12:00:00'); return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); };
   const prop      = PROPS[_prop].short;
