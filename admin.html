@@ -1177,6 +1177,19 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <div id="adm-panel-stats" style="display:none;">
   <div id="adm-panel-stats-inner">
 
+    <!-- Booking Funnel -->
+    <div class="adm-card" style="margin-top:1.25rem;">
+      <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3>🔻 Booking Funnel</h3>
+        <div style="display:flex;gap:.4rem;">
+          <button class="stat-pill active" id="funnel-window-30" onclick="_setFunnelWindow(30)">30d</button>
+          <button class="stat-pill" id="funnel-window-90" onclick="_setFunnelWindow(90)">90d</button>
+          <button class="stat-pill" id="funnel-window-0" onclick="_setFunnelWindow(0)">All time</button>
+        </div>
+      </div>
+      <div class="adm-card-body" id="booking-funnel"><div class="no-bookings">Loading…</div></div>
+    </div>
+
     <!-- Filter bar -->
     <div class="stat-filter-bar" style="margin-top:1.25rem;">
       <span class="stat-filter-label">Year</span>
@@ -2815,7 +2828,7 @@ function switchAdmTab(tab) {
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
   if (tab === 'pricing')   { renderBaseRates(); }
-  if (tab === 'stats')     { _renderStats(); }
+  if (tab === 'stats')     { _renderStats(); _renderBookingFunnel(); }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'booking')   { loadReservations(); }
 }
@@ -3696,6 +3709,72 @@ function statSetProp(p) {
 
 function _destroyChart(id) {
   if (_statCharts[id]) { _statCharts[id].destroy(); delete _statCharts[id]; }
+}
+
+// ── BOOKING FUNNEL ── how far bookings that came in recently actually got, using each row's
+// current status - not per-stage timestamps (the schema doesn't track exactly when a row moved
+// from quoted to signed, only signed_at/cancelled_at), so this is a snapshot of where things
+// stand today, not a strict cohort-over-time analysis. Still answers the real question: of what
+// came in, how much made it all the way, and where's the biggest drop-off.
+let _funnelWindowDays = 30;
+const _FUNNEL_ORDER = { inquiry: 0, quoted: 1, signed: 2, confirmed: 3 };
+
+function _setFunnelWindow(days) {
+  _funnelWindowDays = days;
+  ['30', '90', '0'].forEach(d => {
+    document.getElementById('funnel-window-' + d)?.classList.toggle('active', Number(d) === days);
+  });
+  _renderBookingFunnel();
+}
+
+async function _renderBookingFunnel() {
+  const el = document.getElementById('booking-funnel');
+  if (!el) return;
+  let rows;
+  try {
+    const r = await fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() });
+    if (!r.ok) throw new Error(await r.text());
+    rows = await r.json();
+  } catch (e) {
+    el.innerHTML = '<div class="no-bookings">⚠️ Could not load funnel data.</div>';
+    console.error('Booking funnel load failed:', e);
+    return;
+  }
+
+  if (_funnelWindowDays > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - _funnelWindowDays);
+    rows = rows.filter(r => r.created_at && new Date(r.created_at) >= cutoff);
+  }
+
+  const cancelled = rows.filter(r => r.status === 'cancelled');
+  const active = rows.filter(r => r.status !== 'cancelled');
+  const total = active.length;
+  const stageCount = stage => active.filter(r => (_FUNNEL_ORDER[r.status] ?? -1) >= _FUNNEL_ORDER[stage]).length;
+  const quoted = stageCount('quoted'), signed = stageCount('signed'), confirmed = stageCount('confirmed');
+  const pct = (n, of) => of > 0 ? Math.round(n / of * 100) : 0;
+
+  if (!total && !cancelled.length) {
+    el.innerHTML = '<div class="no-bookings">No bookings in this window yet.</div>';
+    return;
+  }
+
+  const stage = (label, n, ofN, color) => `
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.5rem;">
+      <div style="width:110px;font-size:.82rem;color:var(--muted);">${label}</div>
+      <div style="flex:1;background:var(--sand);border-radius:6px;height:22px;position:relative;overflow:hidden;">
+        <div style="width:${pct(n, ofN)}%;background:${color};height:100%;border-radius:6px;"></div>
+      </div>
+      <div style="width:90px;text-align:right;font-size:.82rem;font-weight:700;color:var(--navy);">${n} <span style="color:var(--muted);font-weight:400;">(${pct(n, ofN)}%)</span></div>
+    </div>`;
+
+  el.innerHTML = `
+    ${stage('Inquired', total, total, '#6b7280')}
+    ${stage('Quoted', quoted, total, '#b8882a')}
+    ${stage('Signed', signed, total, '#1d4e89')}
+    ${stage('Confirmed', confirmed, total, '#166534')}
+    ${cancelled.length ? `<div style="font-size:.78rem;color:#7a1f1f;margin-top:.5rem;">🚫 ${cancelled.length} cancelled in this window (not counted above)</div>` : ''}
+  `;
 }
 
 function _renderStats() {
