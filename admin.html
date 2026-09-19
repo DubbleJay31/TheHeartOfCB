@@ -804,6 +804,11 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
+      <!-- INQUIRY DETAILS (guests/pets/message from the public inquiry form) - the only other
+           place this ever showed was the one-time "New Inquiry" notification email, so it was
+           effectively lost from the dashboard the moment that email scrolled out of view. -->
+      <div id="inquiry-details-box" style="display:none;margin-bottom:1rem;background:var(--sand);border:1px solid var(--border);border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#444;line-height:1.6;"></div>
+
       <!-- PROPERTY -->
       <div class="adm-card">
         <div class="adm-card-header"><h3>🏠 Property</h3></div>
@@ -1445,11 +1450,26 @@ function _loadIntoForm(code) {
   const guestNoteEl = document.getElementById('f-note');
   const cashDiscEl = document.getElementById('f-cash-disc-amt');
   const cashDepEl = document.getElementById('f-cash-dep-amt');
+  // These two used to only get reset inside the `if (_generatedUrl)` block below - fine for a
+  // reservation that already has a saved link, but a brand-new, never-quoted inquiry has no url
+  // yet, so that whole block gets skipped and these were left holding whatever was typed while
+  // editing the *previous* reservation. Their %/flat-total sibling fields never resynced either
+  // way, since setting .value directly doesn't fire the `input` event those siblings listen for -
+  // both reset here unconditionally, then resynced near the end of this function once rate/nights
+  // (which the % math depends on) are actually loaded.
+  const cashDiscPctEl = document.getElementById('f-cash-disc-pct');
+  const cashFlatEl = document.getElementById('f-cash-flat');
+  const cashDepPctEl = document.getElementById('f-cash-dep-pct');
   if (payEl) payEl.value = '';
   if (cashEl) cashEl.checked = false;
   if (overrideEl) overrideEl.checked = false;
   if (dueEl) dueEl.value = '';
   if (guestNoteEl) guestNoteEl.value = '';
+  if (cashDiscEl) cashDiscEl.value = '';
+  if (cashDepEl) cashDepEl.value = '';
+  if (cashDiscPctEl) cashDiscPctEl.value = '';
+  if (cashFlatEl) cashFlatEl.value = '';
+  if (cashDepPctEl) cashDepPctEl.value = '';
   if (_generatedUrl) {
     try {
       const qp = new URL(_generatedUrl).searchParams;
@@ -1459,12 +1479,15 @@ function _loadIntoForm(code) {
       if (guestNoteEl) guestNoteEl.value = qp.get('note') || '';
       if (cashDiscEl) cashDiscEl.value = qp.get('cdsc') || '';
       if (cashDepEl) cashDepEl.value = qp.get('cdep') || '';
-      if (cashEl?.checked) toggleCashOptions();
       // Neither Square nor Cash was set on the original quote - the only way it could have
       // generated at all is Override CC, so restore that too or generate() refuses again.
       if (overrideEl && !qp.get('pay') && qp.get('cash') !== '1') overrideEl.checked = true;
     } catch { /* malformed saved url - leave payment fields blank, Jesse re-enters them */ }
   }
+  // Unconditional (not just when checked) - toggleCashOptions() already branches correctly on
+  // whether cash is checked, but only calling it in the checked case meant the panel stayed
+  // visible with the previous reservation's stale figures when the newly-loaded one has cash off.
+  toggleCashOptions();
   const expEl = document.getElementById('f-exp');
   if (expEl) expEl.value = r.exp || '';
   const creditEl = document.getElementById('f-credit');
@@ -1478,16 +1501,39 @@ function _loadIntoForm(code) {
       `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`;
   }
 
+  const inqBox = document.getElementById('inquiry-details-box');
+  if (inqBox) {
+    const bits = [];
+    if (r.guests_count) bits.push(`<div><b>Guests:</b> ${_esc(r.guests_count)}</div>`);
+    if (r.pets) bits.push(`<div><b>Pets:</b> ${_esc(r.pets)}</div>`);
+    if (r.message) bits.push(`<div style="margin-top:.3rem;"><b>Message:</b> "${_esc(r.message)}"</div>`);
+    if (bits.length) {
+      inqBox.innerHTML = `<div style="font-weight:700;color:var(--navy);margin-bottom:.3rem;">📋 From the guest's original inquiry</div>` + bits.join('');
+      inqBox.style.display = '';
+    } else {
+      inqBox.style.display = 'none';
+    }
+  }
+
+  // Prefer re-splitting the CURRENT guest name over the stored first_name/last_name - the upsert
+  // function only ever saves the combined `guest` string, never first_name/last_name separately,
+  // so those two columns are frozen at whatever the original inquiry said. Preferring them here
+  // meant a name correction (typo fix, legal-name change) silently "came back" the next time this
+  // reservation was reopened for editing.
   const parts = (r.guest || '').split(' ');
-  document.getElementById('f-first').value = r.first_name || parts[0] || '';
-  document.getElementById('f-last').value  = r.last_name  || parts.slice(1).join(' ') || '';
+  document.getElementById('f-first').value = parts[0] || r.first_name || '';
+  document.getElementById('f-last').value  = parts.slice(1).join(' ') || r.last_name || '';
   document.getElementById('f-email').value = r.email || '';
   document.getElementById('f-phone').value = r.phone || '';
   _contactPref = r.contact_pref || '';
   _updateContactPrefUI();
-  if (r.check_in)  document.getElementById('f-ci').value = r.check_in;
-  if (r.check_out) document.getElementById('f-co').value = r.check_out;
-  if (r.check_in && r.check_out) calcNights();
+  // ci/co/rate below used to only overwrite `if (truthy)` - the same "field only reconstructed
+  // when the new row happens to have one" shape as the already-fixed link-wipe bug. A reservation
+  // with no dates/rate yet (e.g. a manually-started draft) left the PREVIOUS reservation's dates
+  // and price sitting in the form, silently ready to be sent to a different guest.
+  document.getElementById('f-ci').value = r.check_in || '';
+  document.getElementById('f-co').value = r.check_out || '';
+  calcNights();
   if (r.prop && PROPS[r.prop]) selectProp(r.prop);
   const noteEl = document.getElementById('f-private-note');
   if (noteEl) noteEl.value = r.host_notes || '';
@@ -1496,13 +1542,20 @@ function _loadIntoForm(code) {
   // once quoted it's the actual Room Fare total this field holds everywhere else - multiply the
   // former by nights, use the latter as-is.
   const rateEl = document.getElementById('f-rate');
-  if (rateEl && r.rate) {
-    if (r.status === 'inquiry' && _nights > 0) {
+  if (rateEl) {
+    if (!r.rate) {
+      rateEl.value = '';
+    } else if (r.status === 'inquiry' && _nights > 0) {
       rateEl.value = Math.round(r.rate * _nights);
     } else {
       rateEl.value = r.rate;
     }
   }
+  // Resync the cash %/flat-total sibling fields now that rate/nights (which their math depends
+  // on via _cashBase()) are actually loaded - doing this earlier, right after restoring the $
+  // amounts from the saved url, would compute against the previous reservation's stale rate.
+  if (cashDiscEl?.value) cashDiscAmtInput();
+  if (cashDepEl?.value) cashDepAmtInput();
   calcTotal();
   generate();
   _checkDateConflict();
@@ -1653,8 +1706,15 @@ function calcTotal() {
   const taxOcc   = subtotal * TAX_OCC;
   const taxSales = subtotal * TAX_SALES;
   const preTax   = subtotal + taxOcc + taxSales;
-  const ccFee    = preTax * CC_FEE;
-  _total = preTax + ccFee;
+  // Mirrors generate()'s credit math exactly - _total is what _saveQuote() persists as
+  // reservations.total, and it used to never subtract credit at all, so a credited reservation's
+  // saved total silently didn't match the balance the guest's own link (and everything else that
+  // reads r.total) actually shows. rate/tax_occ/tax_sales stay at their full, uncredited values -
+  // that matches generate()'s rate/tax_occ/tax_sales URL params too, only `total` is credited.
+  const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
+  const creditedBase = Math.max(0, preTax - credit);
+  const ccFee    = creditedBase * CC_FEE;
+  _total = creditedBase + ccFee;
   _rate = subtotal;
   _taxOcc = taxOcc;
   _taxSales = taxSales;
@@ -1690,6 +1750,24 @@ function renderGuestBreakdown() {
     html += `<div style="height:.15rem;"></div>`;
     html += r('Per night - room fare basis', fmt(subtotal / _nights) + '/night');
     html += r('Per night - total basis', fmt(displayTotal / _nights) + '/night');
+  }
+  // A prior credit is correctly baked into the guest's actual link (generate()'s own `total`),
+  // but this panel - the one Jesse looks at while building the quote - showed the full uncredited
+  // figure with no indication a credit was even applied. If a guest questions the number they
+  // were shown, this panel needs to match what they actually saw.
+  const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
+  if (credit > 0) {
+    const creditedBase = Math.max(0, displayTotal - credit);
+    const creditedTotal = creditedBase + creditedBase * CC_FEE;
+    const refundDue = Math.max(0, credit - displayTotal);
+    html += `<div style="border-top:2px solid var(--border);margin:.25rem 0;"></div>`;
+    html += r('Credit Applied', '&minus;' + fmt(credit));
+    if (refundDue > 0) {
+      html += r('<strong style="color:#7c1d1d;">Refund Owed To Guest</strong>', `<strong style="color:#7c1d1d;">${fmt(refundDue)}</strong>`, true);
+    } else {
+      html += r('<strong>Balance Due (no card fee)</strong>', `<strong>${fmt(creditedBase)}</strong>`, true);
+      html += `<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem;color:var(--muted);"><span>If paid by card</span><span>${fmt(creditedTotal)}</span></div>`;
+    }
   }
   rows.innerHTML = html;
   panel.style.display = '';
@@ -1898,10 +1976,33 @@ async function _finalizeEmailPreviewLink() {
   }
   return url;
 }
+// "✕ New Instead" used to only clear the editing-code tracking, not a single form field - guest
+// name, dates, rate, and payment terms all stayed exactly as loaded from whatever reservation was
+// just being "escaped," despite the label implying a blank slate. If Jesse didn't manually clear
+// every field before generating/sending, a brand-new guest could end up quoted the previous
+// reservation's dates and price.
 function _clearEditing() {
   _editingCode = null;
   _generatedUrl = ''; _qtok = '';
   document.getElementById('editing-badge').style.display = 'none';
+  const inqBox = document.getElementById('inquiry-details-box');
+  if (inqBox) inqBox.style.display = 'none';
+  ['f-first','f-last','f-email','f-phone','f-ci','f-co','f-rate','f-pay','f-due','f-note',
+   'f-cash-disc-amt','f-cash-disc-pct','f-cash-flat','f-cash-dep-amt','f-cash-dep-pct',
+   'f-private-note','f-exp','f-credit','f-guest-total'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['f-cash','f-override-cc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+  _contactPref = '';
+  _updateContactPrefUI();
+  calcNights();
+  toggleCashOptions();
+  calcTotal();
+  _checkDateConflict();
   generate();
 }
 function getGuestName() {
@@ -2056,21 +2157,32 @@ function sendEmail() {
   const taxOcc    = subtotal * TAX_OCC;
   const taxSales  = subtotal * TAX_SALES;
   const preTax    = subtotal + taxOcc + taxSales;
-  const ccFee     = preTax * CC_FEE;
-  const total     = preTax + ccFee;
+  // A prior credit reduces the balance before the card fee, same as generate()'s own math -
+  // this preview used to always show the full uncredited preTax/total, so what Jesse reviewed
+  // and sent never matched the guest's actual link once a credit was involved.
+  const credit    = parseFloat(document.getElementById('f-credit')?.value) || 0;
+  const creditedBase = Math.max(0, preTax - credit);
+  const refundDue = Math.max(0, credit - preTax);
+  const ccFee     = creditedBase * CC_FEE;
+  const total     = creditedBase + ccFee;
 
   // If cash is an option on this quote, lead with the cash price - a guest who's expecting a
   // cash deal shouldn't see a bigger card-inclusive number first. Other payment amounts still
   // show later on the actual payment screen, where they can knowingly choose one that costs more.
   const cashOn = document.getElementById('f-cash')?.checked;
   const cashDiscAmt = parseFloat(document.getElementById('f-cash-disc-amt')?.value) || 0;
-  const cashPrice = Math.max(0, preTax - cashDiscAmt);
+  const cashPrice = Math.max(0, creditedBase - cashDiscAmt);
+
+  const creditRow = credit > 0 ? (refundDue > 0
+    ? `<tr><td colspan="2" style="padding:8px 0 0;font-size:13px;font-weight:700;color:#7c1d1d;">Credit of ${fmt(credit)} exceeds the new total - ${fmt(refundDue)} refund owed</td></tr>`
+    : `<tr><td style="padding:6px 0;color:#666;font-size:13px;">Credit Applied</td><td style="padding:6px 0;text-align:right;font-size:13px;color:#166534;">&minus;${fmt(credit)}</td></tr>`) : '';
 
   const priceBlock = cashOn ? `
         <tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total <span style="font-size:12px;font-weight:600;color:#166534;">(Cash Price)</span></td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(cashPrice)}</td>
         </tr>
+        ${creditRow}
         <tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
         <tr>
           <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #f0ebe0;">Room Fare (${_nights} night${_nights!==1?'s':''})</td>
@@ -2086,8 +2198,9 @@ function sendEmail() {
         </tr>
         <tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total</td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(creditedBase)}</td>
         </tr>
+        ${creditRow}
         ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</td></tr>` : ''}`;
 
   const noteRow = note ? `
@@ -2124,7 +2237,7 @@ function sendEmail() {
 
     <!-- Body -->
     <div style="padding:36px 40px;">
-      <p style="font-size:17px;color:#0a1f3a;margin:0 0 8px;font-weight:600;">Hey ${firstName}! 👋</p>
+      <p style="font-size:17px;color:#0a1f3a;margin:0 0 8px;font-weight:600;">Hey ${_esc(firstName)}! 👋</p>
       <p style="font-size:15px;color:#444;margin:0 0 24px;line-height:1.6;">
         Thanks for reaching out about staying at <strong>${prop}</strong>. I've put together your personal booking quote below - everything's in one place so I can get you booked quickly.
       </p>
@@ -2378,7 +2491,22 @@ function copySmsText() {
 // actually persists it, and Copy Link/Email/Text were the only things that did that. Editing an
 // already-saved reservation and just navigating away silently lost the change - this button is
 // the fix, a deliberate "save this now" that doesn't require going through a send action.
+// A fast double-click on Save Changes (or clicking Copy Link right after Save Changes, both of
+// which route through this function) could fire two overlapping POSTs before the first one's
+// response ever sets _editingCode - reservations-upsert.js would then insert TWO new rows for
+// what was meant to be one quote. In-flight calls now share the same promise instead of each
+// starting their own fetch.
+let _saveQuotePromise = null;
 async function _saveQuote() {
+  if (_saveQuotePromise) return _saveQuotePromise;
+  _saveQuotePromise = _doSaveQuote();
+  try {
+    return await _saveQuotePromise;
+  } finally {
+    _saveQuotePromise = null;
+  }
+}
+async function _doSaveQuote() {
   const statusEl = document.getElementById('save-changes-status');
   const guest = getGuestName();
   const ci    = document.getElementById('f-ci').value;
@@ -2435,7 +2563,7 @@ async function resendQuote(q, btn) {
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Your Booking Link</h1>
   </div>
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-    <p>Hi ${q.guest},</p>
+    <p>Hi ${_esc(q.guest)},</p>
     <p>Here's your booking link for <strong>${propName}</strong>:</p>
     <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
       <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(q.check_in)}</div>
@@ -2742,7 +2870,10 @@ function openReservationDetail(code) {
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
-        <div><b>Total (no card fee):</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        <div><b>${r.credit ? 'Full Stay Value' : 'Total (no card fee)'}:</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
+        ${r.credit && (_noFeeTotal(r) - r.credit) < 0 ? `<div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(r.credit - _noFeeTotal(r))}</div>`
+          : r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
         ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes 3% fee)</div>` : ''}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
@@ -2758,11 +2889,13 @@ function openReservationDetail(code) {
         ${confirmUrl ? `
         ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">📧 Send Full Confirmation</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
-        ${phone && !isCancelled ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${phone}?&body=${smsBody}">💬 Text Guest</a>` : ''}
+        ${phone && !isCancelled ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${_esc(phone)}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
+        ${isCancelled ? `
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
+        ` : ''}
         ${!isCancelled
           ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>`
           : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
@@ -2992,7 +3125,7 @@ async function sendCancellationEmail(code, btn) {
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Reservation Canceled</h1>
   </div>
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-    <p>Hi ${(r.guest||'').split(' ')[0] || r.guest},</p>
+    <p>Hi ${_esc((r.guest||'').split(' ')[0] || r.guest)},</p>
     <p>Your reservation at <strong>${propName}</strong> has been canceled:</p>
     <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
       <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(r.check_in)}</div>
