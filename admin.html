@@ -1361,16 +1361,26 @@ function _esc(s) {
 // The PIN itself is checked server-side now (netlify/functions/admin-login.js) - nothing
 // secret lives in this page's JS anymore. A valid login returns a signed session token that
 // every admin-only function call (reservations list/delete/confirm) requires.
+// Shared so every "start a fresh quote" path (login, "New Instead", loading a never-quoted
+// inquiry) applies the same defaults - these used to only ever get set once, at login, so
+// starting any subsequent quote in the same session left the guest-facing note blank and the
+// expiry date carried over from whatever the previous reservation had.
+function _defaultDueDate() {
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+function _defaultExpDate() {
+  const d = new Date(); d.setDate(d.getDate() + 2);
+  return d.toISOString().slice(0, 10);
+}
+const _DEFAULT_GUEST_NOTE = 'Let me know if you have any questions. Thank you!';
+
 function _enterAdminApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('show');
-  // Default due date and quote expiry to tomorrow
-  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
-  const tmrStr = tmr.toISOString().slice(0, 10);
-  document.getElementById('f-due').value = tmrStr;
-  document.getElementById('f-exp').value = tmrStr;
-  // Default personal note
-  document.getElementById('f-note').value = 'Let me know if you have any questions. Thank you!';
+  document.getElementById('f-due').value = _defaultDueDate();
+  document.getElementById('f-exp').value = _defaultExpDate();
+  document.getElementById('f-note').value = _DEFAULT_GUEST_NOTE;
   calcTotal();
   renderCalc();
   if (!_checkSyncHash()) loadReservations();
@@ -1455,12 +1465,17 @@ function _loadIntoForm(code) {
       if (overrideEl) overrideEl.checked = qp.get('no_card') === '1';
     } catch { /* malformed saved url - leave payment fields blank, Jesse re-enters them */ }
   }
+  // A never-quoted inquiry (no _generatedUrl yet) or an existing quote that predates these
+  // fields falls back to the same defaults a brand-new quote gets, instead of staying blank -
+  // this is what "New Instead" and a fresh login already do (_defaultDueDate() etc.).
+  if (dueEl && !dueEl.value) dueEl.value = _defaultDueDate();
+  if (guestNoteEl && !guestNoteEl.value) guestNoteEl.value = _DEFAULT_GUEST_NOTE;
   // Unconditional (not just when checked) - toggleCashOptions() already branches correctly on
   // whether cash is checked, but only calling it in the checked case meant the panel stayed
   // visible with the previous reservation's stale figures when the newly-loaded one has cash off.
   toggleCashOptions();
   const expEl = document.getElementById('f-exp');
-  if (expEl) expEl.value = r.exp || '';
+  if (expEl) expEl.value = r.exp || _defaultExpDate();
   const creditEl = document.getElementById('f-credit');
   if (creditEl) creditEl.value = r.credit || '';
 
@@ -1958,9 +1973,9 @@ function _clearEditing() {
   document.getElementById('editing-badge').style.display = 'none';
   const inqBox = document.getElementById('inquiry-details-box');
   if (inqBox) inqBox.style.display = 'none';
-  ['f-first','f-last','f-email','f-phone','f-ci','f-co','f-rate','f-due','f-note',
+  ['f-first','f-last','f-email','f-phone','f-ci','f-co','f-rate',
    'f-cash-disc-amt','f-cash-disc-pct','f-cash-flat','f-cash-dep-amt','f-cash-dep-pct',
-   'f-private-note','f-exp','f-credit','f-guest-total'].forEach(id => {
+   'f-private-note','f-credit','f-guest-total'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1968,6 +1983,11 @@ function _clearEditing() {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
+  // These three default to something useful for a fresh quote rather than blank - see
+  // _defaultDueDate()/_defaultExpDate()/_DEFAULT_GUEST_NOTE.
+  document.getElementById('f-due').value = _defaultDueDate();
+  document.getElementById('f-exp').value = _defaultExpDate();
+  document.getElementById('f-note').value = _DEFAULT_GUEST_NOTE;
   _contactPref = '';
   _updateContactPrefUI();
   calcNights();
@@ -2261,6 +2281,17 @@ function sendEmail() {
   document.getElementById('email-preview-body').innerHTML = emailHtml;
   document.getElementById('email-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
+  // sendEmailFromModal() disables this button and never re-enables it on success (only on
+  // failure) - reasonable for "don't double-send while this exact preview is open," but nothing
+  // ever reset it back for a FRESH preview, so fixing a price and reopening the modal to resend
+  // showed a permanently stuck "✅ Sent!" button that did nothing when clicked. Reset it every
+  // time a preview is (re)built.
+  const sendBtn = document.getElementById('modal-send-direct-btn');
+  if (sendBtn) {
+    sendBtn.disabled = false;
+    sendBtn.textContent = '⚡ Send Direct';
+    sendBtn.style.background = '#2a7a3b';
+  }
   // _finalizeEmailPreviewLink -> _getShareableUrl saves the row itself (creating it on first
   // save if needed) - the link's qtok signature and the saved record both land in the
   // background (sendEmailFromModal()/copyEmailHtml() also finalize it themselves right before

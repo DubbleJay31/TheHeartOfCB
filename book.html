@@ -1113,6 +1113,30 @@ if (expRaw && get('action') !== 'confirm') {
   }
 }
 
+// ── STALE-QUOTE CHECK ── sign-link.js already blocks the actual signing action if the price on
+// this page has drifted from what's currently saved (Jesse edited the quote after this link was
+// sent) - but until now the page itself just kept showing the old numbers with no indication
+// anything had changed, so a guest could read the whole page, even start filling in the agreement,
+// before hitting an error only at the very last step. This surfaces it immediately instead.
+(async function() {
+  if (get('action') === 'confirm' || get('signed') === '1' || !code) return;
+  try {
+    const r = await fetch(`/.netlify/functions/check-quote-freshness?code=${encodeURIComponent(code)}&total=${encodeURIComponent(totalRaw)}`);
+    const j = await r.json().catch(() => ({}));
+    if (j.fresh !== false) return;
+    document.getElementById('pay-methods').setAttribute('data-expired', '1');
+    const el = document.getElementById('expiry-banner');
+    const inner = document.getElementById('expiry-inner');
+    if (!el || !inner) return;
+    el.style.display = 'block';
+    inner.className = 'expiry-banner';
+    inner.innerHTML = j.reason === 'cancelled'
+      ? '⛔ This reservation has been canceled. Please contact Jesse with any questions.'
+      : '⛔ This quote has been updated since this link was sent - the pricing shown below is no longer current. Please contact Jesse for an updated link before signing or paying.';
+    checkReady();
+  } catch (e) { console.error('Freshness check failed:', e); }
+})();
+
 // ── AGREEMENT TOGGLE ──
 function toggleAgreement() {
   const btn = document.getElementById('agreement-toggle');
