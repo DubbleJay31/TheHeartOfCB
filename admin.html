@@ -1981,6 +1981,10 @@ function generate() {
   const creditedBase = Math.max(0, preTax - credit);
   const ccFee    = creditedBase * CC_FEE;
   const total    = creditedBase + ccFee;
+  // Shortened-stay case: guest already paid more than the new (smaller) total covers - that's
+  // not $0 due, it's a refund owed back to them. Surfaced separately so it never just silently
+  // disappears into a Math.max(0, ...) floor.
+  const refundDue = Math.max(0, credit - preTax);
 
   const base = 'https://theheartofcb.com/book.html';
   const p = new URLSearchParams();
@@ -3032,11 +3036,22 @@ function _checkSyncHash() {
     }
     if (hash.startsWith('#inq=')) {
       const inq = JSON.parse(decodeURIComponent(escape(atob(hash.slice(5)))));
-      const existing = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-      const isDup = existing.some(e => e.email === inq.email && e.ci === inq.ci);
-      if (!isDup) { existing.unshift(inq); localStorage.setItem('thocb_inquiries', JSON.stringify(existing.slice(0, 50))); _cloudWrite(); }
-      loadInquiries();
-      fillFromInquiry(0);
+      // This link gets clicked from "New Inquiry" notification emails, sometimes long after
+      // the fact and from a browser context whose local storage was never synced/cleared -
+      // blindly trusting that stale local list here (and pushing it to the cloud) was exactly
+      // what kept resurrecting old cleared-out inquiries. Always build on the real current
+      // cloud state instead, so a stale tab can never clobber it.
+      (async () => {
+        let cloudInquiries = null;
+        try { cloudInquiries = (await _cloudRead())?.inquiries; } catch {}
+        const existing = cloudInquiries || JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
+        const isDup = existing.some(e => e.email === inq.email && e.ci === inq.ci);
+        if (!isDup) existing.unshift(inq);
+        localStorage.setItem('thocb_inquiries', JSON.stringify(existing.slice(0, 50)));
+        if (!isDup) await _cloudWrite();
+        loadInquiries();
+        fillFromInquiry(0);
+      })();
       history.replaceState(null, '', window.location.pathname);
       return true;
     }
