@@ -775,7 +775,8 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <!-- Page tab nav -->
   <div class="adm-tabs-nav">
     <div class="adm-tabs-scroll">
-      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📋 Reservations</button>
+      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">🕐 Quotes</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
       <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
       <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
       <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Stats</button>
@@ -1062,21 +1063,19 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
-      <!-- UNIFIED RESERVATIONS LIST -->
+      <!-- QUOTES & INQUIRIES LIST (pre-confirmation pipeline - confirmed/cancelled live on the
+           separate Reservations tab instead) -->
       <div class="adm-card">
         <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-          <h3>📋 All Reservations</h3>
+          <h3>🕐 Quotes &amp; Inquiries</h3>
           <button id="res-refresh-btn" onclick="loadReservations(this)" style="background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--gold);font-weight:600;">⟳ Refresh</button>
         </div>
         <div class="adm-card-body">
-          <div id="res-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#7a1f1f;line-height:1.6;"></div>
           <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;">
             <button class="res-filter-pill active" id="res-filter-all" onclick="_setResFilter('all')" style="background:var(--navy);color:#fff;border:none;border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">All</button>
             <button class="res-filter-pill" id="res-filter-inquiry" onclick="_setResFilter('inquiry')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Inquiries</button>
             <button class="res-filter-pill" id="res-filter-quoted" onclick="_setResFilter('quoted')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Quoted</button>
             <button class="res-filter-pill" id="res-filter-signed" onclick="_setResFilter('signed')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Signed</button>
-            <button class="res-filter-pill" id="res-filter-confirmed" onclick="_setResFilter('confirmed')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Confirmed</button>
-            <button class="res-filter-pill" id="res-filter-cancelled" onclick="_setResFilter('cancelled')" style="background:var(--sand2);color:var(--navy);border:1.5px solid var(--border);border-radius:50px;padding:.3rem .8rem;font-size:.76rem;font-weight:700;cursor:pointer;">Cancelled</button>
           </div>
           <div id="reservations-list">
             <div class="no-bookings">Loading…</div>
@@ -1087,6 +1086,23 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     </div>
   </div>
   </div><!-- /#adm-panel-booking -->
+
+  <!-- ── CONFIRMED RESERVATIONS PANEL ── -->
+  <div id="adm-panel-confirmed" style="display:none;padding:1.5rem;max-width:900px;margin:0 auto;">
+    <div class="conf-header">
+      <h3>✅ Reservations</h3>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-sm" onclick="loadReservations(this)" style="background:var(--sand2);border:1.5px solid var(--border);color:var(--navy);font-weight:700;">⟳ Refresh</button>
+      </div>
+    </div>
+    <div id="res-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
+    <div class="conf-filter-pills">
+      <button class="conf-filter-pill active" id="conf-filter-upcoming" onclick="_setConfFilter('upcoming')">Upcoming</button>
+      <button class="conf-filter-pill" id="conf-filter-past" onclick="_setConfFilter('past')">Past</button>
+      <button class="conf-filter-pill" id="conf-filter-cancelled" onclick="_setConfFilter('cancelled')">Cancelled</button>
+    </div>
+    <div id="confirmed-res-list" class="conf-loading">Loading…</div>
+  </div><!-- /#adm-panel-confirmed -->
 
   <!-- ── PRICING PANEL ── -->
   <div id="adm-panel-pricing" style="display:none;">
@@ -2458,6 +2474,7 @@ async function loadReservations(btn) {
     if (!r.ok) throw new Error(await r.text());
     _reservationsCache = await r.json();
     renderReservations();
+    renderConfirmedPanel();
     _renderConflictBanner();
   } catch(e) {
     el.innerHTML = '<div class="no-bookings">⚠️ Could not load reservations. Check Supabase connection.</div>';
@@ -2536,9 +2553,13 @@ function _reservationLinks(r) {
   return { confirmUrl, viewUrl, phone };
 }
 
+// Backs the Quotes & Inquiries tab - deliberately excludes confirmed/cancelled, which live on
+// the separate Reservations tab instead (see renderConfirmedPanel). Both read from the same
+// _reservationsCache, so switching tabs never needs a re-fetch.
 function renderReservations() {
   const el = document.getElementById('reservations-list');
   const list = _reservationsCache
+    .filter(r => r.status !== 'confirmed' && r.status !== 'cancelled')
     .filter(r => _resFilter === 'all' || r.status === _resFilter)
     .sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
 
@@ -2551,10 +2572,8 @@ function renderReservations() {
 
   el.innerHTML = list.map(r => {
     const dates = r.check_in ? `${fmtD(r.check_in)}${r.check_out ? ' → ' + fmtD(r.check_out) : ''}` : 'No dates';
-    const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
-      ? `openReservationDetail('${r.code}')` : `_loadIntoForm('${r.code}')`;
     return `
-    <div class="recent-item" style="cursor:pointer;border-left:3px solid ${_STATUS_COLOR[r.status] || '#ccc'};padding-left:.8rem;margin-bottom:.6rem;" onclick="${clickable}">
+    <div class="recent-item" style="cursor:pointer;border-left:3px solid ${_STATUS_COLOR[r.status] || '#ccc'};padding-left:.8rem;margin-bottom:.6rem;" onclick="_loadIntoForm('${r.code}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
         <div>
           <div style="font-weight:600;color:var(--navy);">${PROPS[r.prop]?.icon || '🏠'} ${_esc(r.guest)}</div>
@@ -2569,6 +2588,54 @@ function renderReservations() {
       </div>
     </div>`;
   }).join('');
+}
+
+let _confFilter = 'upcoming';
+function _setConfFilter(filter) {
+  _confFilter = filter;
+  ['upcoming', 'past', 'cancelled'].forEach(f => {
+    document.getElementById('conf-filter-' + f)?.classList.toggle('active', f === filter);
+  });
+  renderConfirmedPanel();
+}
+
+// Backs the separate Reservations tab - confirmed/cancelled only, filtered by check_out date
+// (Upcoming/Past) or by status (Cancelled). Reads from the same _reservationsCache as the
+// Quotes tab; loadReservations() populates both on fetch.
+function renderConfirmedPanel() {
+  const el = document.getElementById('confirmed-res-list');
+  if (!el) return;
+  const today = new Date().toISOString().split('T')[0];
+  const list = _reservationsCache
+    .filter(r => {
+      if (_confFilter === 'cancelled') return r.status === 'cancelled';
+      if (r.status !== 'confirmed') return false;
+      return _confFilter === 'upcoming' ? r.check_out >= today : r.check_out < today;
+    })
+    .sort((a, b) => _confFilter === 'past' ? b.check_in.localeCompare(a.check_in) : a.check_in.localeCompare(b.check_in));
+
+  el.className = '';
+  if (!list.length) {
+    el.innerHTML = _confFilter === 'upcoming'
+      ? '<div class="no-bookings">No upcoming reservations. Confirm a quote from the Quotes tab to add one.</div>'
+      : _confFilter === 'past'
+      ? '<div class="no-bookings">No past reservations on file.</div>'
+      : '<div class="no-bookings">Nothing cancelled.</div>';
+    return;
+  }
+  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '?';
+  const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+
+  el.innerHTML = list.map(r => `
+    <div class="conf-row" onclick="openReservationDetail('${r.code}')">
+      <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
+      <div class="conf-row-info">
+        <div class="conf-row-guest">${_esc(r.guest)}${r.status === 'cancelled' ? ' <span style="color:#7a1f1f;font-weight:700;font-size:.78em;">CANCELLED</span>' : ''}</div>
+        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${fmtD(r.check_in)} → ${fmtD(r.check_out)} · ${fmt$(r.total)}</div>
+      </div>
+      <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
+    </div>`).join('');
 }
 
 function _closeReservationDetail() {
@@ -2820,10 +2887,12 @@ function switchAdmTab(tab) {
   const leavingPhotos = tab !== 'photos' && document.getElementById('adm-panel-photos').style.display !== 'none';
   if (leavingPhotos && _photosDirty && !confirm('You have unsaved photo changes. Leave without saving?')) return;
   document.getElementById('adm-panel-booking').style.display   = tab === 'booking'   ? '' : 'none';
+  document.getElementById('adm-panel-confirmed').style.display = tab === 'confirmed' ? '' : 'none';
   document.getElementById('adm-panel-pricing').style.display   = tab === 'pricing'   ? '' : 'none';
   document.getElementById('adm-panel-stats').style.display     = tab === 'stats'     ? '' : 'none';
   document.getElementById('adm-panel-photos').style.display    = tab === 'photos'    ? '' : 'none';
   document.getElementById('adm-tab-btn-booking').classList.toggle('active',   tab === 'booking');
+  document.getElementById('adm-tab-btn-confirmed').classList.toggle('active', tab === 'confirmed');
   document.getElementById('adm-tab-btn-pricing').classList.toggle('active',   tab === 'pricing');
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
@@ -2831,6 +2900,7 @@ function switchAdmTab(tab) {
   if (tab === 'stats')     { _renderStats(); _renderBookingFunnel(); }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'booking')   { loadReservations(); }
+  if (tab === 'confirmed') { loadReservations(); }
 }
 
 // ══════════════════════════════════════════
