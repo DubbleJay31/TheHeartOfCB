@@ -951,12 +951,14 @@ main { padding-top: 150px; }
 .cal-saturday:not(.cal-past):not(.cal-orphan):hover { background: rgba(239,68,68,.12) !important; cursor: not-allowed !important; }
 /* Tooltips are handled by the global JS tooltip in app.js (position: fixed, never clipped) */
 
-/* Date selection states */
-.cal-sel-start, .cal-sel-end {
+/* Date selection states - compound .cal-day.cal-sel-* selectors (rather than the bare class) so
+   this always wins regardless of whatever other state classes (cal-checkout-blocked, cal-booked,
+   etc.) happen to also be on the same cell; a selected day is always shown as selected first. */
+.cal-day.cal-sel-start, .cal-day.cal-sel-end {
   background: var(--navy) !important; border-radius: 8px;
 }
-.cal-sel-start .cal-num, .cal-sel-end .cal-num { color: var(--white) !important; }
-.cal-sel-start .cal-dot-sm, .cal-sel-end .cal-dot-sm { background: var(--gold2) !important; }
+.cal-day.cal-sel-start .cal-num, .cal-day.cal-sel-end .cal-num { color: var(--white) !important; }
+.cal-day.cal-sel-start .cal-dot-sm, .cal-day.cal-sel-end .cal-dot-sm { background: var(--gold2) !important; }
 .cal-in-range { background: rgba(184,136,42,.12); border-radius: 0; }
 .cal-in-range .cal-num { color: var(--navy); }
 
