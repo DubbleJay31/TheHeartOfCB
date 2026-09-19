@@ -28,7 +28,7 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
   return expBuf.length === gotBuf.length && crypto.timingSafeEqual(expBuf, gotBuf);
 }
 
-async function _notifyJesse(code, guest, amount) {
+async function _notifyJesseReservation(code, guest, amount) {
   try {
     const adminUrl = 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code);
     const html = `<div style="font-family:Georgia,serif;padding:20px;">
@@ -42,6 +42,32 @@ async function _notifyJesse(code, guest, amount) {
       body: JSON.stringify({ to: ['jessejonesrealestate@gmail.com'], subject: `Stripe payment received - ${guest}`, html })
     });
   } catch (e) { console.error('Jesse notification failed:', e); }
+}
+
+// A physical order needs Jesse to actually see it to ship it - there's no admin dashboard for
+// merch the way there is for reservations, so this notification email IS the fulfillment queue.
+async function _notifyJesseMerchOrder(session) {
+  try {
+    const product = session.metadata?.product || 'item';
+    const qty = session.metadata?.qty || '1';
+    const amount = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : '?';
+    const email = session.customer_details?.email || '(no email)';
+    const shipName = session.shipping_details?.name || session.customer_details?.name || '(no name)';
+    const addr = session.shipping_details?.address || {};
+    const addrLines = [addr.line1, addr.line2, [addr.city, addr.state, addr.postal_code].filter(Boolean).join(', '), addr.country]
+      .filter(Boolean).join('<br>');
+    const html = `<div style="font-family:Georgia,serif;padding:20px;">
+      <p style="font-size:16px;"><strong>📦 New merch order - ${product} × ${qty}</strong></p>
+      <p>$${amount} charged successfully.</p>
+      <p><strong>Ship to:</strong><br>${shipName}<br>${addrLines || '(no shipping address on file)'}</p>
+      <p><strong>Contact:</strong> ${email}</p>
+    </div>`;
+    await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: 'https://theheartofcb.com' },
+      body: JSON.stringify({ to: ['jessejonesrealestate@gmail.com'], subject: `New merch order - ${product} × ${qty}`, html })
+    });
+  } catch (e) { console.error('Merch order notification failed:', e); }
 }
 
 exports.handler = async function(event) {
@@ -70,8 +96,17 @@ exports.handler = async function(event) {
   const session = stripeEvent.data?.object || {};
   const code = session.metadata?.code;
   const guest = session.metadata?.guest || 'Guest';
+
+  // Merch orders and reservation payments both land on this one endpoint (one Stripe account,
+  // one webhook) - metadata.product vs metadata.code is how create-merch-checkout.js and
+  // create-stripe-checkout.js each mark which kind of session they minted.
+  if (session.metadata?.product) {
+    await _notifyJesseMerchOrder(session);
+    return { statusCode: 200, body: 'ok' };
+  }
+
   if (!code) {
-    console.error('checkout.session.completed with no code in metadata:', session.id);
+    console.error('checkout.session.completed with no code or product in metadata:', session.id);
     return { statusCode: 200, body: 'ok' };
   }
 
@@ -105,7 +140,7 @@ exports.handler = async function(event) {
       return { statusCode: 500, body: 'DB write failed' };
     }
 
-    await _notifyJesse(code, guest, amount);
+    await _notifyJesseReservation(code, guest, amount);
     return { statusCode: 200, body: 'ok' };
   } catch (e) {
     console.error('Stripe webhook handler error:', e);

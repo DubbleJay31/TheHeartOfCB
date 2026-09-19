@@ -1568,10 +1568,11 @@
         <h2 style="color:var(--navy);margin:0 0 .5rem;">THOCB Coffee Mug</h2>
         <p style="font-size:1.6rem;font-weight:700;color:var(--navy);margin:0 0 1rem;">$12.99</p>
         <p style="color:#555;margin-bottom:1.75rem;line-height:1.6;">Start your morning with The Heart Of CB. Classic white ceramic mug with the THOCB pin logo. 11oz.</p>
-        <a href="https://square.link/u/tPnLAvgL" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-block;text-decoration:none;padding:.85rem 2rem;font-size:1rem;">Buy Now - $12.99</a>
-        <p style="color:#999;font-size:.8rem;margin-top:.75rem;">Secure checkout via Square</p>
+        <button id="merch-buy-btn" onclick="buyMerch('mug')" class="btn btn-primary" style="padding:.85rem 2rem;font-size:1rem;">Buy Now - $12.99</button>
+        <p style="color:#999;font-size:.8rem;margin-top:.75rem;">Secure checkout via Stripe</p>
       </div>
     </div>
+    <div id="merch-status-banner" style="display:none;max-width:500px;margin:2rem auto 0;"></div>
     <p style="text-align:center;color:#aaa;font-size:.85rem;margin-top:3rem;">More products coming soon.</p>
   </div>
 </section>

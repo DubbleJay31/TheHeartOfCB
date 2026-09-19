@@ -2,6 +2,12 @@
    THE HEART OF CB - app.js
 ═══════════════════════════════════════ */
 
+// Captured before the SPA routing IIFE further down calls history.replaceState(..., pathname) -
+// that strips the query string from the URL entirely, so anything reading location.search after
+// that point (e.g. the merch-checkout return banner) would always see it empty. Read it once,
+// immediately, while it's still there.
+const _initialQuery = location.search;
+
 // All emails send via Resend through /.netlify/functions/send-email - see _sendEmail() below.
 async function _sendEmail(to, subject, html) {
   try {
@@ -1213,6 +1219,58 @@ window.addEventListener('popstate', function (e) {
   history.replaceState({ page: id }, '', PAGE_SLUGS[id] || '/');
   if (id !== 'home') showPage(id, true);
   else if (PAGE_TITLES.home) document.title = PAGE_TITLES.home;
+})();
+
+// ─── MERCH CHECKOUT (Stripe) ───
+async function buyMerch(product) {
+  const btn = document.getElementById('merch-buy-btn');
+  if (!btn || btn.disabled) return;
+  const origText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Redirecting…';
+  try {
+    const cleanUrl = window.location.origin + '/gear';
+    const r = await fetch('/.netlify/functions/create-merch-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product, qty: 1,
+        success_url: cleanUrl + '?merch_paid=1',
+        cancel_url: cleanUrl + '?merch_cancel=1'
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.url) throw new Error(j.message || 'Could not start checkout');
+    window.location.href = j.url;
+  } catch (err) {
+    console.error('Merch checkout failed:', err);
+    btn.disabled = false; btn.textContent = origText;
+    alert('Could not start checkout - please try again or reach out to Jesse.');
+  }
+}
+
+// Guest lands back here after completing or canceling Stripe Checkout for a merch order. Order
+// fulfillment doesn't depend on this running - stripe-webhook.js already emailed Jesse the order
+// and shipping address server-to-server by the time this redirect happens - this is purely a
+// friendly "here's what just happened" banner.
+(function () {
+  const params = new URLSearchParams(_initialQuery);
+  const paid = params.get('merch_paid') === '1';
+  const cancelled = params.get('merch_cancel') === '1';
+  if (!paid && !cancelled) return;
+  const el = document.getElementById('merch-status-banner');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = paid
+    ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
+         <div style="font-size:2rem;">✅</div>
+         <h3 style="color:#166534;margin:.4rem 0;">Order Received!</h3>
+         <p style="color:#166534;font-size:.9rem;margin:0;">Thanks for your order - Jesse will get it shipped out soon.</p>
+       </div>`
+    : `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:1.25rem 1.5rem;text-align:center;">
+         <div style="font-size:2rem;">↩️</div>
+         <h3 style="color:#92400e;margin:.4rem 0;">Checkout Canceled</h3>
+         <p style="color:#92400e;font-size:.9rem;margin:0;">No charge was made. Feel free to try again whenever you're ready.</p>
+       </div>`;
 })();
 
 // ─── MOBILE MENU ───
