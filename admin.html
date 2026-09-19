@@ -2336,12 +2336,16 @@ function sendSMS() {
   const firstName = guest.split(' ')[0];
   const phone     = document.getElementById('f-phone').value.trim();
   const buildMsg = url => `Hi ${firstName}! It's Jesse from The Heart Of CB. I've put together your personal booking quote - review, sign the agreement, and pay securely all in one place:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
-  _openSmsModal(buildMsg(_generatedUrl), phone);
+  const originalUrl = _generatedUrl;
+  _openSmsModal(buildMsg(originalUrl), phone);
   // Save immediately (see sendEmail()'s note) rather than waiting on the qtok mint - patch the
   // modal text and the saved record with the signed link once minting finishes in the background.
   const savedTs = saveRecent();
   _getShareableUrl().then(url => {
-    if (!url || url === _generatedUrl) return;
+    // _getShareableUrl() mutates and returns _generatedUrl itself, so comparing against the
+    // live _generatedUrl here would always be equal (true bug, caught live 2026-09-19) - compare
+    // against the snapshot taken before the mint instead.
+    if (!url || url === originalUrl) return;
     const liveModal = document.getElementById('sms-modal');
     if (liveModal && liveModal.style.display !== 'none') {
       const liveMsg = buildMsg(url);
