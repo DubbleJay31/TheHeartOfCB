@@ -2004,6 +2004,7 @@ function generate() {
     p.set('credit',     credit.toFixed(2));
     p.set('full_total', preTax.toFixed(2));
   }
+  if (refundDue > 0) p.set('refund_due', refundDue.toFixed(2));
   if (due)  p.set('due',  due);
   if (pay)  p.set('pay',  pay);
   if (cash) p.set('cash', '1');
@@ -2567,22 +2568,14 @@ async function _cloudWrite() {
 
 function _mergeCloudData(cloudData) {
   if (!cloudData) return;
-  // Dedupe by ts (unique per save), not guest+dates - the same guest can legitimately have
-  // multiple quotes or inquiries for the same dates (re-tests, revised quotes), and matching
-  // on identity alone silently dropped every one but the first.
-  const localQ  = JSON.parse(localStorage.getItem('thocb_quotes')    || '[]');
-  const cloudQ  = cloudData.quotes    || [];
-  const mergedQ = [...localQ, ...cloudQ]
-    .filter((q, i, arr) => arr.findIndex(x => x.ts === q.ts) === i)
-    .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 10);
-  localStorage.setItem('thocb_quotes', JSON.stringify(mergedQ));
-
-  const localI  = JSON.parse(localStorage.getItem('thocb_inquiries') || '[]');
-  const cloudI  = cloudData.inquiries || [];
-  const mergedI = [...localI, ...cloudI]
-    .filter((inq, i, arr) => arr.findIndex(x => x.ts === inq.ts) === i)
-    .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 50);
-  localStorage.setItem('thocb_inquiries', JSON.stringify(mergedI));
+  // Cloud is the source of truth - REPLACE local with it, don't merge. This used to union
+  // local+cloud (deduped by ts), which sounded safe but meant any tab/device that still had
+  // old data cached - easy to end up with after hours of testing, or just a tab left open from
+  // earlier - would silently add its stale data back in every time it synced, undoing a clear
+  // done anywhere else. A save always pushes to the cloud right after it happens, so trusting
+  // the cloud here is safe in the normal case and far more predictable in the broken-cache case.
+  localStorage.setItem('thocb_quotes', JSON.stringify(cloudData.quotes || []));
+  localStorage.setItem('thocb_inquiries', JSON.stringify(cloudData.inquiries || []));
 
   renderRecent();
   loadInquiries();

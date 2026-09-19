@@ -764,6 +764,14 @@ a { color: inherit; text-decoration: none; }
         ✅ Agreement captured - now complete your payment below to lock in your dates.
       </div>
 
+      <div id="pay-refund-card" style="display:none;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;padding:1.5rem;text-align:center;">
+        <div style="font-size:1.15rem;font-weight:700;color:#166534;margin-bottom:.4rem;">✅ No payment needed</div>
+        <p style="color:#166534;font-size:.92rem;margin:0 0 1.1rem;">Your updated dates come out to less than what you already paid - you're getting <strong id="pay-refund-amount"></strong> back. Jesse will send that separately once this is confirmed.</p>
+        <button id="confirm-refund-btn" onclick="confirmRefundReservation()" style="width:100%;padding:1rem;background:#166534;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">
+          ✅ Confirm My Updated Reservation
+        </button>
+      </div>
+
       <div id="pay-methods" class="pay-methods locked">
 
         <!-- Credit Card (Square) - only shown if payUrl provided -->
@@ -952,6 +960,7 @@ const totalRaw = get('total');
 const total   = parseFloat(totalRaw) || 0;
 const qtok    = get('qtok') || '';
 const contactPref = get('contact_pref') || '';
+const refundDue = parseFloat(get('refund_due')) || 0;
 // When this contract replaces an old one (see admin's "Change Reservation"), `total` above is
 // already the BALANCE DUE (full stay value minus what was already paid) - every fee/payment
 // calculation below can keep using `total` unchanged. `priorCredit`/`fullTotal` are only for
@@ -1051,12 +1060,22 @@ if (priorCredit > 0) {
   addRow('Full Stay Total', fmt(fullTotal || (rate + taxOcc + taxSales)));
   addRow('<span style="color:#166534;">Previous Payment Credit</span>', `<span style="color:#166534;">&minus;${fmt(priorCredit)}</span>`);
 }
-const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
-addRow(`<strong id="pt-total-label">${priorCredit > 0 ? 'Balance Due' : 'Total'}</strong>`, `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
-addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
-if (cashMode) addRow('<span style="font-size:.72rem;color:#166534;font-weight:600;">or ' + fmt(cashTotal) + ' if paying 100% cash - see Cash option below</span>', '', '');
-if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</span>`, '', '');
-if (dueRaw) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
+if (refundDue > 0) {
+  // Guest already paid more than the updated (shorter) stay costs - nothing to collect, Jesse
+  // owes them back. No balance-due/fee noise here since none of that applies.
+  addRow('<strong style="color:#166534;">💰 Refund Due to You</strong>', `<strong style="color:#166534;">${fmt(refundDue)}</strong>`, 'pt-total');
+} else {
+  const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
+  addRow(`<strong id="pt-total-label">${priorCredit > 0 ? 'Balance Due' : 'Total'}</strong>`, `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
+  addRow('<span style="font-size:.72rem;color:#6b7280;">Includes all taxes &amp; fees</span>', '', '');
+  if (cashMode) addRow('<span style="font-size:.72rem;color:#166534;font-weight:600;">or ' + fmt(cashTotal) + ' if paying 100% cash - see Cash option below</span>', '', '');
+  if (ccFee > 0) addRow(`<span style="font-size:.72rem;color:#b8882a;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</span>`, '', '');
+}
+if (dueRaw && !refundDue) addRow(`Payment Due`, fmtDate(dueRaw), 'pt-deposit');
+if (refundDue > 0) {
+  const amtEl = document.getElementById('pay-refund-amount');
+  if (amtEl) amtEl.textContent = fmt(refundDue);
+}
 
 // ── GUEST INFO ──
 document.getElementById('disp-guest').textContent = guest || '-';
@@ -1270,9 +1289,14 @@ async function submitAgreement() {
 // ── CLOSE OVERLAY → UNLOCK PAYMENTS ──
 function unlockAndPay() {
   document.getElementById('success-overlay').classList.remove('show');
-  document.getElementById('pay-methods').classList.remove('locked');
   document.getElementById('pay-lock-banner').style.display = 'none';
-  document.getElementById('pay-unlock-banner').classList.add('show');
+  if (refundDue > 0) {
+    // Nothing to pay - show the refund card instead of the normal payment methods.
+    document.getElementById('pay-refund-card').style.display = '';
+  } else {
+    document.getElementById('pay-methods').classList.remove('locked');
+    document.getElementById('pay-unlock-banner').classList.add('show');
+  }
   setTimeout(() => document.querySelector('.pay-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 }
 
@@ -1362,6 +1386,23 @@ async function handleCashConfirm() {
   const inner = document.getElementById('pm-cash-dep-section');
   if (inner) inner.innerHTML = `<button disabled style="${btnStyle}">✅ Jesse notified - you'll hear back shortly</button>`;
   showBookingComplete();
+}
+
+// ── CONFIRM UPDATED RESERVATION (shortened stay, no payment - refund owed instead) ──
+async function confirmRefundReservation() {
+  const btn = document.getElementById('confirm-refund-btn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true; btn.textContent = '⏳ Confirming - notifying Jesse…';
+  _setAgreementMethod('Refund');
+  try {
+    await _notifyJesse('Refund');
+    await _notifyGuest('Refund');
+    btn.textContent = '✅ Jesse notified - you\'ll hear back shortly';
+    showBookingComplete();
+  } catch (err) {
+    console.error('Refund confirmation failed:', err);
+    btn.disabled = false; btn.textContent = '✅ Confirm My Updated Reservation';
+  }
 }
 
 function showBookingComplete() {
@@ -1727,8 +1768,9 @@ async function _notifyGuest(method) {
 async function _notifyJesse(method) {
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const isRefund = method === 'Refund';
     const names = { venmo: 'Venmo', cashapp: 'Cash App', square: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
-    const methodLabel = names[method] || method;
+    const methodLabel = isRefund ? 'No payment - refund owed' : (names[method] || method);
     // Build confirm link - use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
     const r = await fetch('/.netlify/functions/send-email', {
@@ -1736,10 +1778,12 @@ async function _notifyJesse(method) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: ['jessejonesrealestate@gmail.com'],
-        subject: `💰 Payment Sent - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+        subject: isRefund
+          ? `🔄 Signed - Refund Owed - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`
+          : `💰 Payment Sent - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
         <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
-          <strong style="font-size:16px;">💰 Payment Sent - Verify &amp; Confirm</strong>
+          <strong style="font-size:16px;">${isRefund ? '🔄 Updated Agreement Signed - Refund Owed' : '💰 Payment Sent - Verify &amp; Confirm'}</strong>
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -1750,14 +1794,17 @@ async function _notifyJesse(method) {
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Verify in Venmo/Cash App/Zelle' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${_receivedNowForMethod(method) > 0 ? fmt(_receivedNowForMethod(method)) : 'Nothing sent yet - full cash at check-in'}</td></tr>
-            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}
+            ${isRefund
+              ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Refund Owed</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(refundDue)}</td></tr>`
+              : `<tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Verify in Venmo/Cash App/Zelle' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${_receivedNowForMethod(method) > 0 ? fmt(_receivedNowForMethod(method)) : 'Nothing sent yet - full cash at check-in'}</td></tr>
+            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}`
+            }
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
             ${contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="padding:5px 0;font-weight:700;">${contactPref === 'text' ? '💬 Text' : contactPref === 'email' ? '📧 Email' : '📧💬 Both'}</td></tr>` : ''}
           </table>
-          ${_receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
+          ${!isRefund && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
           <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
-            ⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.
+            ${isRefund ? `🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${fmt(refundDue)} refund, then confirm below.` : `⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.`}
           </div>
           <div style="margin-top:8px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
             📅 <strong>Remember:</strong> Block these dates on your Airbnb calendar once payment is confirmed.
