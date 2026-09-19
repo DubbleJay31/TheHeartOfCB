@@ -2138,10 +2138,14 @@ function sendEmail() {
 
   const priceBlock = cashOn ? `
         <tr>
-          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total <span style="font-size:12px;font-weight:600;color:#166534;">(Cash Price)</span></td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(cashPrice)}</td>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'} <span style="font-size:12px;font-weight:600;color:#166534;">(Cash Price)</span></td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(credit > 0 ? preTax - cashDiscAmt : cashPrice)}</td>
         </tr>
         ${creditRow}
+        ${credit > 0 && refundDue === 0 ? `<tr>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Cash Balance Due</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(cashPrice)}</td>
+        </tr>` : ''}
         <tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
         <tr>
           <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #f0ebe0;">Room Fare (${_nights} night${_nights!==1?'s':''})</td>
@@ -2156,10 +2160,14 @@ function sendEmail() {
           <td style="padding:6px 0;text-align:right;font-size:13px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(taxSales)}</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">Total</td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(creditedBase)}</td>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'}</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
         </tr>
         ${creditRow}
+        ${credit > 0 && refundDue === 0 ? `<tr>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Balance Due</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(creditedBase)}</td>
+        </tr>` : ''}
         ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</td></tr>` : ''}`;
 
   const noteRow = note ? `
@@ -2842,9 +2850,13 @@ function openReservationDetail(code) {
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total (no card fee)'}:</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
+        ${r.payment_method ? `
+        <div style="color:#166534;"><b>${r.payment_method === 'stripe' ? 'Paid by Card' : 'Amount Paid'}:</b> ${fmt$(r.payment_method === 'stripe' ? r.total : Math.max(0, _noFeeTotal(r) - (r.credit||0)))}${r.payment_method !== 'stripe' ? ` <span style="color:var(--muted);font-size:.82em;">(via ${_esc(r.payment_method)})</span>` : ''}</div>
+        ` : `
         ${r.credit && (_noFeeTotal(r) - r.credit) < 0 ? `<div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(r.credit - _noFeeTotal(r))}</div>`
           : r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
         ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes 3% fee)</div>` : ''}
+        `}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
         ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
@@ -2947,7 +2959,8 @@ async function cancelReservation(code) {
     });
     if (r.ok) {
       _closeReservationDetail();
-      loadReservations();
+      await loadReservations();
+      _openCancelNotifyModal(code);
     } else {
       alert('Cancel failed - check console.');
       console.error(await r.text());
@@ -2955,6 +2968,68 @@ async function cancelReservation(code) {
   } catch(e) {
     alert('Network error.');
     console.error(e);
+  }
+}
+
+// Cancelling shouldn't force a notification to go out automatically (same reasoning as Decline
+// below it) - Jesse asked for a choice popup right after cancelling instead of having to remember
+// to reopen the reservation and click Send Cancellation Email/Text himself.
+function _openCancelNotifyModal(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  let modal = document.getElementById('cancel-notify-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cancel-notify-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;">
+          <span style="color:#fff;font-weight:700;">🚫 Reservation Canceled</span>
+        </div>
+        <div style="padding:1.2rem 1.4rem;">
+          <div id="cancel-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
+          <div style="display:flex;flex-direction:column;gap:.6rem;">
+            <button id="cancel-notify-email-btn" onclick="_sendCancelNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Cancellation Email</button>
+            <button id="cancel-notify-text-btn" onclick="_sendCancelNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Cancellation Text</button>
+            <button onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
+          </div>
+          <div id="cancel-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.dataset.code = code;
+  const star = m => r.contact_pref === m ? ' ★' : '';
+  const emailBtn = modal.querySelector('#cancel-notify-email-btn');
+  const textBtn = modal.querySelector('#cancel-notify-text-btn');
+  emailBtn.textContent = `📧 Send Cancellation Email${star('email')}`;
+  emailBtn.disabled = !r.email;
+  emailBtn.style.opacity = r.email ? '1' : '.5';
+  textBtn.textContent = `💬 Send Cancellation Text${star('text')}`;
+  textBtn.disabled = !r.phone;
+  textBtn.style.opacity = r.phone ? '1' : '.5';
+  modal.querySelector('#cancel-notify-who').textContent =
+    `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
+  modal.querySelector('#cancel-notify-status').textContent = '';
+  modal.style.display = 'flex';
+}
+
+async function _sendCancelNotification(method) {
+  const modal = document.getElementById('cancel-notify-modal');
+  const code = modal.dataset.code;
+  const status = document.getElementById('cancel-notify-status');
+  const btn = document.getElementById(method === 'email' ? 'cancel-notify-email-btn' : 'cancel-notify-text-btn');
+  if (method === 'email') {
+    await sendCancellationEmail(code, btn, true);
+    if (btn.textContent.indexOf('✅') === -1) return; // sendCancellationEmail already reported failure on the button
+    status.style.color = '#166534';
+    status.textContent = '✅ Email sent';
+  } else {
+    sendCancellationText(code);
+    btn.textContent = '✅ Text App Opened';
+    status.style.color = '#166534';
+    status.textContent = '✅ Text composer opened';
   }
 }
 
@@ -3153,11 +3228,11 @@ async function _sendDeclineNotification(method) {
 }
 
 // ── CANCELLATION EMAIL ──
-async function sendCancellationEmail(code, btn) {
+async function sendCancellationEmail(code, btn, skipConfirm) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
-  if (!confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
+  if (!skipConfirm && !confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
   const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };

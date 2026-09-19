@@ -1618,8 +1618,13 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Check-In', fmtDate(sigData.ci) + ' at 3:00 PM', '#f9f6f0')}
     ${ROW('Check-Out', fmtDate(sigData.co) + ' at 11:00 AM', '#f2ede3')}
     ${ROW('Nights', String(sigData.nights), '#f9f6f0')}
-    ${priorCredit > 0 ? ROW('Full Stay Total', fmt2(fullTotal || (total + priorCredit)), '#f9f6f0') + ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f2ede3') : ''}
-    ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, '#f2ede3') : ''}
+    ${ROW('Room Fare (' + sigData.nights + ' night' + (sigData.nights !== 1 ? 's' : '') + ')', fmt2(rate), '#f9f6f0')}
+    ${ROW('Room Occupancy Tax', fmt2(taxOcc), '#f2ede3')}
+    ${ROW('Sales Tax', fmt2(taxSales), '#f9f6f0')}
+    ${ROW(priorCredit > 0 ? 'Full Stay Total' : 'Total', fmt2(fullTotal || (noFee + priorCredit)), '#f2ede3')}
+    ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') + ROW('Balance Due', fmt2(noFee), '#f2ede3') : ''}
+    ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
+    ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, priorCredit > 0 || (!_confIsCash && _confRecvNow > noFee) ? '#f2ede3' : '#f9f6f0') : ''}
     ${_confRecvNow > 0 ? `<tr>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</td>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_confRecvNow)}</td>
@@ -2173,7 +2178,7 @@ async function _notifyJesse(method) {
           <tr style="border-top:2px solid #e8e3d8;"><td style="padding:8px 0;color:#6b7280;font-weight:700;">Amount Charged</td><td style="padding:8px 0;color:#166534;font-weight:700;font-size:1.05rem;">${fmt2(total)}</td></tr>
         </table>
         <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.9rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#166534;line-height:1.6;text-align:left;">
-          📧 A full confirmation email is on its way from Jesse with check-in details, door code instructions, and house rules.
+          📧 A full confirmation email will be sent once Jesse reviews the booking, with check-in details, door code instructions, and house rules.
         </div>
         <p style="font-size:.85rem;color:#6b7280;line-height:1.7;">
           Questions in the meantime? 📞 <a href="tel:9105998118" style="color:#b8882a;font-weight:600;">(910) 599-8118</a>
