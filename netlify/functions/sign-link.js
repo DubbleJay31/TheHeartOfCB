@@ -41,6 +41,20 @@ exports.handler = async function(event) {
     return { statusCode: 401, body: JSON.stringify({ message: 'This booking link is missing or has an invalid quote signature - ask Jesse to resend it.' }) };
   }
 
+  // The qtok only proves Jesse minted THESE numbers at some point - not that they're still
+  // current. If the quote gets edited after the link is sent (e.g. price corrected in Admin),
+  // the guest's original email still has the old total baked into its URL, still carrying a
+  // validly-signed qtok for that stale figure, and nothing before this ever re-checked it against
+  // what's actually saved now. Block signing on drift rather than let a stale price go through -
+  // the guest just needs a fresh link, which is a lot cheaper than a silent pricing mismatch.
+  try {
+    const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=total`);
+    const cur = curResp.ok ? await curResp.json() : [];
+    if (cur.length && Math.abs((parseFloat(cur[0].total) || 0) - (parseFloat(body.total) || 0)) > 0.01) {
+      return { statusCode: 409, body: JSON.stringify({ message: 'This quote has been updated since this link was sent - ask Jesse for a current link before signing.' }) };
+    }
+  } catch (e) { console.error('Freshness check failed:', e); }
+
   const tok = crypto.createHmac('sha256', process.env.LINK_SECRET)
     .update(`${guest}|${email}|${ci}|${co}|${code}`)
     .digest('hex');

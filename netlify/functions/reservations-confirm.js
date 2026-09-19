@@ -29,16 +29,28 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing code, guest, check_in, or check_out' }) };
   }
 
-  // Two valid ways in: a logged-in admin session (the manual "Confirm" button on a quote), or a
-  // per-booking capability token minted by sign-link.js at signing time (the one-click confirm
-  // link in the "Payment Sent" email, which isn't an admin session).
-  if (!requireAdmin(event) && !validCapabilityToken(body)) {
-    return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
-  }
-
   try {
-    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status`);
+    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out`);
     const existing = existingResp.ok ? await existingResp.json() : [];
+
+    // Already confirmed, and the caller already knows this exact reservation's guest/dates (not
+    // just a guessed code) - report success without requiring the capability token. This is the
+    // normal case when Jesse confirms manually in Admin first, then goes to book.html's one-click
+    // link afterward just to send the guest notification: by then there's no write left to
+    // authorize, so gating on `tok` here only produced a false "save failed" for a reservation
+    // that was already saved.
+    if (existing.length && existing[0].status === 'confirmed'
+        && existing[0].guest === guest && existing[0].check_in === check_in && existing[0].check_out === check_out) {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
+    }
+
+    // Two valid ways in for an actual write: a logged-in admin session (the manual "Confirm"
+    // button on a quote), or a per-booking capability token minted by sign-link.js at signing
+    // time (the one-click confirm link in the "Payment Sent" email, which isn't an admin session).
+    if (!requireAdmin(event) && !validCapabilityToken(body)) {
+      return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
+    }
+
     if (!existing.length) {
       return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
     }

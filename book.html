@@ -1229,7 +1229,10 @@ async function submitAgreement() {
   };
 
   // Mint a capability token (+ capture signing IP) so the later one-click confirm link can
-  // write the reservation without a bare, unauthenticated POST anyone could forge.
+  // write the reservation without a bare, unauthenticated POST anyone could forge. This also
+  // double-checks the price embedded in this link is still current - a link stays valid
+  // indefinitely once emailed, so if the quote was edited since it was sent, this rejects rather
+  // than let the guest sign at a stale price.
   let tok = '', sip = '';
   try {
     const r = await fetch('/.netlify/functions/sign-link', {
@@ -1238,8 +1241,20 @@ async function submitAgreement() {
       body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw, prop, total: totalRaw, qtok, code })
     });
     if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
-    else { console.error('sign-link rejected:', await r.text()); }
-  } catch (e) { console.error('sign-link failed:', e); }
+    else {
+      const errBody = await r.json().catch(() => ({}));
+      console.error('sign-link rejected:', errBody);
+      const msg = r.status === 409
+        ? (errBody.message || 'This quote has changed since this link was sent. Please contact Jesse for a current link before signing.')
+        : 'We couldn\'t verify this booking link. Please contact Jesse for a current link before signing.';
+      alert(msg);
+      return;
+    }
+  } catch (e) {
+    console.error('sign-link failed:', e);
+    alert('We couldn\'t reach the server to sign this agreement. Please check your connection and try again.');
+    return;
+  }
 
   _agreementUrl = window.location.href
     + '&signed=1'
