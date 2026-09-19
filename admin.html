@@ -2468,34 +2468,57 @@ async function loadReservations(btn) {
 // property, looking for any pair whose date ranges overlap. Catches the case where the
 // calendar-block step got missed and two guests ended up confirmed for the same dates - separate
 // from _checkDateConflict() in the quote-builder, which only guards NEW quotes going forward.
+// Two different kinds of overlap, surfaced separately since they mean different things:
+// - doubleBookings: two CONFIRMED reservations overlap - a real double-booking, urgent.
+// - pendingOverlaps: an inquiry/quote/signed row overlaps a confirmed reservation - expected to
+//   happen (a new inquiry never gets silently dropped just because dates are already taken, see
+//   reservations-inquiry.js), but worth a heads-up so it doesn't sit unnoticed - either decline
+//   it, or it's a sign a confirmed stay never got blocked on Airbnb.
 function _detectReservationConflicts() {
-  const conflicts = [];
   const today = new Date().toISOString().split('T')[0];
-  const byProp = {};
-  _reservationsCache.filter(r => r.status === 'confirmed' && r.check_out >= today).forEach(r => { (byProp[r.prop] = byProp[r.prop] || []).push(r); });
-  Object.values(byProp).forEach(group => {
-    for (let i = 0; i < group.length; i++) {
-      for (let j = i + 1; j < group.length; j++) {
-        const a = group[i], b = group[j];
-        const aStart = new Date(a.check_in + 'T12:00:00'), aEnd = new Date(a.check_out + 'T12:00:00');
-        const bStart = new Date(b.check_in + 'T12:00:00'), bEnd = new Date(b.check_out + 'T12:00:00');
-        if (aStart < bEnd && aEnd > bStart) conflicts.push([a, b]);
-      }
+  const overlaps = (a, b) => {
+    const aStart = new Date(a.check_in + 'T12:00:00'), aEnd = new Date(a.check_out + 'T12:00:00');
+    const bStart = new Date(b.check_in + 'T12:00:00'), bEnd = new Date(b.check_out + 'T12:00:00');
+    return aStart < bEnd && aEnd > bStart;
+  };
+  const active = _reservationsCache.filter(r => r.status !== 'cancelled' && r.check_in && r.check_out && r.check_out >= today);
+  const confirmed = active.filter(r => r.status === 'confirmed');
+  const pending = active.filter(r => r.status !== 'confirmed');
+
+  const doubleBookings = [];
+  for (let i = 0; i < confirmed.length; i++) {
+    for (let j = i + 1; j < confirmed.length; j++) {
+      if (confirmed[i].prop === confirmed[j].prop && overlaps(confirmed[i], confirmed[j])) doubleBookings.push([confirmed[i], confirmed[j]]);
     }
-  });
-  return conflicts;
+  }
+
+  const pendingOverlaps = [];
+  pending.forEach(p => confirmed.forEach(c => { if (p.prop === c.prop && overlaps(p, c)) pendingOverlaps.push([p, c]); }));
+
+  return { doubleBookings, pendingOverlaps };
 }
 
 function _renderConflictBanner() {
   const banner = document.getElementById('res-conflict-banner');
   if (!banner) return;
-  const conflicts = _detectReservationConflicts();
-  if (!conflicts.length) { banner.style.display = 'none'; return; }
+  const { doubleBookings, pendingOverlaps } = _detectReservationConflicts();
+  if (!doubleBookings.length && !pendingOverlaps.length) { banner.style.display = 'none'; return; }
   const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  banner.innerHTML = '⚠️ <strong>' + conflicts.length + ' overlapping reservation' + (conflicts.length > 1 ? 's' : '') + ' found</strong> - you may have missed blocking a date:<br>' +
-    conflicts.map(([a, b]) =>
-      `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) - ${PROPS[a.prop]?.short || a.prop}`
-    ).join('<br>');
+  let html = '';
+  if (doubleBookings.length) {
+    html += '🚨 <strong>' + doubleBookings.length + ' double-booked date range' + (doubleBookings.length > 1 ? 's' : '') + '</strong> - two confirmed reservations overlap:<br>' +
+      doubleBookings.map(([a, b]) =>
+        `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) - ${PROPS[a.prop]?.short || a.prop}`
+      ).join('<br>');
+  }
+  if (pendingOverlaps.length) {
+    if (html) html += '<br><br>';
+    html += '⚠️ <strong>' + pendingOverlaps.length + ' pending request' + (pendingOverlaps.length > 1 ? 's' : '') + ' overlapping a confirmed reservation</strong> - decline it, or you forgot to block these dates on Airbnb:<br>' +
+      pendingOverlaps.map(([p, c]) =>
+        `&nbsp;&nbsp;• <strong>${p.guest}</strong>'s ${_STATUS_LABEL[p.status] || p.status} (${fmtD(p.check_in)}–${fmtD(p.check_out)}) overlaps <strong>${c.guest}</strong>'s confirmed stay - ${PROPS[p.prop]?.short || p.prop}`
+      ).join('<br>');
+  }
+  banner.innerHTML = html;
   banner.style.display = 'block';
 }
 
@@ -2575,7 +2598,10 @@ function renderConfirmedPanel() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
-        ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm</button>` : ''}
+        <div style="display:flex;gap:.3rem;">
+          ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm</button>` : ''}
+          ${(r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7a1f1f;color:#7a1f1f;" onclick="event.stopPropagation();_openDeclineModal('${r.code}')">🚫 Decline</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2744,6 +2770,101 @@ async function permanentlyDeleteReservation(code) {
   } catch(e) {
     alert('Network error.');
     console.error(e);
+  }
+}
+
+// ── DECLINE (inquiry/quoted/signed only - not yet a booking, so this isn't a "cancellation")
+// ── Lets Jesse write a custom reason once, embeds it in a templated email, and closes the
+// reservation out (reused 'cancelled' status - no new status/schema needed; the reason itself is
+// saved into host_notes so it isn't lost).
+function _openDeclineModal(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  let modal = document.getElementById('decline-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'decline-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
+          <span style="color:#e8a8a8;font-weight:700;letter-spacing:.04em;">🚫 DECLINE REQUEST</span>
+          <button onclick="document.getElementById('decline-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:1.2rem 1.4rem;">
+          <div id="decline-to" style="font-size:.85rem;color:#374151;margin-bottom:.7rem;font-weight:600;"></div>
+          <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Why are you declining? Goes in the email to the guest - leave blank to send a generic note instead.</label>
+          <textarea id="decline-reason" rows="4" placeholder="e.g. those dates just aren't available, and I don't have another opening nearby right now..." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.75rem;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="padding:.9rem 1.4rem;display:flex;gap:.7rem;border-top:1px solid #eee;background:#fafafa;">
+          <button id="decline-send-btn" onclick="_sendDecline()" style="flex:1;background:#7a1f1f;color:#fff;border:none;border-radius:8px;padding:.7rem;font-weight:700;cursor:pointer;">Send &amp; Close Out</button>
+          <button onclick="document.getElementById('decline-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem .9rem;cursor:pointer;">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.dataset.code = code;
+  modal.querySelector('#decline-to').textContent = `Declining: ${r.guest}${r.email ? ' (' + r.email + ')' : ' - no email on file'}`;
+  modal.querySelector('#decline-reason').value = '';
+  modal.style.display = 'flex';
+}
+
+async function _sendDecline() {
+  const modal = document.getElementById('decline-modal');
+  const code = modal.dataset.code;
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  const reason = document.getElementById('decline-reason').value.trim();
+  const btn = document.getElementById('decline-send-btn');
+  btn.disabled = true; btn.textContent = '⏳ Sending…';
+
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const propName = r.prop_label || PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
+  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+<div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+  <div style="background:#0a1f3a;padding:24px;text-align:center;">
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
+      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
+      </td></tr></table>
+    </td></tr></table>
+    <div style="height:10px;"></div>
+    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">About Your Request</h1>
+  </div>
+  <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
+    <p>Hi ${_esc((r.guest||'').split(' ')[0] || r.guest)},</p>
+    <p>Thank you for your interest in <strong>${_esc(propName)}</strong>${r.check_in ? ` for ${fmtD(r.check_in)}` : ''} - unfortunately I'm not able to accommodate this request.</p>
+    ${reason ? `<div style="background:#f8f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:.93rem;font-style:italic;">${_esc(reason)}</div>` : ''}
+    <p>I'm sorry for the inconvenience, and I hope you'll consider The Heart Of CB again for a future stay.</p>
+    <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
+    📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
+  </div>
+</div></body></html>`;
+
+  try {
+    if (r.email) {
+      const resp = await fetch('/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: [r.email], subject: `About your request - The Heart Of CB`, html })
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+    }
+    const updateResp = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'cancelled',
+        host_notes: (r.host_notes ? r.host_notes + '\n\n' : '') + 'Declined: ' + (reason || '(no reason given)')
+      })
+    });
+    if (!updateResp.ok) throw new Error(await updateResp.text());
+    modal.style.display = 'none';
+    loadReservations();
+  } catch(e) {
+    console.error(e);
+    alert('Send failed - check console.');
+    btn.disabled = false; btn.textContent = 'Send & Close Out';
   }
 }
 

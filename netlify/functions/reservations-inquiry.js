@@ -17,9 +17,17 @@ exports.handler = async function(event) {
   }
 
   try {
-    // Same dedup as before: don't create a second row for a guest re-submitting the same dates.
+    // Guards only against a true accidental double-submit (double-click, a flaky connection
+    // retrying the POST) - same email+dates within the last 2 minutes. This used to match on
+    // email+check_in with no time bound at all, which was fine for the old model (one JSONBin
+    // array entry, loosely deduped) but is wrong here: every genuinely new inquiry needs its own
+    // code, even if it happens to share a guest/date with something already on the books - e.g.
+    // a repeat guest, or a date that overlaps a reservation that just hasn't been blocked on
+    // Airbnb yet. Overlap gets surfaced as a warning (see _detectReservationConflicts in
+    // admin.html), never as a silently-dropped inquiry.
+    const recentCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const checkResp = await sbReservations(
-      `?email=eq.${encodeURIComponent(email)}&check_in=eq.${encodeURIComponent(ci)}&select=code`
+      `?email=eq.${encodeURIComponent(email)}&check_in=eq.${encodeURIComponent(ci)}&created_at=gte.${encodeURIComponent(recentCutoff)}&select=code`
     );
     const existing = checkResp.ok ? await checkResp.json() : [];
     if (existing.length > 0) {
