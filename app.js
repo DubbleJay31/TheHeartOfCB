@@ -1082,8 +1082,24 @@ function attestHouseRules() {
   _updateBbBtn();
   const bar = document.getElementById('booking-bar');
   const btn = document.getElementById('attest-rules-btn');
-  if (btn) { btn.textContent = '✅ House rules acknowledged - click Request to Book in the bar below'; btn.disabled = true; btn.style.opacity = '.6'; }
-  if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // "click Request to Book in the bar below" only makes sense once dates are actually picked -
+  // the booking bar only shows a real Request to Book action after that (see _showBookingBar()).
+  // Guests can (and do) read and agree to the rules before ever touching the calendar, since
+  // rules come first on the page - telling them to click a bar that isn't showing yet was just
+  // wrong in that order.
+  const datesChosen = !!(_selStart && _selEnd);
+  if (btn) {
+    btn.textContent = datesChosen
+      ? '✅ House rules acknowledged - click Request to Book in the bar below'
+      : '✅ House rules acknowledged - pick your dates below to continue';
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+  }
+  if (datesChosen) {
+    if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    document.querySelector('.page.active .listing-cal-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function scrollToGuide() {
