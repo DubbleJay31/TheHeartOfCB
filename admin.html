@@ -1635,7 +1635,6 @@ function renderGuestBreakdown() {
   const taxSales  = subtotal * TAX_SALES;
   const preTax    = subtotal + taxOcc + taxSales;
   const ccFee     = preTax * CC_FEE;
-  const guestTotal = preTax + ccFee;
   const displayTotal = preTax;
   const r = (label, val, bold) =>
     `<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:.15rem 0;">` +
@@ -1656,8 +1655,11 @@ function renderGuestBreakdown() {
   }
   rows.innerHTML = html;
   panel.style.display = '';
+  // Autofill with the no-card-fee total, matching how calcFromGuestTotal() below reverses it
+  // (fare+tax only, cc fee never baked into this field) - it used to autofill with the
+  // fee-inclusive figure, which typed back in as-is would silently double-charge the cc fee.
   const gtEl = document.getElementById('f-guest-total');
-  if (gtEl && document.activeElement !== gtEl) gtEl.value = guestTotal.toFixed(2);
+  if (gtEl && document.activeElement !== gtEl) gtEl.value = displayTotal.toFixed(2);
 }
 
 function calcFromGuestTotal() {
@@ -2581,6 +2583,18 @@ function _noFeeTotal(r) {
   return (parseFloat(r.rate) || 0) + (parseFloat(r.tax_occ) || 0) + (parseFloat(r.tax_sales) || 0);
 }
 
+// A raw inquiry's `rate` is the average NIGHTLY rate the guest saw before submitting (see
+// app.js's submitBooking, `rate: window._lastAvgNightly`), not a per-stay figure - unlike every
+// later status, where `rate` is already the full-stay room fare a real quote was built from.
+// Feeding an inquiry's rate straight into _noFeeTotal() reads as "the total" when it's actually
+// just one night's rate, so this keeps the list row honest about which figure it's showing.
+function _rowPriceLabel(r, fmt$) {
+  if (r.status === 'inquiry') {
+    return parseFloat(r.rate) > 0 ? ` · ~${fmt$(r.rate)}/night` : '';
+  }
+  return _noFeeTotal(r) ? ` · ${fmt$(_noFeeTotal(r))}` : '';
+}
+
 // The row's own `url` (set once a quote is first saved) is the guest-facing booking link -
 // read-only once signed (it carries signed=1 from signing time, rendering the signed-agreement
 // view with no action buttons), so that's the one guests should get via Copy Link/Text Guest.
@@ -2640,7 +2654,7 @@ function renderConfirmedPanel() {
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
         <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};">${_STATUS_LABEL[r.status] || r.status}</span></div>
-        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_noFeeTotal(r) ? ' · ' + fmt$(_noFeeTotal(r)) : ''}</div>
+        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
