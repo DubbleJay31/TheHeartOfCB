@@ -1826,6 +1826,7 @@ async function _notifyJesse(method) {
       <div style="font-size:3rem;margin-bottom:.5rem;">📬</div>
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
+      ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest is fine with either'}</div>` : ''}
       ${methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
@@ -1833,13 +1834,18 @@ async function _notifyJesse(method) {
         📅 <strong>Remember:</strong> Block these dates on your Airbnb calendar once payment is confirmed.
       </div>
       <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
-        <strong>This will send a full confirmation email to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
-        Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.
+        <strong>Email sends the full confirmation to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
+        Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.<br/><br/>
+        <strong>Text sends a shorter note</strong>${phone ? ` to ${_esc(phone)}` : ' (no phone on file)'} with a link to the full details online.
       </div>
       ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
       <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
-        style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;">
-        ✅ Send Confirmation to ${_esc(guest.split(' ')[0])}
+        style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:.6rem;">
+        ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}
+      </button>
+      <button id="send-confirm-text-btn" onclick="sendGuestConfirmationText()" ${phone ? '' : 'disabled'}
+        style="width:100%;padding:1rem;background:${phone ? '#166534' : '#d1d5db'};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:${phone ? 'pointer' : 'not-allowed'};letter-spacing:.01em;">
+        💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}
       </button>
       <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
     </div>`;
@@ -1873,10 +1879,41 @@ async function _notifyJesse(method) {
         if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
       }
     } catch(err) {
-      btn.textContent = '✅ Send Confirmation to ' + guest.split(' ')[0];
+      btn.textContent = '✅ Email Confirmation to ' + guest.split(' ')[0];
       btn.disabled = false; btn.style.opacity = '';
       if (status) status.innerHTML = `<span style="color:#dc2626;">Send failed - check console</span>`;
       console.error('Confirmation send failed:', err);
+    }
+  };
+
+  // Text alternative - same reservation-confirm step, shorter message with a link instead of
+  // the full HTML email (a text can't carry the whole confirmation, so it points to the same
+  // signed-agreement page the email links to).
+  window.sendGuestConfirmationText = async function() {
+    const btn = document.getElementById('send-confirm-text-btn');
+    const status = document.getElementById('confirm-status');
+    if (!btn || btn.disabled || !phone) return;
+    btn.disabled = true; btn.style.opacity = '.7';
+    try {
+      const bookUrl = window.location.href.replace(/&action=confirm.*$/, '');
+      const firstName = guest.split(' ')[0];
+      const msg = `Hi ${firstName}! It's Jesse - you're officially confirmed for ${fmtDate(ciRaw)} - ${fmtDate(coRaw)} at The Heart Of CB. Full details, door code instructions, and house rules: ${bookUrl}\n\nSee you soon!`;
+      window.open(`sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
+      btn.textContent = '✅ Text App Opened';
+      btn.style.background = '#0f1e3d'; btn.style.opacity = '';
+
+      const resv = await _confirmReservation();
+      if (resv.ok) {
+        const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Text opened for ${_esc(phone)}${note}</span>`;
+      } else {
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Text opened for ${_esc(phone)}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
+      }
+    } catch(err) {
+      btn.textContent = '💬 Text Confirmation to ' + guest.split(' ')[0];
+      btn.disabled = false; btn.style.opacity = '';
+      if (status) status.innerHTML = `<span style="color:#dc2626;">Send failed - check console</span>`;
+      console.error('Text confirmation failed:', err);
     }
   };
 })();
