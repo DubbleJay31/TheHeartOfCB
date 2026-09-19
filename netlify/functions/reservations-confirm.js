@@ -30,7 +30,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out`);
+    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out,rate,tax_occ,tax_sales,total,credit`);
     const existing = existingResp.ok ? await existingResp.json() : [];
 
     // Already confirmed, and the caller already knows this exact reservation's guest/dates (not
@@ -58,13 +58,31 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
 
+    // The capability token (`tok`) only proves identity/dates match, never money - a guest who
+    // holds a valid tok (which they legitimately do once signed) could otherwise submit any
+    // total/rate/tax figures here and have them written as the confirmed reservation's permanent
+    // record, with no payment required. rate/tax_occ/tax_sales are set once, by Jesse, when the
+    // quote is built - they never legitimately differ from what's already on the row, so the
+    // request body's copies are ignored in favor of the DB's own values. `total` alone is allowed
+    // to differ (a credit-flow confirm may legitimately record the full pre-credit stay value for
+    // bookkeeping, per the comment below) - but never DOWN from the floor those trusted fields
+    // establish, which is the only direction that could let a guest avoid paying.
+    const dbRate = parseFloat(existing[0].rate) || 0;
+    const dbTaxOcc = parseFloat(existing[0].tax_occ) || 0;
+    const dbTaxSales = parseFloat(existing[0].tax_sales) || 0;
+    const dbCredit = parseFloat(existing[0].credit) || 0;
+    const totalFloor = Math.max(0, dbRate + dbTaxOcc + dbTaxSales - dbCredit);
+    const submittedTotal = parseFloat(total) || 0;
+    // Record the full stay value here, not just today's balance - rate/tax_occ/tax_sales below
+    // are always full-stay figures, so total needs to match them for the numbers to add up in
+    // the admin dashboard and any tax reporting.
     const row = {
       status: 'confirmed',
       updated_at: new Date().toISOString(),
-      total: parseFloat(total) || 0,
-      rate: rate != null ? parseFloat(rate) || 0 : null,
-      tax_occ: tax_occ != null ? parseFloat(tax_occ) || 0 : null,
-      tax_sales: tax_sales != null ? parseFloat(tax_sales) || 0 : null,
+      total: submittedTotal >= totalFloor - 0.01 ? submittedTotal : (parseFloat(existing[0].total) || totalFloor),
+      rate: dbRate,
+      tax_occ: dbTaxOcc,
+      tax_sales: dbTaxSales,
       signed_ip: signed_ip || null,
       contact_pref: contact_pref || null
     };

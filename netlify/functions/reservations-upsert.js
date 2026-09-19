@@ -42,6 +42,30 @@ exports.handler = async function(event) {
 
   try {
     if (code) {
+      // This endpoint used to force status back to 'quoted' unconditionally on every edit -
+      // including a pure link resend or a private-note tweak with no term changes at all. That
+      // silently un-confirmed real, paid bookings (dropping them out of the confirmed-only
+      // conflict scan AND all three cron reminder functions) just from clicking "Copy Link" on
+      // an already-confirmed reservation. Now: if the row is currently confirmed and none of the
+      // guest-facing terms actually changed, leave status/cancelled_at untouched - only a real
+      // change to dates/price genuinely needs re-signing. This read also catches a stale/deleted
+      // `code` before the write, instead of PATCHing zero rows and reporting success anyway.
+      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out`);
+      const cur = curResp.ok ? await curResp.json() : [];
+      if (!cur.length) {
+        return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
+      }
+      const c = cur[0];
+      const sameTerms = c.check_in === row.check_in && c.check_out === row.check_out
+        && Math.abs((parseFloat(c.total) || 0) - row.total) < 0.01
+        && Math.abs((parseFloat(c.rate) || 0) - (row.rate || 0)) < 0.01
+        && Math.abs((parseFloat(c.tax_occ) || 0) - (row.tax_occ || 0)) < 0.01
+        && Math.abs((parseFloat(c.tax_sales) || 0) - (row.tax_sales || 0)) < 0.01;
+      if (c.status === 'confirmed' && sameTerms) {
+        delete row.status;
+        delete row.cancelled_at;
+      }
+
       const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
         method: 'PATCH',
         headers: { Prefer: 'return=minimal' },
