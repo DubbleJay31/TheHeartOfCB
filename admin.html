@@ -1468,7 +1468,7 @@ function loadInquiries() {
           <div style="font-weight:600;color:var(--navy)">${name}</div>
           <div style="font-size:.8rem;color:var(--muted)">${prop} · ${dates}</div>
           <div style="font-size:.75rem;color:var(--muted)">${_esc(inq.email)}${inq.phone ? ' · ' + _esc(inq.phone) : ''}</div>
-          ${inq.contactPref ? `<div style="font-size:.72rem;color:#166534;font-weight:600;">${inq.contactPref === 'email' ? '📧 Prefers Email' : inq.contactPref === 'text' ? '💬 Prefers Text' : '📧💬 Either works'}</div>` : ''}
+          ${inq.contactPref ? `<div style="font-size:.72rem;color:#166534;font-weight:600;">${inq.contactPref === 'email' ? '📧 Prefers Email' : inq.contactPref === 'text' ? '💬 Prefers Text' : '📧💬 Prefers Both'}</div>` : ''}
           ${inq.guests ? `<div style="font-size:.75rem;color:var(--muted)">${_esc(inq.guests)}${inq.pets && inq.pets !== 'No pets' ? ' · ' + _esc(inq.pets) : ''}</div>` : ''}
           ${inq.message ? `<div style="font-size:.75rem;color:var(--muted);font-style:italic;margin-top:.2rem">"${_esc(inq.message.slice(0,80))}${inq.message.length>80?'…':''}"</div>` : ''}
         </div>
@@ -2422,7 +2422,7 @@ function renderRecent() {
     <div class="booking-item">
       <div class="bi-prop">${PROPS[q.prop]?.icon || '🏠'}</div>
       <div class="bi-info">
-        <div class="bi-guest">${_esc(q.guest)}${q.contactPref ? ` <span style="font-size:.7rem;color:#166534;font-weight:600;">${q.contactPref === 'email' ? '· 📧 prefers email' : q.contactPref === 'text' ? '· 💬 prefers text' : '· 📧💬 either'}</span>` : ''}</div>
+        <div class="bi-guest">${_esc(q.guest)}${q.contactPref ? ` <span style="font-size:.7rem;color:#166534;font-weight:600;">${q.contactPref === 'email' ? '· 📧 prefers email' : q.contactPref === 'text' ? '· 💬 prefers text' : '· 📧💬 prefers both'}</span>` : ''}</div>
         <div class="bi-dates">${fmtD(q.ci)} → ${fmtD(q.co)} · ${fmt(q.total)}</div>
       </div>
       <div class="bi-actions">
@@ -2774,7 +2774,7 @@ function openReservationDetail(id) {
         ${r.payment_method ? `<div><b>Paid via:</b> ${_esc(r.payment_method)}</div>` : ''}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
-        ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Either'}</span></div>` : ''}
+        ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
       </div>
       <label>Private Note - only visible to you</label>
