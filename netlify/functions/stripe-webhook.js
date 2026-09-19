@@ -28,13 +28,24 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
   return expBuf.length === gotBuf.length && crypto.timingSafeEqual(expBuf, gotBuf);
 }
 
-async function _notifyJesseReservation(code, guest, amount) {
+async function _notifyJesseReservation(row, amount) {
   try {
+    const code = row.code;
+    const guest = row.guest || 'Guest';
     const adminUrl = 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code);
-    const html = `<div style="font-family:Georgia,serif;padding:20px;">
+    const fmtD = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return s; } };
+    const prefLabel = row.contact_pref === 'text' ? '💬 Text' : row.contact_pref === 'email' ? '📧 Email' : row.contact_pref === 'either' ? '📧💬 Either' : null;
+    const html = `<div style="font-family:Georgia,serif;padding:20px;max-width:480px;">
       <p style="font-size:16px;"><strong>💳 Stripe payment received - ${guest}</strong></p>
       <p>$${amount.toFixed(2)} charged successfully. This reservation has been automatically marked <strong>confirmed</strong>.</p>
-      <p><a href="${adminUrl}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:7px;font-weight:700;">Open in Admin & Send Confirmation</a></p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;">
+        <tr><td style="padding:4px 0;color:#666;width:110px;">Dates</td><td style="padding:4px 0;font-weight:600;">${fmtD(row.check_in)} → ${fmtD(row.check_out)}</td></tr>
+        ${prefLabel ? `<tr><td style="padding:4px 0;color:#666;">Prefers</td><td style="padding:4px 0;font-weight:700;">${prefLabel}</td></tr>` : ''}
+      </table>
+      <div style="margin-top:10px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
+        📧 Send the guest's confirmation via their preferred method, and 📅 block these dates on your Airbnb calendar so they don't get double-booked.
+      </div>
+      <p style="margin-top:14px;"><a href="${adminUrl}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:7px;font-weight:700;">Open in Admin & Send Confirmation</a></p>
     </div>`;
     await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
       method: 'POST',
@@ -111,7 +122,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,host_notes`);
+    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,host_notes,check_in,check_out,contact_pref`);
     const rows = resp.ok ? await resp.json() : [];
     if (!rows.length) {
       console.error('Stripe webhook: no reservation found for code', code);
@@ -140,7 +151,7 @@ exports.handler = async function(event) {
       return { statusCode: 500, body: 'DB write failed' };
     }
 
-    await _notifyJesseReservation(code, guest, amount);
+    await _notifyJesseReservation({ code, guest, check_in: rows[0].check_in, check_out: rows[0].check_out, contact_pref: rows[0].contact_pref }, amount);
     return { statusCode: 200, body: 'ok' };
   } catch (e) {
     console.error('Stripe webhook handler error:', e);
