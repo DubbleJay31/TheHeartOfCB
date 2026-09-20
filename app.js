@@ -445,20 +445,21 @@ function _dayClick(key, prop, wrapId) {
   _calProp = prop;
   const ranges = _calCache[prop] || [];
   const dt = _keyToDate(key);
-  const isSat = dt.getDay() === 6;
   const isBooked = _isBooked(dt, ranges);
+  const restr = _effRestriction(prop, dt, ranges);
 
-  const isOrphan = _isOrphanCheckIn(dt, ranges);
   if (!_selStart || (_selStart && _selEnd)) {
-    if (isSat && !isOrphan) {
-      _showCalError('Saturday check-in is not available - please choose a different day.');
+    if (restr.noCheckIn) {
+      _showCalError('Check-in is not available on this date - please choose a different day.');
       return;
     }
     if (isBooked) {
       _showCalError('That date is already booked. Pick an available (green) date to check in.');
       return;
     }
-    // Prewall: next night already booked, only 1 free night - violates 2-night min (unless orphan)
+    // Prewall: next night already booked, only 1 free night - violates the minimum stay (a true
+    // orphan slot can't reach here, since that requires BOTH neighbors booked - this fires only
+    // on the asymmetric "one side open" case).
     const nxtCI = new Date(dt); nxtCI.setDate(nxtCI.getDate() + 1);
     const prvCI = new Date(dt); prvCI.setDate(prvCI.getDate() - 1);
     if (_isBooked(nxtCI, ranges) && !_isBooked(prvCI, ranges)) {
@@ -481,7 +482,7 @@ function _dayClick(key, prop, wrapId) {
     return;
   }
   if (dt <= _selStart) {
-    if ((!isSat || isOrphan) && !isBooked) {
+    if (!restr.noCheckIn && !isBooked) {
       const nxtR = new Date(dt); nxtR.setDate(nxtR.getDate() + 1);
       const prvR = new Date(dt); prvR.setDate(prvR.getDate() - 1);
       if (_isBooked(nxtR, ranges) && !_isBooked(prvR, ranges)) {
@@ -500,12 +501,13 @@ function _dayClick(key, prop, wrapId) {
     return;
   }
   const nights = Math.round((dt - _selStart) / 86400000);
-  if (isSat && !(nights === 1 && _isOrphanCheckIn(_selStart, ranges))) {
-    _showCalError('Saturday check-out is not available - please choose a different day.');
+  if (restr.noCheckOut && !(nights === 1 && _isOrphanCheckIn(_selStart, ranges))) {
+    _showCalError('Check-out is not available on this date - please choose a different day.');
     return;
   }
-  if (nights < 2 && !_isOrphanCheckIn(_selStart, ranges)) {
-    _showCalError('Minimum stay is 2 nights - please select a later check-out date.');
+  const startRestr = _effRestriction(prop, _selStart, ranges);
+  if (nights < startRestr.minNights) {
+    _showCalError(`Minimum stay is ${startRestr.minNights} night${startRestr.minNights !== 1 ? 's' : ''} - please select a later check-out date.`);
     return;
   }
   // Check if this day is blocked for checkout
@@ -541,6 +543,24 @@ function _isOrphanCheckIn(dt, ranges) {
   return _isBooked(prev, ranges) && _isBooked(next, ranges);
 }
 
+// Mirrors admin.html's _prcEffRestr() - merges Jesse's per-date restriction overrides (including
+// the auto-generated holiday minimums admin computes for Memorial Day/July 4th/Labor Day/
+// Christmas/New Year's) with the same defaults used everywhere on this calendar: 2-night minimum,
+// Saturday check-in/check-out blocked, unless a stored override for that date says otherwise. The
+// 1-night "orphan" exception is computed from THIS calendar's own booked ranges via
+// _isOrphanCheckIn - admin computes its own equivalent (_prcIs1NightSlot) from its own iCal fetch,
+// same concept, independently derived on each side.
+function _effRestriction(prop, dt, ranges) {
+  if (_isOrphanCheckIn(dt, ranges)) return { minNights: 1, noCheckIn: false, noCheckOut: false };
+  const stored = (_restrictions[prop] || {})[_dateKey(dt)] || {};
+  const isSat = dt.getDay() === 6;
+  return {
+    minNights: stored.minNights || 2,
+    noCheckIn: stored.noCheckIn !== undefined ? !!stored.noCheckIn : isSat,
+    noCheckOut: stored.noCheckOut !== undefined ? !!stored.noCheckOut : isSat
+  };
+}
+
 function _refreshAllWrapStyles() {
   document.querySelectorAll('.cal-wrap[data-prop]').forEach(wrap => {
     _refreshWrapStyles(wrap);
@@ -551,16 +571,15 @@ function _refreshAllWrapStyles() {
 function _tlDayClick(dateKey, propId) {
   const ranges = _calCache[propId] || [];
   const dt = _keyToDate(dateKey);
-  const isSat = dt.getDay() === 6;
   const isBooked = _isBooked(dt, ranges);
-  const isOrphan = _isOrphanCheckIn(dt, ranges);
+  const restr = _effRestriction(propId, dt, ranges);
 
   if (!_selStart || (_selStart && _selEnd)) {
-    if (isSat && !isOrphan) { _showCalError('Saturday check-in is not available - please choose a different day.'); return; }
+    if (restr.noCheckIn) { _showCalError('Check-in is not available on this date - please choose a different day.'); return; }
     if (isBooked) { _showCalError('That date is already booked. Pick an available date to check in.'); return; }
     const nxt = new Date(dt); nxt.setDate(nxt.getDate() + 1);
     const prv = new Date(dt); prv.setDate(prv.getDate() - 1);
-    if (!isOrphan && _isBooked(nxt, ranges) && !_isBooked(prv, ranges)) {
+    if (_isBooked(nxt, ranges) && !_isBooked(prv, ranges)) {
       _showCalError('Only 1 free night before the next booking - please choose an earlier check-in date.'); return;
     }
     _selStart = dt; _selEnd = null; _calProp = propId;
@@ -573,7 +592,7 @@ function _tlDayClick(dateKey, propId) {
     _refreshAllWrapStyles(); return;
   }
   if (dt <= _selStart) {
-    if ((!isSat || isOrphan) && !isBooked) {
+    if (!restr.noCheckIn && !isBooked) {
       const nxt = new Date(dt); nxt.setDate(nxt.getDate() + 1);
       const prv = new Date(dt); prv.setDate(prv.getDate() - 1);
       if (_isBooked(nxt, ranges) && !_isBooked(prv, ranges)) {
@@ -586,8 +605,9 @@ function _tlDayClick(dateKey, propId) {
     return;
   }
   const nights = Math.round((dt - _selStart) / 86400000);
-  if (isSat && !(nights === 1 && isOrphan)) { _showCalError('Saturday check-out is not available - please choose a different day.'); return; }
-  if (nights < 2 && !_isOrphanCheckIn(_selStart, ranges)) { _showCalError('Minimum stay is 2 nights - please select a later check-out date.'); return; }
+  if (restr.noCheckOut && !(nights === 1 && _isOrphanCheckIn(_selStart, ranges))) { _showCalError('Check-out is not available on this date - please choose a different day.'); return; }
+  const startRestr = _effRestriction(propId, _selStart, ranges);
+  if (nights < startRestr.minNights) { _showCalError(`Minimum stay is ${startRestr.minNights} night${startRestr.minNights !== 1 ? 's' : ''} - please select a later check-out date.`); return; }
   // Check for booked nights in range
   const scan = new Date(_selStart); scan.setDate(scan.getDate() + 1);
   while (scan < dt) {
@@ -607,7 +627,9 @@ function _refreshTimeline() {
 
   // Precompute firstWall per prop (same logic as _refreshWrapStyles)
   const firstWalls = {};
+  let startRestr = null;
   if (choosing) {
+    startRestr = _effRestriction(_calProp, _selStart, _calCache[_calProp] || []);
     ['prop1','prop2','prop3'].forEach(pid => {
       const ranges = _calCache[pid] || [];
       if (_calProp !== pid) return;
@@ -639,11 +661,14 @@ function _refreshTimeline() {
     const fw = firstWalls[pid];
     if (nights === 1) {
       if (_isOrphanCheckIn(_selStart, ranges)) { el.classList.add('tl-eligible'); }
-      else { el.classList.add('tl-blocked', 'tl-blocked-2min'); el.dataset.tip = '2-night minimum stay'; }
+      else { el.classList.add('tl-blocked', 'tl-blocked-2min'); el.dataset.tip = startRestr.minNights + '-night minimum stay'; }
     } else if (fw && dt > fw) {
       el.classList.add('tl-blocked');
-    } else if (dt.getDay() === 6) {
+    } else if (_effRestriction(pid, dt, ranges).noCheckOut) {
       el.classList.add('tl-blocked');
+    } else if (nights < startRestr.minNights) {
+      el.classList.add('tl-blocked', 'tl-blocked-2min');
+      el.dataset.tip = startRestr.minNights + '-night minimum stay';
     } else {
       el.classList.add('tl-eligible');
     }
@@ -659,7 +684,9 @@ function _refreshWrapStyles(wrap) {
   // Precompute the first booked wall night after check-in so we can grey
   // out ALL days beyond it (not just booked ones) in one efficient pass.
   let firstWall = null;
+  let startRestr = null;
   if (choosing) {
+    startRestr = _effRestriction(prop, _selStart, ranges);
     const scan = new Date(_selStart); scan.setDate(scan.getDate() + 1);
     for (let i = 0; i < 365; i++) {
       if (_isBooked(scan, ranges)) { firstWall = new Date(scan); break; }
@@ -694,11 +721,14 @@ function _refreshWrapStyles(wrap) {
       const nights = Math.round((dt - _selStart) / 86400000);
       if (nights === 1) {
         if (_isOrphanCheckIn(_selStart, ranges)) { el.classList.add('cal-checkout-eligible'); }
-        else { el.classList.add('cal-checkout-blocked', 'cal-blocked-2min'); el.dataset.tip = '2-night minimum stay'; }
+        else { el.classList.add('cal-checkout-blocked', 'cal-blocked-2min'); el.dataset.tip = startRestr.minNights + '-night minimum stay'; }
       } else if (firstWall && dt > firstWall) {
         el.classList.add('cal-checkout-blocked');
-      } else if (dt.getDay() === 6) {
-        el.classList.add('cal-checkout-blocked'); // no Saturday checkout
+      } else if (_effRestriction(prop, dt, ranges).noCheckOut) {
+        el.classList.add('cal-checkout-blocked');
+      } else if (nights < startRestr.minNights) {
+        el.classList.add('cal-checkout-blocked', 'cal-blocked-2min');
+        el.dataset.tip = startRestr.minNights + '-night minimum stay';
       } else {
         el.classList.add('cal-checkout-eligible'); // valid - includes firstWall back-to-back
       }
