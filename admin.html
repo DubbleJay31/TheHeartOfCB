@@ -2984,15 +2984,16 @@ function _openCancelNotifyModal(code) {
     modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
     modal.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
-        <div style="background:#0a1f3a;padding:1rem 1.4rem;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
           <span style="color:#fff;font-weight:700;">🚫 Reservation Canceled</span>
+          <button onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
         </div>
         <div style="padding:1.2rem 1.4rem;">
           <div id="cancel-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
             <button id="cancel-notify-email-btn" onclick="_sendCancelNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Cancellation Email</button>
             <button id="cancel-notify-text-btn" onclick="_sendCancelNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Cancellation Text</button>
-            <button onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
+            <button id="cancel-notify-close-btn" onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
           </div>
           <div id="cancel-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
         </div>
@@ -3031,6 +3032,10 @@ async function _sendCancelNotification(method) {
     status.style.color = '#166534';
     status.textContent = '✅ Text composer opened';
   }
+  // "Don't Send Anything" only makes sense before anything's been sent - once something has,
+  // relabel it to what it actually now does, so it's not confusingly the only way out.
+  const closeBtn = document.getElementById('cancel-notify-close-btn');
+  if (closeBtn) closeBtn.textContent = 'Close';
 }
 
 async function permanentlyDeleteReservation(code) {
@@ -3158,15 +3163,16 @@ function _openDeclineNotifyModal(code, reason) {
     modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
     modal.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
-        <div style="background:#0a1f3a;padding:1rem 1.4rem;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
           <span style="color:#fff;font-weight:700;">✅ Reservation Declined</span>
+          <button onclick="document.getElementById('decline-notify-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
         </div>
         <div style="padding:1.2rem 1.4rem;">
           <div id="decline-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
             <button id="decline-notify-email-btn" onclick="_sendDeclineNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Decline Email</button>
             <button id="decline-notify-text-btn" onclick="_sendDeclineNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Decline Text</button>
-            <button onclick="document.getElementById('decline-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
+            <button id="decline-notify-close-btn" onclick="document.getElementById('decline-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
           </div>
           <div id="decline-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
         </div>
@@ -3224,7 +3230,12 @@ async function _sendDeclineNotification(method) {
     status.style.color = '#b91c1c';
     status.textContent = '⚠️ Send failed - check console';
     btn.disabled = false; btn.textContent = origText;
+    return;
   }
+  // "Don't Send Anything" only makes sense before anything's been sent - once something has,
+  // relabel it to what it actually now does, so it's not confusingly the only way out.
+  const closeBtn = document.getElementById('decline-notify-close-btn');
+  if (closeBtn) closeBtn.textContent = 'Close';
 }
 
 // ── CANCELLATION EMAIL ──
