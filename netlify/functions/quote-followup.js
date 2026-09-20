@@ -88,7 +88,7 @@ async function _sendGuestNudge(q, RESEND_KEY) {
 </body>
 </html>`;
 
-  await fetch('https://api.resend.com/emails', {
+  const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -98,6 +98,7 @@ async function _sendGuestNudge(q, RESEND_KEY) {
       html
     })
   });
+  if (!r.ok) throw new Error('Guest nudge send failed: ' + await r.text());
 }
 
 async function _sendHostHeadsUp(q, RESEND_KEY) {
@@ -127,7 +128,7 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
   </div>
 </div>`;
 
-  await fetch('https://api.resend.com/emails', {
+  const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -137,4 +138,5 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
       html
     })
   });
+  if (!r.ok) throw new Error('Host heads-up send failed: ' + await r.text());
 }
