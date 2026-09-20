@@ -764,8 +764,8 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <!-- Page tab nav -->
   <div class="adm-tabs-nav">
     <div class="adm-tabs-scroll">
-      <button class="adm-tab-btn active" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">🕐 Quotes</button>
-      <button class="adm-tab-btn" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
+      <button class="adm-tab-btn active" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">🕐 Quotes</button>
       <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
       <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
       <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Stats</button>
@@ -775,7 +775,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   </div>
 
   <!-- ── BOOKING PANEL ── -->
-  <div id="adm-panel-booking">
+  <div id="adm-panel-booking" style="display:none;">
   <div class="adm-body">
 
     <!-- ── LEFT COLUMN: FORM ── -->
@@ -1046,7 +1046,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   </div><!-- /#adm-panel-booking -->
 
   <!-- ── CONFIRMED RESERVATIONS PANEL ── -->
-  <div id="adm-panel-confirmed" style="display:none;padding:1.5rem;max-width:900px;margin:0 auto;">
+  <div id="adm-panel-confirmed" style="padding:1.5rem;max-width:900px;margin:0 auto;">
     <div class="conf-header">
       <h3>✅ Reservations</h3>
       <div style="display:flex;gap:.5rem;">
