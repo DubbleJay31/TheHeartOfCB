@@ -234,7 +234,14 @@ function _isWeekendNight(d) {
   return false;
 }
 
-function _calcEstimate(start, end, prop) {
+// A single "orphan" night - the only free night wedged between two existing bookings, too short
+// to combine with anything else - still costs a full turnover (clean + prep) for just one night's
+// revenue. Front Home is the bigger clean, hence the bigger surcharge. Folded straight into the
+// room fare below rather than broken out as its own line item - a guest filling a calendar gap
+// doesn't need a fee explained to them, just the one number.
+const ORPHAN_NIGHT_SURCHARGE = { prop1: 100, prop2: 50, prop3: 50 };
+
+function _calcEstimate(start, end, prop, ranges) {
   const p   = _RATES[prop] || _RATES.prop1;
   const ov  = _overrides[prop] || {};
   let subtotal = 0, nights = 0;
@@ -246,6 +253,9 @@ function _calcEstimate(start, end, prop) {
       : (_isWeekendNight(cur) ? p.we[cur.getMonth()] : p.wd[cur.getMonth()]);
     nights++;
     cur.setDate(cur.getDate() + 1);
+  }
+  if (nights === 1 && ranges && _isOrphanCheckIn(start, ranges)) {
+    subtotal += ORPHAN_NIGHT_SURCHARGE[prop] || 0;
   }
   // Un-rounded until final display, matching admin.html's calcTotal()/generate() - this used to
   // round each tax component to a whole dollar, then round the card fee again on top of the
@@ -263,7 +273,7 @@ function _calcEstimate(start, end, prop) {
 function _showBookingBar(start, end) {
   const bar = document.getElementById('booking-bar');
   if (!bar) return;
-  const est = _calcEstimate(start, end, _calProp);
+  const est = _calcEstimate(start, end, _calProp, _calCache[_calProp]);
   const propNames = { prop1: 'Front Home', prop2: 'Left Suite', prop3: 'Right Suite' };
   const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -1035,7 +1045,7 @@ function _fillFormDates(start, end) {
 function _updateFormSummary(start, end) {
   const box = document.getElementById('form-cost-summary');
   if (!box) return;
-  const est = _calcEstimate(start, end, _calProp);
+  const est = _calcEstimate(start, end, _calProp, _calCache[_calProp]);
   const propNames = { prop1: 'Front Home', prop2: 'Left Suite', prop3: 'Right Suite' };
   const fmt = d => d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
   box.innerHTML = `
