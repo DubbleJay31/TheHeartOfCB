@@ -129,15 +129,26 @@ exports.handler = async function(event) {
       return { statusCode: 200, body: 'ok' };
     }
     // Idempotent - Stripe can and does redeliver webhook events. Already-confirmed just
-    // acknowledges without writing again.
-    if (rows[0].status === 'confirmed') {
+    // acknowledges without writing again. Anything other than 'signed' (which is the only status
+    // a reservation can legitimately be in when its Stripe Checkout Session was created - see
+    // create-stripe-checkout.js) also just acknowledges without writing - in particular, if Jesse
+    // cancelled this reservation after the guest paid (before a delayed/redelivered webhook
+    // arrives), a stale event must never resurrect it. That specific case is logged loudly since
+    // it likely means a refund still needs to be issued manually in Stripe's own dashboard.
+    if (rows[0].status !== 'signed') {
+      if (rows[0].status === 'cancelled') {
+        console.error(`Stripe webhook: reservation ${code} was cancelled after payment cleared - not re-confirming. A manual refund in Stripe's dashboard may be needed (session ${session.id}).`);
+      }
       return { statusCode: 200, body: 'ok' };
     }
 
     const amount = (session.amount_total != null ? session.amount_total / 100 : parseFloat(rows[0].total) || 0);
     const paidNote = `Paid via Stripe (session ${session.id})`;
     const hostNotes = rows[0].host_notes ? `${rows[0].host_notes}\n\n${paidNote}` : paidNote;
-    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+    // Scoped to status=eq.signed (not just code) so two near-simultaneous webhook deliveries for
+    // the same session can't both pass the check above and both write - only the first to commit
+    // still matches this filter.
+    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&status=eq.signed`, {
       method: 'PATCH',
       headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({

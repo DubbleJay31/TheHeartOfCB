@@ -46,10 +46,14 @@ exports.handler = async function(event) {
       // including a pure link resend or a private-note tweak with no term changes at all. That
       // silently un-confirmed real, paid bookings (dropping them out of the confirmed-only
       // conflict scan AND all three cron reminder functions) just from clicking "Copy Link" on
-      // an already-confirmed reservation. Now: if the row is currently confirmed and none of the
-      // guest-facing terms actually changed, leave status/cancelled_at untouched - only a real
-      // change to dates/price genuinely needs re-signing. This read also catches a stale/deleted
-      // `code` before the write, instead of PATCHing zero rows and reporting success anyway.
+      // an already-confirmed reservation. Now: if the row is currently confirmed OR signed and
+      // none of the guest-facing terms actually changed, leave status/cancelled_at untouched -
+      // only a real change to dates/price genuinely needs re-signing. `signed` matters just as
+      // much as `confirmed` here - a reservation the guest already signed (say, resending their
+      // link because they lost it) was still getting silently knocked back to `quoted`, losing
+      // that signed state in the dashboard even though signed_name/signed_at never actually
+      // changed. This read also catches a stale/deleted `code` before the write, instead of
+      // PATCHing zero rows and reporting success anyway.
       const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out`);
       const cur = curResp.ok ? await curResp.json() : [];
       if (!cur.length) {
@@ -61,7 +65,7 @@ exports.handler = async function(event) {
         && Math.abs((parseFloat(c.rate) || 0) - (row.rate || 0)) < 0.01
         && Math.abs((parseFloat(c.tax_occ) || 0) - (row.tax_occ || 0)) < 0.01
         && Math.abs((parseFloat(c.tax_sales) || 0) - (row.tax_sales || 0)) < 0.01;
-      if (c.status === 'confirmed' && sameTerms) {
+      if ((c.status === 'confirmed' || c.status === 'signed') && sameTerms) {
         delete row.status;
         delete row.cancelled_at;
       }

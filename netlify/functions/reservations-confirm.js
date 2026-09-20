@@ -57,6 +57,15 @@ exports.handler = async function(event) {
     if (existing[0].status === 'confirmed') {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
+    // A valid `tok` only proves identity/dates match - it's handed to the guest's own browser at
+    // signing time and never expires, so without this, a guest could read it out of their own
+    // network tab and call this endpoint directly to self-confirm without ever paying, or replay
+    // it weeks later to silently resurrect a reservation Jesse has since cancelled. `confirmed`
+    // may only ever be reached from `signed` - the one status that means "agreement signed,
+    // payment pending, nothing else legitimately confirms this."
+    if (existing[0].status !== 'signed') {
+      return { statusCode: 409, body: JSON.stringify({ ok: false, message: 'This reservation is not awaiting confirmation.' }) };
+    }
 
     // The capability token (`tok`) only proves identity/dates match, never money - a guest who
     // holds a valid tok (which they legitimately do once signed) could otherwise submit any
@@ -89,7 +98,10 @@ exports.handler = async function(event) {
     if (host_notes) row.host_notes = host_notes;
     if (payment_method) row.payment_method = payment_method;
 
-    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+    // Scoped to status=eq.signed (not just code) so two near-simultaneous requests can't both
+    // pass the status check above and both write - only the first to actually commit still
+    // matches this filter, the second affects zero rows.
+    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&status=eq.signed`, {
       method: 'PATCH',
       headers: { Prefer: 'return=minimal' },
       body: JSON.stringify(row)
