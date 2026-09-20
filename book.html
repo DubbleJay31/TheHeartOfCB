@@ -1312,10 +1312,14 @@ async function submitAgreement() {
     if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
     else {
       const errBody = await r.json().catch(() => ({}));
-      console.error('sign-link rejected:', errBody);
-      const msg = r.status === 409
-        ? (errBody.message || 'This quote has changed since this link was sent. Please contact Jesse for a current link before signing.')
-        : 'We couldn\'t verify this booking link. Please contact Jesse for a current link before signing.';
+      console.error('sign-link rejected (status ' + r.status + '):', errBody);
+      // Show the server's actual reason rather than a one-size-fits-all message - a 400 (missing
+      // field), 401 (bad/mismatched link signature), and 500 (server misconfigured) all used to
+      // read identically as "we couldn't verify this link," which made a real report from a guest
+      // impossible to diagnose after the fact with no server logs to check against.
+      const msg = errBody.message
+        ? errBody.message + ' (error ' + r.status + ')'
+        : 'We couldn\'t verify this booking link (error ' + r.status + '). Please contact Jesse for a current link before signing.';
       alert(msg);
       return;
     }

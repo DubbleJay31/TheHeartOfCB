@@ -38,7 +38,11 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, email, ci, co, or code' }) };
   }
   if (!validQuoteToken(body)) {
-    return { statusCode: 401, body: JSON.stringify({ message: 'This booking link is missing or has an invalid quote signature - ask Jesse to resend it.' }) };
+    // Logged so a real-world report ("guest couldn't sign") is diagnosable after the fact from
+    // Netlify function logs - which of the 7 signed fields actually don't match is otherwise
+    // invisible once the guest is just staring at a generic error on their phone.
+    console.error('sign-link: invalid qtok for code', code, { guest, email, ci, co, prop: body.prop, total: body.total, hasQtok: !!body.qtok });
+    return { statusCode: 401, body: JSON.stringify({ message: 'This booking link has an invalid or outdated signature - ask Jesse to resend it.' }) };
   }
 
   // The qtok only proves Jesse minted THESE values at some point - not that they're still
