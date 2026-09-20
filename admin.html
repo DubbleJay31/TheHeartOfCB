@@ -829,13 +829,13 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Email *</label>
+              <label>Email (optional)</label>
               <input type="email" id="f-email" placeholder="guest@email.com" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" oninput="generate()" />
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Phone (optional)</label>
+              <label>Phone *</label>
               <input type="tel" id="f-phone" placeholder="(910) 555-1234" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" oninput="generate()" />
             </div>
             <div class="field">
@@ -1994,12 +1994,12 @@ function generate() {
   // valid payment path by default. `pay`/`cash`/`overrideCc` are no longer required for the link
   // to be considered ready; `overrideCc` now only controls whether card is explicitly disabled
   // (see no_card below), not whether SOME payment method exists at all.
-  const ready = guest && lastName && email && ci && co && _nights > 0 && subtotal > 0;
+  const ready = guest && lastName && phone && ci && co && _nights > 0 && subtotal > 0;
   if (!ready) {
     _generatedUrl = '';
     _qtok = '';
     linkEl.className = 'link-url empty';
-    linkEl.textContent = 'Fill in required fields (last name, email, dates, rate)…';
+    linkEl.textContent = 'Fill in required fields (last name, phone, dates, rate)…';
     copyBtn.disabled = true;
     prevBtn.disabled = true;
     return;
