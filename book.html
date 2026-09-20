@@ -1559,7 +1559,7 @@ async function _sendAgreementCopy(sigData) {
         <strong style="font-size:13px;color:#ffffff;">💵 Cash${disc > 0 ? ` &mdash; <span style="color:#4ade80;">Save ${fmt2(disc)}</span>` : ''}</strong><br/>
         <span style="font-size:12px;color:rgba(255,255,255,.85);">Cash price: <strong style="color:#ffffff;">${fmt2(ct)}</strong>${disc > 0 ? ` &nbsp;<span style="text-decoration:line-through;opacity:.55;color:rgba(255,255,255,.65);">${fmt2(noFee)}</span>` : ''}</span>
         ${dep > 0
-          ? `<br/><span style="font-size:12px;color:rgba(255,255,255,.85);">Deposit now: <strong style="color:#4ade80;">${fmt2(dep)}</strong><span style="color:rgba(255,255,255,.6);font-size:11px;"> (${depPct}%)</span> via Venmo / Cash App / Zelle &nbsp;&middot;&nbsp; Balance at check-in: <strong style="color:#ffffff;">${fmt2(ct - dep)}</strong></span>`
+          ? `<br/><span style="font-size:12px;color:rgba(255,255,255,.85);">Deposit now: <strong style="color:#4ade80;">${fmt2(dep)}</strong><span style="color:rgba(255,255,255,.6);font-size:11px;"> (${depPct}%)</span> via Venmo / Cash App / Zelle &nbsp;&middot;&nbsp; Due in cash at check-in: <strong style="color:#ffffff;">${fmt2(ct)}</strong></span>`
           : `<br/><span style="font-size:12px;color:rgba(255,255,255,.7);">Click for details on the cash payment process</span>`}
       </td></tr>
       ${dep > 0 ? `
@@ -1568,7 +1568,7 @@ async function _sendAgreementCopy(sigData) {
           <td style="padding-right:3px;width:50%;"><a href="https://venmo.com/u/Jesse-Jones-85?txn=pay&amount=${dep.toFixed(2)}&note=213+Harper+Deposit" style="display:block;background:#0a6dcd;color:#ffffff;padding:10px 12px;text-decoration:none;font-size:12px;font-weight:700;text-align:center;font-family:Arial,Helvetica,sans-serif;">💙 Venmo Deposit ${fmt2(dep)}</a></td>
           <td style="padding-left:3px;width:50%;"><a href="https://cash.app/$dubblejay31/${dep.toFixed(2)}" style="display:block;background:#00c244;color:#000000;padding:10px 12px;text-decoration:none;font-size:12px;font-weight:700;text-align:center;font-family:Arial,Helvetica,sans-serif;">💚 Cash App Deposit ${fmt2(dep)}</a></td>
         </tr></table>
-        <p style="margin:4px 0 0;font-size:11px;color:#555;font-family:Arial,Helvetica,sans-serif;">Or Zelle: send <strong>${fmt2(dep)}</strong> to 910-599-8118 &nbsp;&middot;&nbsp; Balance at check-in: <strong>${fmt2(ct - dep)}</strong></p>
+        <p style="margin:4px 0 0;font-size:11px;color:#555;font-family:Arial,Helvetica,sans-serif;">Or Zelle: send <strong>${fmt2(dep)}</strong> to 910-599-8118 &nbsp;&middot;&nbsp; Due in cash at check-in: <strong>${fmt2(ct)}</strong></p>
       </td></tr>` : ''}`;
     })() : '';
 
@@ -1626,7 +1626,10 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Room Occupancy Tax', fmt2(taxOcc), '#f2ede3')}
     ${ROW('Sales Tax', fmt2(taxSales), '#f9f6f0')}
     ${ROW(priorCredit > 0 ? 'Full Stay Total' : 'Total', fmt2(fullTotal || (noFee + priorCredit)), '#f2ede3')}
-    ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') + ROW('Balance Due', fmt2(noFee), '#f2ede3') : ''}
+    ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') : ''}
+    ${refundDue > 0
+      ? `<tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">💰 Refund Due to You</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(refundDue)}</td></tr>`
+      : priorCredit > 0 ? ROW('Balance Due', fmt2(noFee), '#f2ede3') : ''}
     ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
     ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, priorCredit > 0 || (!_confIsCash && _confRecvNow > noFee) ? '#f2ede3' : '#f9f6f0') : ''}
     ${_confRecvNow > 0 ? `<tr>
@@ -2003,7 +2006,10 @@ async function _notifyJesse(method) {
   // The guest confirmation email's "View & Print Your Signed Agreement" link, and this page's own
   // URL, need to actually carry signed=1/signame/ts/tok for that link to land on the real signed
   // view instead of the plain pre-payment quote page - append them when they were backfilled
-  // rather than already present in the URL.
+  // rather than already present in the URL. `method` matters too, not just for display - the
+  // Agreement Print View uses it to pick the right Total (e.g. the card-fee-inclusive amount for
+  // Stripe); without it, that page silently falls back to the no-fee total, showing the guest's
+  // own printed/signed record a lower total than what actually hit their card.
   function _signedBookUrl(stripped) {
     if (!_backfilled) return stripped;
     return stripped
@@ -2011,7 +2017,8 @@ async function _notifyJesse(method) {
       + '&signame=' + encodeURIComponent(sigName)
       + '&ts=' + encodeURIComponent(sigTs)
       + (sigTok ? '&tok=' + encodeURIComponent(sigTok) : '')
-      + (sigIp ? '&sip=' + encodeURIComponent(sigIp) : '');
+      + (sigIp ? '&sip=' + encodeURIComponent(sigIp) : '')
+      + (methodName ? '&method=' + encodeURIComponent(methodName) : '');
   }
 
   async function _confirmReservation() {
@@ -2125,7 +2132,7 @@ async function _notifyJesse(method) {
       // database write first means it's done by the time anything could interrupt the page.
       const resv = await _confirmReservation();
 
-      const bookUrl = window.location.href.replace(/&action=confirm.*$/, '');
+      const bookUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
       const firstName = guest.split(' ')[0];
       const msg = `Hi ${firstName}! It's Jesse - you're officially confirmed for ${fmtDate(ciRaw)} - ${fmtDate(coRaw)} at The Heart Of CB. Full details, door code instructions, and house rules: ${bookUrl}\n\nSee you soon!`;
       window.open(`sms:${phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
