@@ -144,20 +144,6 @@ async function _fetchICS(url) {
   } catch(e) { return []; }
 }
 
-// Airbnb's iCal feed only reflects what's blocked there - a direct booking made through book.html
-// is confirmed in this site's own database immediately, but Airbnb has no idea until Jesse
-// manually blocks it, a real double-booking window. This supplements the iCal-derived ranges with
-// confirmed reservations from the database itself, using the same {s, e} Date-range shape _isBooked
-// already expects, so every existing calendar/conflict check benefits without any other change.
-async function _fetchConfirmedRanges(prop) {
-  try {
-    const r = await fetch(`/.netlify/functions/reservations-busy-dates?prop=${encodeURIComponent(prop)}`);
-    if (!r.ok) return [];
-    const rows = await r.json();
-    return rows.map(x => ({ s: _keyToDate(x.check_in), e: _keyToDate(x.check_out) }));
-  } catch(e) { return []; }
-}
-
 function _parseICS(txt) {
   const ranges = [];
   txt.split('BEGIN:VEVENT').slice(1).forEach(blk => {
@@ -338,11 +324,11 @@ async function renderCalInto(prop, wrapId, startOffset) {
   _calInst[wrapId] = inst;
 
   if (!_calCache[prop]) {
-    const [icalRanges, confirmedRanges] = await Promise.all([
-      _fetchICS(ICAL_URLS[prop]),
-      _fetchConfirmedRanges(prop)
-    ]);
-    _calCache[prop] = icalRanges.concat(confirmedRanges);
+    // Availability shown here follows Airbnb's iCal feed only - a reservation confirmed on this
+    // site doesn't block anything on the public calendar until Jesse actually blocks those dates
+    // on Airbnb himself. (Admin's own quote-builder separately warns him if he's about to quote
+    // dates that overlap an existing confirmed reservation - that check is unrelated to this one.)
+    _calCache[prop] = await _fetchICS(ICAL_URLS[prop]);
   }
 
   // Guard: instance may have been replaced if user navigated away quickly
