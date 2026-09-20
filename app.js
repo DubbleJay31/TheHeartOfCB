@@ -52,7 +52,7 @@ async function _sendGuestConfirmation(inquiry) {
   </div>
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
     <p>Hi ${firstName},</p>
-    <p>Thanks for reaching out! We received your inquiry and will get back to you shortly with pricing and availability.</p>
+    <p>Thanks for reaching out! I'll put together your custom quote and get back to you shortly with pricing and availability.</p>
     <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
       ${inquiry.propLabel || inquiry.prop ? `<div style="margin-bottom:7px;"><strong>Property:</strong> ${inquiry.propLabel || inquiry.prop}</div>` : ''}
       ${inquiry.ci ? `<div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(inquiry.ci)}</div>` : ''}
