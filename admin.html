@@ -1308,6 +1308,14 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 </div>
 
 <!-- EMAIL PREVIEW MODAL -->
+<style>
+  /* Links inside the preview (e.g. "Complete Your Booking Here") shouldn't navigate Jesse away
+     from Admin while he's just reviewing before sending - this is purely a display-time rule in
+     THIS page's own stylesheet, not part of #email-preview-body's innerHTML, so it has no effect
+     on the actual email that gets sent or copied (sendEmailFromModal()/copyEmailHtml() both read
+     that innerHTML as-is). */
+  #email-preview-body a { pointer-events: none; cursor: default; }
+</style>
 <div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9000;overflow-y:auto;padding:2rem 1rem;">
   <div style="max-width:660px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.35);">
     <!-- Modal header -->
