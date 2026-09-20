@@ -135,13 +135,19 @@ const _visitedTabs = new Set();
 let _lastPropCalOffset = 0;
 const _calInst   = {}; // wrapId → { prop, wrap, sentinel, observer, months, startOffset }
 
+// Returns null (not []) specifically on a failed fetch, distinct from a genuinely empty-but-
+// successful response (a property with zero current bookings is a real, valid state) - callers
+// need to tell these apart, since after tonight's change this calendar is the SOLE source of
+// truth for what's booked. Silently treating a failed fetch as "nothing is booked" would show
+// every date as available, including ones genuinely blocked on Airbnb.
 async function _fetchICS(url) {
   if (!url) return [];
   try {
     const r = await fetch(url);
+    if (!r.ok) return null;
     const txt = await r.text();
     return _parseICS(txt);
-  } catch(e) { return []; }
+  } catch(e) { return null; }
 }
 
 function _parseICS(txt) {
@@ -233,7 +239,7 @@ function _calcEstimate(start, end, prop, ranges) {
   let subtotal = 0, nights = 0;
   const cur = new Date(start);
   while (cur < end) {
-    const dk = cur.toISOString().slice(0,10);
+    const dk = _dateKey(cur); // local-date key, not toISOString() - avoids a day-shift for guests east of UTC
     subtotal += ov[dk] !== undefined
       ? ov[dk]
       : (_isWeekendNight(cur) ? p.we[cur.getMonth()] : p.wd[cur.getMonth()]);
@@ -328,7 +334,15 @@ async function renderCalInto(prop, wrapId, startOffset) {
     // site doesn't block anything on the public calendar until Jesse actually blocks those dates
     // on Airbnb himself. (Admin's own quote-builder separately warns him if he's about to quote
     // dates that overlap an existing confirmed reservation - that check is unrelated to this one.)
-    _calCache[prop] = await _fetchICS(ICAL_URLS[prop]);
+    const fetched = await _fetchICS(ICAL_URLS[prop]);
+    if (fetched === null) {
+      // Guard: instance may have been replaced if user navigated away quickly
+      if (_calInst[wrapId] !== inst) return;
+      wrap.innerHTML = '<div style="padding:2rem 1.25rem;text-align:center;color:#7c1d1d;background:#fff5f5;border-radius:8px;">' +
+        '⚠️ Couldn\'t load live availability right now. Please text/call <a href="tel:9105998118" style="color:#7c1d1d;font-weight:700;">(910) 599-8118</a> to check dates, or try reloading the page.</div>';
+      return;
+    }
+    _calCache[prop] = fetched;
   }
 
   // Guard: instance may have been replaced if user navigated away quickly
@@ -497,7 +511,10 @@ function _dayClick(key, prop, wrapId) {
   // Check if this day is blocked for checkout
   const allDays = document.querySelectorAll(`.cal-wrap[data-prop="${prop}"] .cal-day[data-date="${key}"]`);
   for (const el of allDays) {
-    if (el.classList.contains('cal-checkout-blocked')) return;
+    if (el.classList.contains('cal-checkout-blocked')) {
+      _showCalError('That date isn\'t available for check-out - please choose a different day.');
+      return;
+    }
   }
   let cur = new Date(_selStart); cur.setDate(cur.getDate() + 1);
   let conflict = false;
