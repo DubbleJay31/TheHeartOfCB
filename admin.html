@@ -1547,20 +1547,6 @@ function _isWeekendNight(d) {
   if (m === 8) { const firstDow = new Date(y,8,1).getDay(); const firstMon = 1+((8-firstDow)%7); if (day===firstMon-1) return true; }
   return false;
 }
-function _calcAvgNightly(ci, co, prop) {
-  if (!ci || !co) return 0;
-  const p = _RATES[prop] || _RATES.prop1;
-  let subtotal = 0, nights = 0;
-  const cur = new Date(ci + 'T12:00:00');
-  const end = new Date(co + 'T12:00:00');
-  while (cur < end) {
-    subtotal += _isWeekendNight(cur) ? p.we[cur.getMonth()] : p.wd[cur.getMonth()];
-    nights++;
-    cur.setDate(cur.getDate() + 1);
-  }
-  return nights > 0 ? Math.round(subtotal / nights) : 0;
-}
-
 // ── PROPERTY ──
 const PROPS = {
   prop1: { name: 'Home in The Heart Of CB (Front Home)', icon: '🏠', short: 'Front Home'  },
@@ -1653,11 +1639,6 @@ function calcNights() {
     document.getElementById('nights-display').textContent = 'Select dates to calculate nights';
   }
   calcTotal();
-}
-
-function _autoFillRate(ci, co) {
-  const avg = _calcAvgNightly(ci, co, _prop);
-  if (avg > 0 && _nights > 0) document.getElementById('f-rate').value = Math.round(avg * _nights);
 }
 
 // ── TOTAL ──
@@ -2834,6 +2815,17 @@ function openReservationDetail(code) {
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
   const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${viewUrl}`);
   const isCancelled = r.status === 'cancelled';
+  // Cash-with-deposit never gets its own DB column for the deposit amount - the only record of
+  // it is inside the saved quote link's own query string (cdep), same place _loadIntoForm()
+  // already recovers cdsc/cdep from when reopening a reservation for editing. Without this,
+  // "Amount Paid" for a cash-deposit reservation showed the FULL cash price, when in reality only
+  // a small refundable deposit was ever actually received - the rest is still owed in person at
+  // check-in.
+  let _cashDepositAmt = 0;
+  if (r.payment_method === 'Cash' && r.url) {
+    try { _cashDepositAmt = parseFloat(new URL(r.url).searchParams.get('cdep')) || 0; } catch { /* malformed saved url */ }
+  }
+  const _refundOwed = r.credit && (_noFeeTotal(r) - r.credit) < 0 ? (r.credit - _noFeeTotal(r)) : 0;
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -2850,11 +2842,17 @@ function openReservationDetail(code) {
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total (no card fee)'}:</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
-        ${r.payment_method ? `
-        <div style="color:#166534;"><b>${r.payment_method === 'stripe' ? 'Paid by Card' : 'Amount Paid'}:</b> ${fmt$(r.payment_method === 'stripe' ? r.total : Math.max(0, _noFeeTotal(r) - (r.credit||0)))}${r.payment_method !== 'stripe' ? ` <span style="color:var(--muted);font-size:.82em;">(via ${_esc(r.payment_method)})</span>` : ''}</div>
+        ${_refundOwed > 0 ? `
+        <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
+        ${r.payment_method ? `<div style="color:var(--muted);font-size:.85em;">Originally paid via ${_esc(r.payment_method === 'stripe' ? 'Credit/Debit Card' : r.payment_method)}</div>` : ''}
+        ` : r.payment_method ? `
+        ${_cashDepositAmt > 0 ? `
+        <div style="color:#166534;"><b>Deposit Received:</b> ${fmt$(_cashDepositAmt)} <span style="color:var(--muted);font-size:.82em;">(refundable - full ${fmt$(Math.max(0, _noFeeTotal(r) - (r.credit||0)))} due in cash at check-in)</span></div>
         ` : `
-        ${r.credit && (_noFeeTotal(r) - r.credit) < 0 ? `<div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(r.credit - _noFeeTotal(r))}</div>`
-          : r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
+        <div style="color:#166534;"><b>${r.payment_method === 'stripe' ? 'Paid by Card' : 'Amount Paid'}:</b> ${fmt$(r.payment_method === 'stripe' ? r.total : Math.max(0, _noFeeTotal(r) - (r.credit||0)))}${r.payment_method !== 'stripe' ? ` <span style="color:var(--muted);font-size:.82em;">(via ${_esc(r.payment_method)})</span>` : ''}</div>
+        `}
+        ` : `
+        ${r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
         ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes 3% fee)</div>` : ''}
         `}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
@@ -3010,6 +3008,11 @@ function _openCancelNotifyModal(code) {
   textBtn.textContent = `💬 Send Cancellation Text${star('text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
+  // The modal DOM node is a reused singleton - without resetting this, reopening for a DIFFERENT
+  // reservation right after sending for a previous one left it reading "Close" before anything
+  // had actually been sent this time, which could read as "already handled."
+  const closeBtn = modal.querySelector('#cancel-notify-close-btn');
+  if (closeBtn) closeBtn.textContent = "Don't Send Anything";
   modal.querySelector('#cancel-notify-who').textContent =
     `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
   modal.querySelector('#cancel-notify-status').textContent = '';
@@ -3190,6 +3193,10 @@ function _openDeclineNotifyModal(code, reason) {
   textBtn.textContent = `💬 Send Decline Text${star('text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
+  // Same reused-singleton reset as the cancel-notify modal - without this, reopening for a
+  // different reservation right after sending could still read "Close" from the previous one.
+  const closeBtn = modal.querySelector('#decline-notify-close-btn');
+  if (closeBtn) closeBtn.textContent = "Don't Send Anything";
   modal.querySelector('#decline-notify-who').textContent =
     `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
   modal.querySelector('#decline-notify-status').textContent = '';
