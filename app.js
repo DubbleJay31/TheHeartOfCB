@@ -1017,6 +1017,16 @@ function scrollToCalendar(wrapId) {
   window.scrollTo({ top: targetY, behavior: 'smooth' });
 }
 
+// The top-of-listing "Book Now" button used to always jump to the calendar, even for a guest who
+// already picked dates and just hasn't agreed to the rules yet - sending them back to the dates
+// they'd already chosen instead of toward what's actually blocking them. Once dates are picked,
+// route through the same place the "Agree to House Rules to Book" bar button goes (house rules,
+// or straight to the booking form if rules are already attested) instead of the calendar.
+function bookNowTop(wrapId) {
+  if (_selStart && _selEnd) bbListingPage();
+  else scrollToCalendar(wrapId);
+}
+
 function clearDates() {
   _selStart = null; _selEnd = null;
   _attestedRules = false;
