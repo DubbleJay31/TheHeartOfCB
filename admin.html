@@ -1060,7 +1060,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
                for all of them) - this button and note exist to make that fact visible, not to add
                a new requirement. -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
-            <button type="button" onclick="_getShareableUrl()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Now</button>
+            <button type="button" onclick="_saveNowAndClose()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Now</button>
             <span id="save-changes-status" style="font-size:.75rem;color:#92400e;"></span>
           </div>
           <div style="font-size:.72rem;color:var(--muted);margin-top:.45rem;">Email, Text, Copy Link, and Open Live Link above all save automatically first - Save Now just saves without sending or copying anything.</div>
@@ -2010,6 +2010,17 @@ async function _getShareableUrl() {
   // Persist the now-complete url (code + qtok) back to the row.
   await _saveQuote();
   return _generatedUrl;
+}
+
+// "Save Now" is a deliberate exit, not a step toward sending/copying/previewing something -
+// once it actually saved, Jesse's done here and wants back at the list, not left staring at the
+// same form. Cleared first so a stale "Saved" from an earlier action can't be misread as this
+// save's own result if _getShareableUrl() returns early (e.g. required fields still blank).
+async function _saveNowAndClose() {
+  const status = document.getElementById('save-changes-status');
+  if (status) status.textContent = '';
+  await _getShareableUrl();
+  if (status && status.textContent.includes('Saved')) switchAdmTab('confirmed');
 }
 
 // Patches the finalized (qtok-bearing) link into any booking-link anchor already rendered in
