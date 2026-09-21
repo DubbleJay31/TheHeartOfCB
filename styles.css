@@ -721,7 +721,6 @@ main { padding-top: 150px; }
 .listing-stars { color: var(--gold2); font-weight: 700; }
 .listing-reviews-link { color: rgba(255,255,255,.75); text-decoration: underline; text-underline-offset: 2px; }
 .listing-dot { color: rgba(255,255,255,.3); }
-.listing-share-row { flex-shrink: 0; }
 
 /* ── PHOTO GRID (Airbnb-style 5-up) ── */
 .photo-grid-5 {

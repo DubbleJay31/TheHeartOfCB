@@ -1017,22 +1017,13 @@ function scrollToCalendar(wrapId) {
   window.scrollTo({ top: targetY, behavior: 'smooth' });
 }
 
-// The top-of-listing "Book Now" button used to always jump to the calendar, even for a guest who
-// already picked dates and just hasn't agreed to the rules yet - sending them back to the dates
-// they'd already chosen instead of toward what's actually blocking them. Once dates are picked,
-// route through the same place the "Agree to House Rules to Book" bar button goes (house rules,
-// or straight to the booking form if rules are already attested) instead of the calendar.
-function bookNowTop(wrapId) {
-  if (_selStart && _selEnd) bbListingPage();
-  else scrollToCalendar(wrapId);
-}
-
 // The site-wide header/mobile-bar "Book Now!" link always sent guests to the general Stay
 // overview (all 3 listings), even one who'd already picked dates on a specific listing's calendar
 // and just navigated elsewhere (e.g. back to Home) - losing their place instead of picking up
-// where they left off. Same bbListingPage() routing as bookNowTop() above: with dates already
-// selected, this takes them straight to the top of that specific listing (or house rules, or the
-// booking form, depending how far they'd already gotten) instead of the generic overview page.
+// where they left off. With dates already selected, route through the same bbListingPage() the
+// "Agree to House Rules to Book" bar button uses - straight to the top of that specific listing
+// (or house rules, or the booking form, depending how far they'd already gotten) instead of the
+// generic overview page.
 function bookNowNav() {
   if (_selStart && _selEnd) bbListingPage();
   else showPage('stay');
