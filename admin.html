@@ -2247,7 +2247,8 @@ function sendEmail() {
   const cashPrice = Math.max(0, creditedBase - cashDiscAmt);
 
   const creditRow = credit > 0 ? (refundDue > 0.005
-    ? `<tr><td colspan="2" style="padding:8px 0 0;font-size:13px;font-weight:700;color:#7c1d1d;">Credit of ${fmt(credit)} exceeds the new total - ${fmt(refundDue)} refund owed</td></tr>`
+    ? `<tr><td colspan="2" style="padding:8px 0 0;font-size:13px;font-weight:700;color:#7c1d1d;">Credit of ${fmt(credit)} exceeds the new total - ${fmt(refundDue)} refund owed</td></tr>
+       <tr><td colspan="2" style="padding:4px 0 0;font-size:12px;color:#7c1d1d;">Signing below is still required to receive this refund - nothing goes out automatically.</td></tr>`
     : `<tr><td style="padding:6px 0;color:#666;font-size:13px;">Credit Applied</td><td style="padding:6px 0;text-align:right;font-size:13px;color:#166534;">&minus;${fmt(credit)}</td></tr>`) : '';
 
   const priceBlock = cashOn ? `
@@ -2870,6 +2871,12 @@ function _reservationLinks(r) {
       viewUrl = u.toString();
       phone = u.searchParams.get('phone') || r.phone || '';
       u.searchParams.set('action', 'confirm');
+      // Without this, the confirm page opened from here had no way to know it's a refund (or
+      // which payment method to verify) - the "Send Their Refund"/"Paid by Card"/"Verify Venmo"
+      // banners and the refund-aware steps list all key off this same &method= param that the
+      // host notification email's own confirm link already carries, so this button/link and that
+      // email link used to show two different pages for the exact same reservation.
+      if (r.payment_method) u.searchParams.set('method', r.payment_method);
       confirmUrl = u.toString();
     } catch { /* malformed url - leave blank, buttons hide themselves */ }
   }
@@ -3096,6 +3103,15 @@ async function confirmFromQuote(code, btn) {
   const q = _reservationsCache.find(x => x.code === code);
   if (!q) { alert('Could not find that reservation - try refreshing.'); return; }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
+  // q.payment_method is whatever was saved the LAST time this reservation was actually confirmed -
+  // stale the moment a Change Reservation edit reverts status back to 'quoted'/'signed' without
+  // touching that column (reservations-upsert.js never writes it). A row with a refund_due baked
+  // into its saved link is exactly that case: quick-confirming it here should record 'Refund', not
+  // whatever the ORIGINAL payment method happened to be (e.g. still 'stripe' from before the
+  // edit) - otherwise the signed receipt and the confirm-send page both end up saying "Paid by
+  // Credit/Debit Card" on a reservation where nothing was actually charged this time.
+  let _urlRefundDue = 0;
+  try { _urlRefundDue = parseFloat(new URL(q.url).searchParams.get('refund_due')) || 0; } catch {}
   const payload = {
     code: q.code, guest: q.guest, email: q.email || '',
     check_in: q.check_in, check_out: q.check_out,
@@ -3111,7 +3127,7 @@ async function confirmFromQuote(code, btn) {
     // from "brand-new lead" after a later Change Reservation edit resets status back to quoted.
     // Without this, that later edit would misroute to the Decline flow's "sorry, can't accommodate
     // this request" copy instead of Cancel, for a guest who was actually already confirmed.
-    payment_method: q.payment_method || 'Manual'
+    payment_method: _urlRefundDue > 0.005 ? 'Refund' : (q.payment_method || 'Manual')
   };
   try {
     const r = await fetch('/.netlify/functions/reservations-confirm', {
