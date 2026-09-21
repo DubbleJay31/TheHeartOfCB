@@ -85,7 +85,13 @@ em { font-style: italic; color: var(--gold2); }
 
 /* ── HEADER ── */
 .site-header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  /* Was z-index:200, tied with .listing-top-bar/.prop-switcher (both also 200, position:sticky) -
+     a tie between elements in different stacking contexts is broken by DOM order, and those two
+     come later in the page than the header, so they were winning and rendering on top of it -
+     including on top of the "..." mobile nav dropdown nested inside the header, despite that
+     dropdown's own much higher z-index (that z-index only ever competes within the header's own
+     stacking context, which had already lost). Bumped well above every sticky in-page bar. */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
   background: rgba(255,255,255,.97); backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
   border-bottom: 2px solid var(--gold);
