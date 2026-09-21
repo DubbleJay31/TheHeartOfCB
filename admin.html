@@ -908,7 +908,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
                    when Jesse wants to cover the fee himself instead of passing that cost through. -->
               <div id="refund-fee-row" style="display:none;align-items:center;gap:.4rem;margin-top:.4rem;">
                 <input type="checkbox" id="f-refund-fee" onchange="_onRefundFeeToggle()" style="width:15px;height:15px;cursor:pointer;" />
-                <label for="f-refund-fee" style="font-size:.78rem;color:var(--muted);font-weight:400;cursor:pointer;">Also refund the card fee (Stripe/PayPal don't give it back to you - only check this if you want to cover it)</label>
+                <label for="f-refund-fee" style="font-size:.78rem;color:var(--muted);font-weight:400;cursor:pointer;">Also refund the card fee (adds a proportional share to whatever refund is due - not the full original fee - since Stripe/PayPal never give it back to you)</label>
               </div>
             </div>
           </div>
@@ -1516,7 +1516,7 @@ function _loadIntoForm(code) {
       `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`
       + (_origPaidGross > 0
           ? (_origFeeAmt > 0
-              ? ` Already-paid $${_origPaidGross.toFixed(2)} (of that, $${_origFeeAmt.toFixed(2)} was the card fee - not refundable, so $${(_origPaidGross - _origFeeAmt).toFixed(2)} is auto-credited below) - clear it or check "Also refund the card fee" if that's not right.`
+              ? ` Already-paid $${_origPaidGross.toFixed(2)} (of that, $${_origFeeAmt.toFixed(2)} was the card fee - not refundable, so $${(_origPaidGross - _origFeeAmt).toFixed(2)} is auto-credited below) - clear it if that's not right, or check "Also refund the card fee" to add a proportional share back to any refund.`
               : ` Already-paid $${_origPaidGross.toFixed(2)} auto-credited below - clear it if that's not right.`)
           : '');
   }
@@ -1760,7 +1760,7 @@ function renderGuestBreakdown() {
   if (credit > 0) {
     const creditedBase = Math.max(0, displayTotal - credit);
     const creditedTotal = creditedBase + creditedBase * CC_FEE;
-    const refundDue = Math.max(0, credit - displayTotal);
+    const refundDue = Math.max(0, credit - displayTotal) + _refundFeeShare(Math.max(0, credit - displayTotal));
     html += `<div style="border-top:2px solid var(--border);margin:.25rem 0;"></div>`;
     html += r('Credit Applied', '&minus;' + fmt(credit));
     if (refundDue > 0) {
@@ -1913,10 +1913,11 @@ let _qtok = '';
 let _editingCode = null; // code of the reservation currently loaded in the form, or null if this is a brand-new one not yet saved
 let _contactPref = '';
 // What was actually collected on the reservation currently loaded (gross, and the card/PayPal
-// fee portion of it) - set by _loadIntoForm, read by _onRefundFeeToggle. Stripe/PayPal never
+// fee portion of it) - set by _loadIntoForm, read by _refundFeeShare(). Stripe/PayPal never
 // refund their processing fee, so the "Already Paid / Credit" auto-fill defaults to crediting
-// only the net amount; these two track what the full gross and the fee actually were so toggling
-// "Also refund the card fee" can recompute without re-deriving it from the reservation again.
+// only the net amount. These two track what the full gross and the fee actually were, purely to
+// derive the original fee RATE (_origFeeAmt / net) - "Also refund the card fee" applies that rate
+// proportionally to whatever refund is actually due, not the full original fee amount.
 let _origPaidGross = 0;
 let _origFeeAmt = 0;
 
@@ -1985,14 +1986,26 @@ async function _finalizeEmailPreviewLink() {
   }
   return url;
 }
-// Recomputes the Credit field from the original payment when "Also refund the card fee" is
-// toggled - switches between crediting the net amount (default, protects Jesse from covering a
-// fee Stripe/PayPal never give back) and the full gross amount (Jesse's choice to eat it).
+// "Also refund the card fee" doesn't touch the Credit field itself - it only changes how much
+// extra rides on top of whatever refund is already due (see _refundFeeShare below). Just
+// recalculates everything downstream with the new checkbox state.
 function _onRefundFeeToggle() {
-  const checked = document.getElementById('f-refund-fee')?.checked;
-  const creditEl = document.getElementById('f-credit');
-  if (creditEl) creditEl.value = Math.max(0, _origPaidGross - (checked ? 0 : _origFeeAmt)).toFixed(2);
   generate();
+}
+
+// The fee-protection amount to add on top of a refund that's already due, if Jesse checks "Also
+// refund the card fee" - proportional to the refund itself, not the original fee in full. E.g. a
+// guest due $100 back gets $103 if checked (3% of the $100, not the full original fee, which may
+// have been calculated on a much larger original stay) - Stripe/PayPal never give the original
+// fee back regardless, so "refunding the fee" only ever means Jesse covering an equivalent
+// percentage out of pocket on the amount actually being refunded.
+function _refundFeeShare(baseRefund) {
+  if (baseRefund <= 0) return 0;
+  if (!document.getElementById('f-refund-fee')?.checked) return 0;
+  const netOrig = _origPaidGross - _origFeeAmt;
+  if (netOrig <= 0) return 0;
+  const feeRate = _origFeeAmt / netOrig;
+  return baseRefund * feeRate;
 }
 
 // "✕ New Instead" used to only clear the editing-code tracking, not a single form field - guest
@@ -2087,8 +2100,10 @@ function generate() {
   const total    = creditedBase + ccFee;
   // Shortened-stay case: guest already paid more than the new (smaller) total covers - that's
   // not $0 due, it's a refund owed back to them. Surfaced separately so it never just silently
-  // disappears into a Math.max(0, ...) floor.
-  const refundDue = Math.max(0, credit - preTax);
+  // disappears into a Math.max(0, ...) floor. _refundFeeShare adds the proportional card-fee
+  // share on top only if "Also refund the card fee" is checked - see its own comment.
+  const _baseRefundDue = Math.max(0, credit - preTax);
+  const refundDue = _baseRefundDue + _refundFeeShare(_baseRefundDue);
 
   const base = 'https://theheartofcb.com/book.html';
   const p = new URLSearchParams();
@@ -2174,7 +2189,8 @@ function sendEmail() {
   // and sent never matched the guest's actual link once a credit was involved.
   const credit    = parseFloat(document.getElementById('f-credit')?.value) || 0;
   const creditedBase = Math.max(0, preTax - credit);
-  const refundDue = Math.max(0, credit - preTax);
+  const _baseRefundDue2 = Math.max(0, credit - preTax);
+  const refundDue = _baseRefundDue2 + _refundFeeShare(_baseRefundDue2);
   const ccFee     = creditedBase * CC_FEE;
   const total     = creditedBase + ccFee;
 
