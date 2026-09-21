@@ -1,7 +1,7 @@
 // Runs daily alongside the other reminders. Sends Jesse a single heads-up email listing any
 // guest(s) checking in tomorrow - the only host-side arrival notice he wants (Airbnb's 8-day
 // one is too far out to be useful).
-const { sbReservations, propLabel } = require('./_reservations');
+const { sbReservations, propLabel, escapeHtml } = require('./_reservations');
 
 exports.handler = async function(event) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
@@ -15,7 +15,10 @@ exports.handler = async function(event) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const sbResp = await sbReservations(`?check_in=eq.${tomorrowStr}&status=eq.confirmed&select=*`);
+  // arrival_reminder_sent_at guards against a duplicate cron invocation re-sending this digest -
+  // the same idempotency pattern reminder.js/checkout-reminder.js/quote-followup.js already use
+  // on their own *_sent_at columns, previously missing here (flagged in two prior audits).
+  const sbResp = await sbReservations(`?check_in=eq.${tomorrowStr}&status=eq.confirmed&arrival_reminder_sent_at=is.null&select=*`);
   if (!sbResp.ok) {
     const err = await sbResp.text();
     console.error('Supabase query error:', err);
@@ -44,6 +47,17 @@ exports.handler = async function(event) {
   const result = await emailResp.json().catch(() => ({}));
   console.log(emailResp.ok ? 'sent' : 'failed', result.id || '');
 
+  if (emailResp.ok) {
+    // One email covers the whole batch, so every reservation in it gets marked together - an
+    // `in.()` filter instead of a loop of individual PATCHes.
+    const codes = reservations.map(r => r.code);
+    await sbReservations(`?code=in.(${codes.map(c => encodeURIComponent(c)).join(',')})`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ arrival_reminder_sent_at: new Date().toISOString() })
+    }).catch(err => console.error('Failed to mark arrival_reminder_sent_at:', err));
+  }
+
   return { statusCode: 200, body: JSON.stringify({ processed: reservations.length }) };
 };
 
@@ -53,12 +67,12 @@ function _buildArrivalHtml(reservations) {
 
   const cards = reservations.map(r => `
     <div style="background:#f8f6f0;border-radius:8px;padding:16px 18px;margin:0 0 14px;font-size:.93rem;">
-      <div style="font-weight:700;color:#0a1f3a;font-size:1.05rem;margin-bottom:6px;">${r.guest}</div>
+      <div style="font-weight:700;color:#0a1f3a;font-size:1.05rem;margin-bottom:6px;">${escapeHtml(r.guest)}</div>
       <div style="margin-bottom:6px;"><strong>Property:</strong> ${propLabel(r.prop)}</div>
       <div style="margin-bottom:6px;"><strong>Check-out:</strong> ${fmtD(r.check_out)}</div>
       ${r.total ? `<div style="margin-bottom:6px;"><strong>Total:</strong> ${fmt$(r.total)}</div>` : ''}
-      ${r.email ? `<div style="margin-bottom:6px;"><strong>Email:</strong> ${r.email}</div>` : ''}
-      ${r.host_notes ? `<div style="margin-top:8px;padding:8px 10px;background:#fbf0da;border-radius:6px;font-size:.85rem;color:#8a5a00;"><strong>Your note:</strong> ${r.host_notes}</div>` : ''}
+      ${r.email ? `<div style="margin-bottom:6px;"><strong>Email:</strong> ${escapeHtml(r.email)}</div>` : ''}
+      ${r.host_notes ? `<div style="margin-top:8px;padding:8px 10px;background:#fbf0da;border-radius:6px;font-size:.85rem;color:#8a5a00;"><strong>Your note:</strong> ${escapeHtml(r.host_notes)}</div>` : ''}
     </div>`).join('');
 
   return `<!DOCTYPE html>
