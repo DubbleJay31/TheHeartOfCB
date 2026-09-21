@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { sbReservations } = require('./_reservations');
+const { sbReservations, propLabel } = require('./_reservations');
 
 // Public - this is called by Stripe's own servers, not a browser, so it can't be PIN-gated or
 // capability-token-gated like everything else. Authenticity instead comes entirely from the
@@ -53,6 +53,44 @@ async function _notifyJesseReservation(row, amount) {
       body: JSON.stringify({ to: ['jessejonesrealestate@gmail.com'], subject: `Stripe payment received - ${guest}`, html })
     });
   } catch (e) { console.error('Jesse notification failed:', e); }
+}
+
+// Mirrors book.html's _notifyGuest() - the same "we got it, hang tight" email a guest paying by
+// Venmo/Cash App/Zelle/PayPal/Cash already gets the instant they click "I've sent payment", so a
+// Stripe-paying guest isn't left with radio silence between paying and Jesse's eventual final
+// confirmation. That manual-method email fires from the guest's own browser right after they act;
+// this is the same moment for the Stripe path, just server-side (Stripe's webhook, not the guest's
+// browser, is what actually confirms the payment - see the module comment up top).
+async function _notifyGuestReservation(row) {
+  try {
+    if (!row.email) return;
+    const fmtD = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return s; } };
+    const firstName = (row.guest || 'there').split(' ')[0];
+    const nights = Math.round((new Date(row.check_out + 'T12:00:00') - new Date(row.check_in + 'T12:00:00')) / 86400000);
+    const prop = propLabel(row.prop);
+    const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
+      <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
+        <strong style="font-size:16px;">📋 Booking Request Received</strong>
+      </div>
+      <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
+        <p style="margin:0 0 12px;font-size:14px;">Hi ${firstName},</p>
+        <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
+          <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
+          <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtD(row.check_in)}</td></tr>
+          <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtD(row.check_out)}</td></tr>
+          <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
+        </table>
+        <p style="margin:0 0 8px;font-size:13px;color:#666;">Questions? Text Jesse at <strong>(910) 599-8118</strong> or email <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a>.</p>
+        <p style="margin:0;font-size:12px;color:#9ca3af;">📥 Don't see Jesse's confirmation soon? Check spam/junk just in case.</p>
+      </div>
+    </div>`;
+    await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: 'https://theheartofcb.com' },
+      body: JSON.stringify({ to: [row.email], subject: `📋 Booking Request Received - ${prop} | ${fmtD(row.check_in)}–${fmtD(row.check_out)}`, html })
+    });
+  } catch (e) { console.error('Guest notification failed:', e); }
 }
 
 // A physical order needs Jesse to actually see it to ship it - there's no admin dashboard for
@@ -122,7 +160,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,host_notes,check_in,check_out,contact_pref`);
+    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,host_notes,check_in,check_out,contact_pref,email,prop`);
     const rows = resp.ok ? await resp.json() : [];
     if (!rows.length) {
       console.error('Stripe webhook: no reservation found for code', code);
@@ -164,6 +202,7 @@ exports.handler = async function(event) {
     }
 
     await _notifyJesseReservation({ code, guest, check_in: rows[0].check_in, check_out: rows[0].check_out, contact_pref: rows[0].contact_pref }, amount);
+    await _notifyGuestReservation({ guest, email: rows[0].email, check_in: rows[0].check_in, check_out: rows[0].check_out, prop: rows[0].prop });
     return { statusCode: 200, body: 'ok' };
   } catch (e) {
     console.error('Stripe webhook handler error:', e);
