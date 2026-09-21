@@ -2941,8 +2941,13 @@ function renderConfirmedPanel() {
     // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
     const isChangePending = (r.status === 'quoted' || r.status === 'signed') && !!r.payment_method;
-    const statusLabel = isChangePending ? '🔄 Change Pending' : (_STATUS_LABEL[r.status] || r.status);
-    const statusColor = isChangePending ? '#7c3aed' : (_STATUS_COLOR[r.status] || '#666');
+    // Confirmed only ever means the DB status flipped - it says nothing about whether the guest
+    // was actually notified (e.g. confirmed via the list's own quick-confirm button, which never
+    // sends anything). Flagged here the same way the detail modal's own button already does, so
+    // it's visible without opening the row.
+    const needsSend = r.status === 'confirmed' && !r.confirmation_sent_at;
+    const statusLabel = isChangePending ? '🔄 Change Pending' : needsSend ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status);
+    const statusColor = isChangePending ? '#7c3aed' : needsSend ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
     return `
     <div class="conf-row" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
