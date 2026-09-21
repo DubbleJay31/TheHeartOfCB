@@ -2995,32 +2995,78 @@ async function confirmFromQuote(code, btn) {
 // Soft-cancel - the row stays (status 'cancelled'), so it's still visible under the Cancelled
 // filter with its full history intact. A true permanent delete is a separate, rarely-used
 // cleanup action (see permanentlyDeleteReservation), reached from the same modal once cancelled.
-async function cancelReservation(code) {
-  if (!confirm('Cancel this reservation? The guest will need a new confirmation if this was a mistake.')) return;
+// Same shape as Decline below it - a reason modal up front (saved as an internal note AND reused
+// by the notify step after), not a plain confirm() with no record of why. The old plain-confirm
+// version left Decline as the only rejection flow that actually remembered why.
+function cancelReservation(code) {
+  _openCancelModal(code);
+}
+
+function _openCancelModal(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  let modal = document.getElementById('cancel-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cancel-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
+          <span style="color:#e8a8a8;font-weight:700;letter-spacing:.04em;">🚫 CANCEL RESERVATION</span>
+          <button onclick="document.getElementById('cancel-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:1.2rem 1.4rem;">
+          <div id="cancel-to" style="font-size:.85rem;color:#374151;margin-bottom:.7rem;font-weight:600;"></div>
+          <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Why are you canceling? Saved as an internal note, and goes in the email/text if you choose to send one afterward - leave blank to skip both.</label>
+          <textarea id="cancel-reason" rows="4" placeholder="e.g. Guest requested it, or: sorry for the inconvenience - I'll follow up about your refund by end of day..." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.75rem;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="padding:.9rem 1.4rem;display:flex;gap:.7rem;border-top:1px solid #eee;background:#fafafa;">
+          <button id="cancel-send-btn" onclick="_confirmCancel()" style="flex:1;background:#7a1f1f;color:#fff;border:none;border-radius:8px;padding:.7rem;font-weight:700;cursor:pointer;">Cancel Reservation</button>
+          <button onclick="document.getElementById('cancel-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem .9rem;cursor:pointer;">Never Mind</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.dataset.code = code;
+  modal.querySelector('#cancel-to').textContent = `Canceling: ${r.guest}${r.email ? ' (' + r.email + ')' : ' - no email on file'}`;
+  modal.querySelector('#cancel-reason').value = '';
+  modal.style.display = 'flex';
+}
+
+async function _confirmCancel() {
+  const modal = document.getElementById('cancel-modal');
+  const code = modal.dataset.code;
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  const reason = document.getElementById('cancel-reason').value.trim();
+  const btn = document.getElementById('cancel-send-btn');
+  btn.disabled = true; btn.textContent = '⏳ Canceling…';
   try {
-    const r = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
+    const updateResp = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
       method: 'PATCH',
       headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'cancelled' })
+      body: JSON.stringify({
+        status: 'cancelled',
+        host_notes: (r.host_notes ? r.host_notes + '\n\n' : '') + 'Canceled' + (reason ? ': ' + reason : ' (no reason given)')
+      })
     });
-    if (r.ok) {
-      _closeReservationDetail();
-      await loadReservations();
-      _openCancelNotifyModal(code);
-    } else {
-      alert('Cancel failed - check console.');
-      console.error(await r.text());
-    }
+    if (!updateResp.ok) throw new Error(await updateResp.text());
+    modal.style.display = 'none';
+    _closeReservationDetail();
+    await loadReservations();
+    _openCancelNotifyModal(code, reason);
   } catch(e) {
-    alert('Network error.');
     console.error(e);
+    alert('Cancel failed - check console.');
+    btn.disabled = false; btn.textContent = 'Cancel Reservation';
   }
 }
 
 // Cancelling shouldn't force a notification to go out automatically (same reasoning as Decline
 // below it) - Jesse asked for a choice popup right after cancelling instead of having to remember
 // to reopen the reservation and click Send Cancellation Email/Text himself.
-function _openCancelNotifyModal(code) {
+function _openCancelNotifyModal(code, reason) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
   let modal = document.getElementById('cancel-notify-modal');
@@ -3036,8 +3082,6 @@ function _openCancelNotifyModal(code) {
         </div>
         <div style="padding:1.2rem 1.4rem;">
           <div id="cancel-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
-          <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Optional custom message - included in the email/text below, leave blank to send just the standard notice.</label>
-          <textarea id="cancel-notify-message" rows="3" placeholder="e.g. So sorry for the inconvenience - I'll follow up about your refund by end of day." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.6rem;font-size:.88rem;line-height:1.5;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:.9rem;"></textarea>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
             <button id="cancel-notify-email-btn" onclick="_sendCancelNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Cancellation Email</button>
             <button id="cancel-notify-text-btn" onclick="_sendCancelNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Cancellation Text</button>
@@ -3049,6 +3093,7 @@ function _openCancelNotifyModal(code) {
     document.body.appendChild(modal);
   }
   modal.dataset.code = code;
+  modal.dataset.reason = reason || '';
   const star = m => r.contact_pref === m ? ' ★' : '';
   const emailBtn = modal.querySelector('#cancel-notify-email-btn');
   const textBtn = modal.querySelector('#cancel-notify-text-btn');
@@ -3066,17 +3111,13 @@ function _openCancelNotifyModal(code) {
   modal.querySelector('#cancel-notify-who').textContent =
     `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
   modal.querySelector('#cancel-notify-status').textContent = '';
-  // Reused singleton, same reasoning as the "Don't Send Anything" reset above - without this, a
-  // message typed for one guest could still be sitting in the box and get sent to the next one.
-  const msgEl = modal.querySelector('#cancel-notify-message');
-  if (msgEl) msgEl.value = '';
   modal.style.display = 'flex';
 }
 
 async function _sendCancelNotification(method) {
   const modal = document.getElementById('cancel-notify-modal');
   const code = modal.dataset.code;
-  const message = modal.querySelector('#cancel-notify-message')?.value.trim() || '';
+  const message = modal.dataset.reason || '';
   const status = document.getElementById('cancel-notify-status');
   const btn = document.getElementById(method === 'email' ? 'cancel-notify-email-btn' : 'cancel-notify-text-btn');
   if (method === 'email') {
