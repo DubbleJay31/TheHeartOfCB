@@ -2241,6 +2241,8 @@ async function _notifyJesse(method) {
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
       ${_isResend || methodName === 'Refund' || methodName === 'Even' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
+      </div>` : methodName === 'Manual' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
+        ⏳ Verify payment was actually received before confirming, then send confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
