@@ -2231,6 +2231,13 @@ function sendEmail() {
   const refundDue = _baseRefundDue2 + _refundFeeShare(_baseRefundDue2);
   const ccFee     = creditedBase * CC_FEE;
   const total     = creditedBase + ccFee;
+  // Guest already paid a card-processing fee on their original payment - the portion of that fee
+  // covering the stay they're keeping doesn't come back just because a refund is owed on the rest
+  // (see _refundFeeShare). ccFee above is 0 here (creditedBase floors to 0 once credit exceeds
+  // preTax), which used to make the fee vanish from the email entirely - "Full Stay Total" and the
+  // refund line read as a silent mismatch (paid $500, stay is $400, but refund isn't exactly $100)
+  // with nothing explaining why.
+  const stayCcFee = refundDue > 0.005 ? preTax * CC_FEE : 0;
 
   // If cash is an option on this quote, lead with the cash price - a guest who's expecting a
   // cash deal shouldn't see a bigger card-inclusive number first. Other payment amounts still
@@ -2266,9 +2273,13 @@ function sendEmail() {
           <td style="padding:6px 0;color:#666;font-size:13px;border-bottom:1px solid #f0ebe0;">Sales Tax (7%)</td>
           <td style="padding:6px 0;text-align:right;font-size:13px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(taxSales)}</td>
         </tr>
+        ${stayCcFee > 0 ? `<tr>
+          <td style="padding:6px 0;color:#666;font-size:13px;border-bottom:1px solid #f0ebe0;">Credit Card Fee (3%)</td>
+          <td style="padding:6px 0;text-align:right;font-size:13px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(stayCcFee)}</td>
+        </tr>` : ''}
         <tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'}</td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax + stayCcFee)}</td>
         </tr>
         ${creditRow}
         ${credit > 0 && refundDue <= 0.005 ? `<tr>

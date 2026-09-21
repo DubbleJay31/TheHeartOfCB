@@ -1055,13 +1055,19 @@ addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(nights > 0 ? Math
 if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
+// Guest already paid a card-processing fee on their original payment - the portion of that fee
+// covering the stay they're keeping doesn't come back just because a refund is owed on the rest
+// (see _refundFeeShare in admin.html). Left out entirely before, so "Full Stay Total" and the
+// refund figure below it read as a silent mismatch (paid $500, stay is $400, but refund isn't
+// exactly $100) with no explanation why.
+const stayFullTotal = fullTotal || (rate + taxOcc + taxSales);
+const stayCcFee = refundDue > 0.005 ? stayFullTotal * CC_FEE_RATE : 0;
 if (priorCredit > 0) {
-  addRow('Full Stay Total', fmt(fullTotal || (rate + taxOcc + taxSales)));
+  if (stayCcFee > 0) addRow('Credit Card Fee (3%)', fmt(stayCcFee));
+  addRow('Full Stay Total', fmt(stayFullTotal + stayCcFee));
   addRow('<span style="color:#166534;">Previous Payment Credit</span>', `<span style="color:#166534;">&minus;${fmt(priorCredit)}</span>`);
 }
 if (refundDue > 0) {
-  // Guest already paid more than the updated (shorter) stay costs - nothing to collect, Jesse
-  // owes them back. No balance-due/fee noise here since none of that applies.
   addRow('<strong style="color:#166534;">💰 Refund Due to You</strong>', `<strong style="color:#166534;">${fmt(refundDue)}</strong>`, 'pt-total');
 } else {
   const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
