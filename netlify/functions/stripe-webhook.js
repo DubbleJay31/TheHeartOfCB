@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { sbReservations, propLabel } = require('./_reservations');
+const { sbReservations, propLabel, escapeHtml } = require('./_reservations');
 
 // Public - this is called by Stripe's own servers, not a browser, so it can't be PIN-gated or
 // capability-token-gated like everything else. Authenticity instead comes entirely from the
@@ -36,7 +36,7 @@ async function _notifyJesseReservation(row, amount) {
     const fmtD = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return s; } };
     const prefLabel = row.contact_pref === 'text' ? '💬 Text' : row.contact_pref === 'email' ? '📧 Email' : row.contact_pref === 'either' ? '📧💬 Either' : null;
     const html = `<div style="font-family:Georgia,serif;padding:20px;max-width:480px;">
-      <p style="font-size:16px;"><strong>💳 Stripe payment received - ${guest}</strong></p>
+      <p style="font-size:16px;"><strong>💳 Stripe payment received - ${escapeHtml(guest)}</strong></p>
       <p>$${amount.toFixed(2)} charged successfully. This reservation has been automatically marked <strong>confirmed</strong>.</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;">
         <tr><td style="padding:4px 0;color:#666;width:110px;">Dates</td><td style="padding:4px 0;font-weight:600;">${fmtD(row.check_in)} → ${fmtD(row.check_out)}</td></tr>
@@ -81,7 +81,7 @@ async function _notifyGuestReservation(row) {
         <strong style="font-size:16px;">📋 Booking Request Received</strong>
       </div>
       <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
-        <p style="margin:0 0 12px;font-size:14px;">Hi ${firstName},</p>
+        <p style="margin:0 0 12px;font-size:14px;">Hi ${escapeHtml(firstName)},</p>
         <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
           <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
@@ -111,13 +111,15 @@ async function _notifyJesseMerchOrder(session) {
     const email = session.customer_details?.email || '(no email)';
     const shipName = session.shipping_details?.name || session.customer_details?.name || '(no name)';
     const addr = session.shipping_details?.address || {};
+    // Stripe Checkout lets the customer type their own shipping name/address - all of it lands
+    // unescaped in Jesse's inbox otherwise.
     const addrLines = [addr.line1, addr.line2, [addr.city, addr.state, addr.postal_code].filter(Boolean).join(', '), addr.country]
-      .filter(Boolean).join('<br>');
+      .filter(Boolean).map(escapeHtml).join('<br>');
     const html = `<div style="font-family:Georgia,serif;padding:20px;">
-      <p style="font-size:16px;"><strong>📦 New merch order - ${product} × ${qty}</strong></p>
+      <p style="font-size:16px;"><strong>📦 New merch order - ${escapeHtml(product)} × ${escapeHtml(qty)}</strong></p>
       <p>$${amount} charged successfully.</p>
-      <p><strong>Ship to:</strong><br>${shipName}<br>${addrLines || '(no shipping address on file)'}</p>
-      <p><strong>Contact:</strong> ${email}</p>
+      <p><strong>Ship to:</strong><br>${escapeHtml(shipName)}<br>${addrLines || '(no shipping address on file)'}</p>
+      <p><strong>Contact:</strong> ${escapeHtml(email)}</p>
     </div>`;
     await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
       method: 'POST',
@@ -199,6 +201,12 @@ exports.handler = async function(event) {
       headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({
         status: 'confirmed',
+        // Clears any prior_terms snapshot reservations-upsert.js left for a pending change -
+        // reservations-confirm.js (the manual-payment path) already does this on its own confirm
+        // write; this path was missing it, which meant a Change Reservation edit that got paid
+        // via Stripe left a stale snapshot of the OLD (pre-edit) terms sitting on an already-
+        // confirmed, already-paid row - reachable via admin's "Keep Original Terms".
+        prior_terms: null,
         updated_at: new Date().toISOString(),
         host_notes: hostNotes,
         payment_method: 'stripe'
