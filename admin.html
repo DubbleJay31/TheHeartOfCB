@@ -2833,6 +2833,14 @@ function openReservationDetail(code) {
     try { _cashDepositAmt = parseFloat(new URL(r.url).searchParams.get('cdep')) || 0; } catch { /* malformed saved url */ }
   }
   const _refundOwed = r.credit && (_noFeeTotal(r) - r.credit) < 0 ? (r.credit - _noFeeTotal(r)) : 0;
+  // Jesse wants to see the TRUE total including the card/PayPal fee right in the main total row -
+  // not the amount that actually lands in his account (that's a separate, deliberate deduction),
+  // but what the guest was actually charged. Only applies to the plain (no-credit) Total line -
+  // "Full Stay Value" for a credited reservation is the contract value the stay is worth, which a
+  // card fee on this particular balance payment doesn't change.
+  const _hasFee = !r.credit && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
+  const _feeAmt = _hasFee ? Math.max(0, (parseFloat(r.total) || 0) - _noFeeTotal(r)) : 0;
+  const _feeLabel = r.payment_method === 'paypal' ? 'PayPal fee' : 'card fee';
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -2847,7 +2855,7 @@ function openReservationDetail(code) {
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
-        <div><b>${r.credit ? 'Full Stay Value' : 'Total (no card fee)'}:</b> ${fmt$(_noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)})</span>` : ''}</div>
+        <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
         ${_refundOwed > 0 ? `
         <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
