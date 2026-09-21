@@ -1009,7 +1009,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           </div>
           <div class="link-actions">
             <button class="link-btn copy" id="copy-btn" onclick="copyLink()" disabled>📋 Copy Link</button>
-            <button class="link-btn preview" id="preview-btn" onclick="previewLink()" disabled>👁 Preview</button>
+            <button class="link-btn preview" id="preview-btn" onclick="previewLink()" disabled>🔗 Open Live Link</button>
           </div>
           <!-- One save control, same for a brand-new quote or an edit to an existing one - it used
                to only exist inside the editing badge, so a new quote being built from scratch had
@@ -3036,6 +3036,8 @@ function _openCancelNotifyModal(code) {
         </div>
         <div style="padding:1.2rem 1.4rem;">
           <div id="cancel-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
+          <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Optional custom message - included in the email/text below, leave blank to send just the standard notice.</label>
+          <textarea id="cancel-notify-message" rows="3" placeholder="e.g. So sorry for the inconvenience - I'll follow up about your refund by end of day." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.6rem;font-size:.88rem;line-height:1.5;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:.9rem;"></textarea>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
             <button id="cancel-notify-email-btn" onclick="_sendCancelNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Cancellation Email</button>
             <button id="cancel-notify-text-btn" onclick="_sendCancelNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Cancellation Text</button>
@@ -3064,21 +3066,26 @@ function _openCancelNotifyModal(code) {
   modal.querySelector('#cancel-notify-who').textContent =
     `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
   modal.querySelector('#cancel-notify-status').textContent = '';
+  // Reused singleton, same reasoning as the "Don't Send Anything" reset above - without this, a
+  // message typed for one guest could still be sitting in the box and get sent to the next one.
+  const msgEl = modal.querySelector('#cancel-notify-message');
+  if (msgEl) msgEl.value = '';
   modal.style.display = 'flex';
 }
 
 async function _sendCancelNotification(method) {
   const modal = document.getElementById('cancel-notify-modal');
   const code = modal.dataset.code;
+  const message = modal.querySelector('#cancel-notify-message')?.value.trim() || '';
   const status = document.getElementById('cancel-notify-status');
   const btn = document.getElementById(method === 'email' ? 'cancel-notify-email-btn' : 'cancel-notify-text-btn');
   if (method === 'email') {
-    await sendCancellationEmail(code, btn, true);
+    await sendCancellationEmail(code, btn, true, message);
     if (btn.textContent.indexOf('✅') === -1) return; // sendCancellationEmail already reported failure on the button
     status.style.color = '#166534';
     status.textContent = '✅ Email sent';
   } else {
-    sendCancellationText(code);
+    sendCancellationText(code, message);
     btn.textContent = '✅ Text App Opened';
     status.style.color = '#166534';
     status.textContent = '✅ Text composer opened';
@@ -3425,7 +3432,7 @@ async function _sendDeclineNotification(method) {
 }
 
 // ── CANCELLATION EMAIL ──
-async function sendCancellationEmail(code, btn, skipConfirm) {
+async function sendCancellationEmail(code, btn, skipConfirm, message) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
@@ -3451,6 +3458,7 @@ async function sendCancellationEmail(code, btn, skipConfirm) {
       <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(r.check_in)}</div>
       <div><strong>Check-out:</strong> ${fmtD(r.check_out)}</div>
     </div>
+    ${message ? `<div style="background:#f8f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:.93rem;font-style:italic;">${_esc(message)}</div>` : ''}
     <p>If a refund is due, it will be issued per the cancellation policy in your signed rental agreement, using whatever terms were agreed upon at booking.</p>
     <p>Questions? Reach out anytime.</p>
     <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
@@ -3472,13 +3480,13 @@ async function sendCancellationEmail(code, btn, skipConfirm) {
 }
 
 // Text version of the cancellation notice - same info, opened as a text message.
-function sendCancellationText(code) {
+function sendCancellationText(code, message) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   const { phone } = _reservationLinks(r);
   const firstName = (r.guest || '').split(' ')[0] || r.guest;
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
-  const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Your reservation (${fmtD(r.check_in)} - ${fmtD(r.check_out)}) has been canceled. If a refund is due, it'll be issued per the cancellation policy in your signed agreement. Questions? Just reply or call me anytime.`;
+  const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Your reservation (${fmtD(r.check_in)} - ${fmtD(r.check_out)}) has been canceled.${message ? ` ${message}` : ''} If a refund is due, it'll be issued per the cancellation policy in your signed agreement. Questions? Just reply or call me anytime.`;
   _openSmsModal(msg, phone || '');
 }
 
