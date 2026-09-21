@@ -2821,7 +2821,6 @@ function openReservationDetail(code) {
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
-  const smsBody = encodeURIComponent(`Hi ${(r.guest||'').split(' ')[0]}! Here's your booking confirmation for The Heart Of CB: ${viewUrl}`);
   const isCancelled = r.status === 'cancelled';
   // Cash-with-deposit never gets its own DB column for the deposit amount - the only record of
   // it is inside the saved quote link's own query string (cdep), same place _loadIntoForm()
@@ -2865,7 +2864,7 @@ function openReservationDetail(code) {
         `}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
-        ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
+        ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">★ ${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
         ${r.signed_name ? `<div><b>Signed:</b> ${_esc(r.signed_name)}${r.signed_at ? ' · ' + fmtBooked(r.signed_at) : ''}</div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
         ${r.cancelled_at ? `<div><b>Cancelled:</b> ${fmtBooked(r.cancelled_at)}</div>` : ''}
@@ -2877,7 +2876,6 @@ function openReservationDetail(code) {
         ${confirmUrl ? `
         ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">📧 Send Full Confirmation</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
-        ${phone && !isCancelled ? `<a class="conf-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="sms:${_esc(phone)}?&body=${smsBody}">💬 Text Guest</a>` : ''}
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
         ${isCancelled ? `
