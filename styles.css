@@ -965,7 +965,7 @@ main { padding-top: 150px; }
 }
 .cal-day.cal-sel-start .cal-num, .cal-day.cal-sel-end .cal-num { color: var(--white) !important; }
 .cal-day.cal-sel-start .cal-dot-sm, .cal-day.cal-sel-end .cal-dot-sm { background: var(--gold2) !important; }
-.cal-in-range { background: rgba(184,136,42,.12); border-radius: 0; }
+.cal-in-range { background: rgba(184,136,42,.3); border-radius: 0; }
 .cal-in-range .cal-num { color: var(--navy); }
 
 /* Error and selection summary */
@@ -1069,7 +1069,10 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 .tl-blocked .tl-dot   { background: #cbd5e1 !important; box-shadow: none !important; }
 .tl-blocked   { cursor: not-allowed !important; }
 .tl-blocked:hover { background: none !important; }
-.tl-in-range  { background: rgba(184,136,42,.1); }
+/* Was rgba(184,136,42,.1) - correct class, correct cascade, but 10% gold over white is close to
+   invisible, which is exactly what Jesse flagged ("not greying out... like it used to"). Bumped to
+   something actually visible as a highlighted range instead of technically-present-but-unseen. */
+.tl-in-range  { background: rgba(184,136,42,.3); }
 .tl-c-booked.tl-eligible .tl-dot { background: #16a34a !important; box-shadow: 0 0 5px rgba(22,163,74,.4) !important; }
 
 /* Timeline tooltips handled by global JS tooltip in app.js */
