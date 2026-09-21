@@ -1148,10 +1148,9 @@ function bbProceed() {
   const bookPage = document.getElementById('page-book');
   if (bookPage) bookPage.classList.add('active');
   if (_selStart && _selEnd) _updateFormSummary(_selStart, _selEnd);
-  setTimeout(() => {
-    const sec = document.getElementById('booking-form-section');
-    if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + window.pageYOffset - 110, behavior: 'smooth' });
-  }, 100);
+  // Used to scroll straight to the form, skipping past the page's own hero banner entirely - a
+  // guest landing here never saw it at all. Top of page instead, same as a normal page navigation.
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function bbListingPage() {
