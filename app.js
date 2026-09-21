@@ -1137,6 +1137,7 @@ function _updateFormSummary(start, end) {
       <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${Math.round(est.preTax)}</span></div>
       <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%)</span><span>$${Math.round(est.ccFee)}</span></div>
     </div>
+    <div class="fcs-note" style="color:#166534;">Free with Venmo, Cash App, or Zelle - card is just one option.</div>
     <div class="fcs-note">Estimate - Jesse will confirm your exact rate.</div>
   `;
   box.style.display = 'block';
