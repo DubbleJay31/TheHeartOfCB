@@ -1102,6 +1102,48 @@ document.getElementById('sig-date').value = new Date().toLocaleDateString('en-US
 // date-based expiry, a stale price (sign-link.js already blocks the actual signing action for
 // this, but the page itself used to just keep showing the old numbers with no warning), or a
 // canceled reservation.
+// A guest re-clicking their original emailed link after everything's already been signed and
+// confirmed shouldn't land back on the full sign-and-pay form - reuses reservation-signing-info.js
+// (already built for admin's action=confirm screen) to remint the same tok and link straight to
+// their actual signed receipt, instead of a dead end or a confusing "sign again" page.
+async function _showAlreadyConfirmedPage() {
+  ['bk-hero', 'bk-main'].forEach(id => {
+    const el = document.getElementById(id) || document.querySelector('.' + id);
+    if (el) el.style.display = 'none';
+  });
+  const expiryBanner = document.getElementById('expiry-banner');
+  if (expiryBanner) expiryBanner.style.display = 'none';
+  let receiptUrl = '';
+  try {
+    const r = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
+    if (r.ok) {
+      const info = await r.json();
+      if (info.signed_name && info.tok) {
+        receiptUrl = window.location.href
+          + '&signed=1&signame=' + encodeURIComponent(info.signed_name)
+          + '&ts=' + encodeURIComponent(info.signed_at || '')
+          + '&tok=' + encodeURIComponent(info.tok)
+          + (info.payment_method ? '&method=' + encodeURIComponent(info.payment_method) : '');
+      }
+    }
+  } catch (e) { console.error('Failed to build receipt link:', e); }
+  const div = document.createElement('div');
+  div.style.cssText = 'max-width:520px;margin:3rem auto;padding:0 1.25rem;font-family:Inter,sans-serif;';
+  div.innerHTML = `
+    <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2.5rem 2rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:.75rem;">🎉</div>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.75rem;">You're All Set!</h2>
+      <p style="color:#4b5563;font-size:.95rem;line-height:1.6;margin-bottom:1.5rem;">This reservation is already signed, paid, and confirmed - there's nothing left to do here.</p>
+      ${receiptUrl ? `<a href="${receiptUrl}" style="display:inline-block;background:#0f1e3d;color:#fff;text-decoration:none;padding:.85rem 1.6rem;border-radius:10px;font-weight:700;font-size:.92rem;margin-bottom:1.5rem;">📄 View Your Signed Agreement</a><br/>` : ''}
+      <p style="font-size:.88rem;color:#6b7280;line-height:1.7;">
+        Questions before your stay? Reach out anytime:<br/>
+        📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;font-weight:600;">(910) 599-8118</a><br/>
+        📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;font-weight:600;">stay@theheartofcb.com</a>
+      </p>
+    </div>`;
+  document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+}
+
 function _showQuoteBlockedPage(message) {
   ['bk-hero', 'bk-main'].forEach(id => {
     const el = document.getElementById(id) || document.querySelector('.' + id);
@@ -1152,6 +1194,7 @@ if (expRaw && get('action') !== 'confirm') {
     const r = await fetch(`/.netlify/functions/check-quote-freshness?code=${encodeURIComponent(code)}&total=${encodeURIComponent(totalRaw)}`);
     const j = await r.json().catch(() => ({}));
     if (j.fresh !== false) return;
+    if (j.reason === 'already_confirmed') { _showAlreadyConfirmedPage(); return; }
     _showQuoteBlockedPage(j.reason === 'cancelled'
       ? 'This reservation has been canceled. Please contact Jesse with any questions.'
       : 'This quote has been updated since this link was sent. Please check your email for a new quote link, or contact Jesse directly.');
@@ -1917,14 +1960,14 @@ async function _notifyGuest(method) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: [email],
-        subject: `📋 Booking Request Received - ${prop} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
+        subject: `📝 Agreement Signed - ${prop} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
         <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
-          <strong style="font-size:16px;">📋 Booking Request Received</strong>
+          <strong style="font-size:16px;">📝 Agreement Signed - Confirming Your Reservation</strong>
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
           <p style="margin:0 0 12px;font-size:14px;">Hi ${_esc(firstName || guest)},</p>
-          <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
+          <p style="margin:0 0 16px;font-size:14px;">Your signed agreement has been received! Jesse will verify everything and send your official confirmation shortly.</p>
           <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
             <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>

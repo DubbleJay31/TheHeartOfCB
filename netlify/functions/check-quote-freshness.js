@@ -25,6 +25,13 @@ exports.handler = async function(event) {
     if (row.status === 'cancelled') {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fresh: false, reason: 'cancelled' }) };
     }
+    // A guest re-clicking their ORIGINAL emailed link (not the signed=1 receipt link, which
+    // stays valid on purpose) after already finishing everything used to just show the full
+    // sign-and-pay form again, as if nothing had happened yet - confusing, and a stale re-signature
+    // attempt against an already-confirmed reservation.
+    if (row.status === 'confirmed') {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fresh: false, reason: 'already_confirmed', status: 'confirmed' }) };
+    }
     const fresh = Math.abs((parseFloat(row.total) || 0) - (parseFloat(total) || 0)) < 0.01;
     return {
       statusCode: 200,

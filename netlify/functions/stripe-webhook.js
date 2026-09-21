@@ -78,11 +78,11 @@ async function _notifyGuestReservation(row) {
     const prop = propLabel(row.prop);
     const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
       <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
-        <strong style="font-size:16px;">📋 Booking Request Received</strong>
+        <strong style="font-size:16px;">✅ Payment Received - Confirming Your Reservation</strong>
       </div>
       <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
         <p style="margin:0 0 12px;font-size:14px;">Hi ${escapeHtml(firstName)},</p>
-        <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
+        <p style="margin:0 0 16px;font-size:14px;">Your agreement is signed and payment has been received! Jesse will send your official confirmation with check-in details shortly.</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
           <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
           <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtD(row.check_in)}</td></tr>
@@ -96,7 +96,7 @@ async function _notifyGuestReservation(row) {
     await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Origin: 'https://theheartofcb.com' },
-      body: JSON.stringify({ to: [row.email], subject: `📋 Booking Request Received - ${prop} | ${fmtD(row.check_in)}–${fmtD(row.check_out)}`, html })
+      body: JSON.stringify({ to: [row.email], subject: `✅ Payment Received - ${prop} | ${fmtD(row.check_in)}–${fmtD(row.check_out)}`, html })
     });
   } catch (e) { console.error('Guest notification failed:', e); }
 }
