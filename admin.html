@@ -3034,10 +3034,14 @@ function openReservationDetail(code) {
         ${confirmUrl ? `
         <!-- This modal only ever opens for a confirmed/cancelled reservation, but "confirmed" and
              "someone actually got the confirmation" aren't the same thing - a reservation confirmed
-             via the list's quick button has status='confirmed' with nobody notified yet.
-             r.confirmation_sent_at (set only once the full Email/Text confirmation actually goes
-             out) is what tells a genuine resend apart from a first send that just hasn't happened. -->
-        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✓ Confirm Reservation'}</button>` : ''}
+             via the list's quick button (or automatically, by Stripe) has status='confirmed' with
+             nobody notified yet. The label has to track that distinction too, not just the click
+             handler: a reservation that's already confirmed but never sent should say "Send
+             Confirmation," not "Confirm Reservation" (which reads as if the reservation itself
+             still needs confirming). r.confirmation_sent_at (set only once the full Email/Text
+             confirmation actually goes out) is what tells a genuine resend apart from a first send
+             that just hasn't happened yet. -->
+        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
