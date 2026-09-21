@@ -649,12 +649,12 @@ a { color: inherit; text-decoration: none; }
               `<strong>Cancel ${cd.halfStart} &ndash; ${cd.halfEnd}:</strong> 50% refund.<br/>` +
               `<strong>${cd.ciFormatted} (your check-in day): Cancellation not accepted &mdash; no refund.</strong>` +
               (cashMode && cashDep > 0 ? ` For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.` : '') + `<br/><br/>` +
-              `<strong>Only three exceptions apply:</strong> (1) Written approval from Jesse issued in advance, ` +
+              `<strong>Only two exceptions apply:</strong> (1) Written approval from Jesse issued in advance, or ` +
               `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> ` +
-              `is officially activated for your specific dates and location, or ` +
-              `(3) Jesse successfully re-books your dates with another guest &mdash; confirmed in writing by Jesse. ` +
+              `is officially activated for your specific dates and location. ` +
               `Personal reasons and weather in your area of origin are not covered &mdash; ` +
               `if it is safe to travel in the Wilmington/Carolina Beach area and the property is available, the policy applies in full. ` +
+              `If Jesse successfully re-books your dates with another guest, refunding you &mdash; in full or in part &mdash; is entirely at his discretion, not a guaranteed exception to this policy. ` +
               `Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
           } else {
             el.innerHTML =
@@ -662,10 +662,10 @@ a { color: inherit; text-decoration: none; }
               `<strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/>` +
               `<strong>Same-day cancellation: Not accepted &mdash; no refund.</strong>` +
               (cashMode && cashDep > 0 ? ` For cash guests: deposit is non-refundable and you owe the remaining unpaid balance.` : '') + `<br/><br/>` +
-              `<strong>Only three exceptions:</strong> (1) Written approval from Jesse, ` +
-              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> applies, or ` +
-              `(3) Jesse successfully re-books your dates &mdash; confirmed in writing by Jesse. ` +
+              `<strong>Only two exceptions:</strong> (1) Written approval from Jesse, or ` +
+              `(2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener">Major Disruptive Events Policy</a> applies. ` +
               `Personal reasons and weather at your origin are not covered. ` +
+              `If Jesse successfully re-books your dates, refunding you &mdash; in full or in part &mdash; is entirely at his discretion, not a guaranteed exception. ` +
               `Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
           }
         });
@@ -1694,8 +1694,9 @@ async function _sendAgreementCopy(sigData) {
         ${(() => { const cd = _cancelDates(sigData.ci); return cd
           ? `<strong>Cancel by ${cd.fullBy}:</strong> Full refund.<br/><strong>Cancel ${cd.halfStart}&ndash;${cd.halfEnd}:</strong> 50% refund.<br/><strong>${cd.ciFormatted} (check-in day): Cancellation not accepted &mdash; no refund, no exceptions.</strong>`
           : `<strong>5+ days before check-in:</strong> Full refund.<br/><strong>1&ndash;4 days before check-in:</strong> 50% refund.<br/><strong>Same-day cancellation: Not accepted &mdash; no refund, no exceptions.</strong>`; })()}${sigData.cashMode ? ' For cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.' : ''}<br/><br/>
-        <strong>Only three exceptions:</strong> (1) Written approval from Jesse issued in advance, (2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" style="color:#7c1d1d;">Major Disruptive Events Policy</a> is officially activated for your dates and location, or (3) Jesse successfully re-books your dates with another guest &mdash; confirmed in writing by Jesse.<br/><br/>
+        <strong>Only two exceptions:</strong> (1) Written approval from Jesse issued in advance, or (2) Airbnb&rsquo;s <a href="https://www.airbnb.com/help/article/1320" style="color:#7c1d1d;">Major Disruptive Events Policy</a> is officially activated for your dates and location.<br/><br/>
         Personal reasons and weather in your origin area are <strong>not</strong> covered. If it is safe to travel in the Wilmington/Carolina Beach area and the property is available, the policy applies in full.<br/><br/>
+        If Jesse successfully re-books your dates with another guest, refunding you &mdash; in full or in part &mdash; is entirely at his discretion, not a guaranteed exception to this policy.<br/><br/>
         Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.
       </span>
     </td></tr>
@@ -2394,7 +2395,8 @@ async function _notifyJesse(method) {
         `<strong>Cancel ${cd.halfStart}–${cd.halfEnd}:</strong> 50% refund. ` +
         `<strong>${cd.ciFormatted} (check-in day): Not accepted - no refund.</strong> ` +
         `For cash guests: deposit is non-refundable and you owe the remaining unpaid balance. ` +
-        `Only three exceptions: (1) Written approval from Jesse, (2) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location, or (3) Jesse successfully re-books your dates - confirmed in writing by Jesse. ` +
+        `Only two exceptions: (1) Written approval from Jesse, or (2) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location. ` +
+        `If Jesse successfully re-books your dates, refunding you - in full or in part - is entirely at his discretion, not a guaranteed exception. ` +
         `Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
     } else {
       cancelEl.innerHTML = `<strong>5+ days before check-in:</strong> Full refund. <strong>1–4 days:</strong> 50% refund. <strong>Same day:</strong> Not accepted - no refund. Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
