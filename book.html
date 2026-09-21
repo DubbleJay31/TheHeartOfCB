@@ -771,7 +771,7 @@ a { color: inherit; text-decoration: none; }
 
       <div id="pay-refund-card" style="display:none;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;padding:1.5rem;text-align:center;">
         <div style="font-size:1.15rem;font-weight:700;color:#166534;margin-bottom:.4rem;">✅ No payment needed</div>
-        <p style="color:#166534;font-size:.92rem;margin:0 0 1.1rem;">Your updated dates come out to less than what you already paid - you're getting <strong id="pay-refund-amount"></strong> back. Jesse will send that separately once this is confirmed.</p>
+        <p id="pay-refund-text" style="color:#166534;font-size:.92rem;margin:0 0 1.1rem;">Your updated dates come out to less than what you already paid - you're getting <strong id="pay-refund-amount"></strong> back. Jesse will send that separately once this is confirmed.</p>
         <button id="confirm-refund-btn" onclick="confirmRefundReservation()" style="width:100%;padding:1rem;background:#166534;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">
           ✅ Confirm My Updated Reservation
         </button>
@@ -975,7 +975,13 @@ const fullTotal   = parseFloat(get('full_total')) || 0;
 // it read as a silent mismatch (paid $500, stay is $400, but refund isn't exactly $100) with
 // nothing explaining why. Computed once here, shared by every breakdown table on this page.
 const stayFullTotal = fullTotal || (rate + taxOcc + taxSales);
-const stayCcFee = refundDue > 0.005 ? stayFullTotal * CC_FEE_RATE : 0;
+// Credit lands exactly on the new total (within a rounding cent) - not a balance still owed, not
+// a refund, genuinely nothing to collect or send back. Same "nothing to pay" shape as the refund
+// case, just without money changing hands either direction - treated the same way throughout this
+// page (no payment section, fee context still shown, a reminder that signing is what actually
+// finalizes the change).
+const isZeroBalance = priorCredit > 0 && refundDue <= 0.005 && Math.max(0, stayFullTotal - priorCredit) <= 0.005;
+const stayCcFee = (refundDue > 0.005 || isZeroBalance) ? stayFullTotal * CC_FEE_RATE : 0;
 const dueRaw  = get('due')     || '';
 // Set when Jesse checks "Override - no card option" in admin.html - lets him intentionally leave
 // card payment off a specific quote (e.g. cash/Venmo-only arrangement), now that Stripe would
@@ -1074,6 +1080,8 @@ if (priorCredit > 0) {
 }
 if (refundDue > 0) {
   addRow('<strong style="color:#166534;">💰 Refund Due to You</strong>', `<strong style="color:#166534;">${fmt(refundDue)}</strong>`, 'pt-total');
+} else if (isZeroBalance) {
+  addRow('<strong style="color:#166534;">✅ Nothing More to Pay</strong>', `<strong style="color:#166534;">${fmt(0)}</strong>`, 'pt-total');
 } else {
   const baseTotal = noFeeTotal > 0 ? noFeeTotal : total;
   addRow(`<strong id="pt-total-label">${priorCredit > 0 ? 'Balance Due' : 'Total'}</strong>`, `<strong id="pt-total-val">${fmt(baseTotal)}</strong>`, 'pt-total');
@@ -1085,6 +1093,9 @@ if (dueRaw && !refundDue) addRow(`Quote Expires`, fmtDate(dueRaw), 'pt-deposit')
 if (refundDue > 0) {
   const amtEl = document.getElementById('pay-refund-amount');
   if (amtEl) amtEl.textContent = fmt(refundDue);
+} else if (isZeroBalance) {
+  const textEl = document.getElementById('pay-refund-text');
+  if (textEl) textEl.textContent = 'Your prior credit covers this updated stay in full - there\'s nothing more to pay.';
 }
 
 // ── GUEST INFO ──
@@ -1197,6 +1208,12 @@ if (expRaw && get('action') !== 'confirm') {
     // do anything.
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `💰 You have a ${fmt(refundDue)} refund coming your way - but it only goes out once you sign the updated agreement below. Your dates are <strong>not blocked</strong> until then.`;
+  } else if (isZeroBalance) {
+    // Credit lands exactly on the new total - same "nothing to pay" situation as the refund case
+    // above, just with no money moving either direction. Same reasoning: the payment warning is
+    // wrong here, and what's actually still needed is the signature, not a check for payment.
+    inner.className = 'expiry-banner warn';
+    inner.innerHTML = `✅ Your prior credit covers this updated stay in full - nothing more to pay. Sign the updated agreement below for the change to take effect.`;
   } else {
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `⚠️ Your booking is not complete until payment is received. Your dates are <strong>not blocked</strong> - anyone can book them until you pay.`;
@@ -1318,18 +1335,21 @@ function toggleCheck(e) {
   }
 })();
 
-// A refund-owed guest has nothing to pay - showing the full payment-methods list (even dimmed,
-// pre-signing) suggested a payment step that doesn't exist and could read as "pay now, get change
-// later" instead of what it actually is. Lead with the same "No payment needed" card shown after
-// signing, just locked/greyed until they actually sign - never the payment methods at all.
-if (refundDue > 0.005) {
+// A refund-owed (or exactly-even) guest has nothing to pay - showing the full payment-methods
+// list (even dimmed, pre-signing) suggested a payment step that doesn't exist and could read as
+// "pay now, get change later" instead of what it actually is. Lead with the same "No payment
+// needed" card shown after signing, just locked/greyed until they actually sign - never the
+// payment methods at all.
+if (refundDue > 0.005 || isZeroBalance) {
   const payMethodsEl = document.getElementById('pay-methods');
   const refundCard = document.getElementById('pay-refund-card');
   const lockBanner = document.getElementById('pay-lock-banner');
   const refundBtn = document.getElementById('confirm-refund-btn');
   if (payMethodsEl) payMethodsEl.style.display = 'none';
   if (refundCard) { refundCard.style.display = ''; refundCard.classList.add('locked'); }
-  if (lockBanner) lockBanner.textContent = '🔒 Submit your signed agreement above to receive your refund.';
+  if (lockBanner) lockBanner.textContent = isZeroBalance
+    ? '🔒 Submit your signed agreement above for the change to take effect.'
+    : '🔒 Submit your signed agreement above to receive your refund.';
   if (refundBtn) refundBtn.disabled = true;
 }
 
@@ -1433,15 +1453,17 @@ async function submitAgreement() {
   const printBtn = document.getElementById('print-agreement-btn');
   if (printBtn) printBtn.style.display = '';
 
-  // Refund case has nothing to pay - "payment is the next required step" and "NOT confirmed
-  // until payment is received" are both actively wrong here, and the button led to a payment
-  // screen showing methods that don't apply. Swap in wording that matches what's actually left
-  // to do (nothing but confirming).
-  if (refundDue > 0) {
+  // Refund/exactly-even case has nothing to pay - "payment is the next required step" and "NOT
+  // confirmed until payment is received" are both actively wrong here, and the button led to a
+  // payment screen showing methods that don't apply. Swap in wording that matches what's actually
+  // left to do (nothing but confirming).
+  if (refundDue > 0 || isZeroBalance) {
     const sub = document.getElementById('success-overlay-sub');
     const warn = document.getElementById('success-overlay-warn');
     const btn2 = document.getElementById('success-overlay-btn');
-    if (sub) sub.textContent = 'No payment needed - you\'re due a refund on your updated dates.';
+    if (sub) sub.textContent = refundDue > 0
+      ? 'No payment needed - you\'re due a refund on your updated dates.'
+      : 'No payment needed - your credit covers your updated dates in full.';
     if (warn) warn.textContent = '⚠️ Your reservation isn\'t updated yet - confirm below to finish.';
     if (btn2) btn2.textContent = 'Take Me to Confirm →';
   }
@@ -1455,7 +1477,7 @@ function unlockAndPay() {
   document.getElementById('success-overlay').classList.remove('show');
   document.getElementById('pay-lock-banner').style.display = 'none';
   _activatePayLinks();
-  if (refundDue > 0) {
+  if (refundDue > 0 || isZeroBalance) {
     // Nothing to pay - the refund card was already showing (locked/greyed) before signing; unlock
     // it now instead of the normal payment methods, which stay hidden throughout.
     const refundCard = document.getElementById('pay-refund-card');
@@ -1581,7 +1603,8 @@ async function handleCashConfirm() {
   showBookingComplete();
 }
 
-// ── CONFIRM UPDATED RESERVATION (shortened stay, no payment - refund owed instead) ──
+// ── CONFIRM UPDATED RESERVATION (changed stay, nothing to pay - either a refund is owed, or the
+// credit lands exactly on the new total) ──
 async function confirmRefundReservation() {
   // Every other payment path (handleCashConfirm, handlePayClick, copyZelleNum) guards on
   // _agreementSent before doing anything - this one didn't, so calling it straight from devtools
@@ -1590,10 +1613,14 @@ async function confirmRefundReservation() {
   const btn = document.getElementById('confirm-refund-btn');
   if (!btn || btn.disabled) return;
   btn.disabled = true; btn.textContent = '⏳ Confirming - notifying Jesse…';
-  _setAgreementMethod('Refund');
+  // 'Even' keeps the zero-balance case from being notified/labeled as a refund elsewhere (host
+  // email, admin confirm page) when nothing is actually owed back - "refund owed: $0.00" reads as
+  // a bug, not a status.
+  const method = refundDue > 0.005 ? 'Refund' : 'Even';
+  _setAgreementMethod(method);
   try {
-    await _notifyJesse('Refund');
-    await _notifyGuest('Refund');
+    await _notifyJesse(method);
+    await _notifyGuest(method);
     btn.textContent = '✅ Jesse notified - you\'ll hear back shortly';
     showBookingComplete();
   } catch (err) {
@@ -1737,6 +1764,8 @@ async function _sendAgreementCopy(sigData) {
     ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') : ''}
     ${refundDue > 0
       ? `<tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">💰 Refund Due to You</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(refundDue)}</td></tr>`
+      : isZeroBalance
+      ? `<tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">✅ Nothing More to Pay</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(0)}</td></tr>`
       : priorCredit > 0 ? ROW('Balance Due', fmt2(noFee), '#f2ede3') : ''}
     ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
     ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, priorCredit > 0 || (!_confIsCash && _confRecvNow > noFee) ? '#f2ede3' : '#f9f6f0') : ''}
@@ -2024,8 +2053,9 @@ async function _notifyJesse(method) {
   try {
     const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const isRefund = method === 'Refund';
+    const isEven = method === 'Even';
     const names = { venmo: 'Venmo', cashapp: 'Cash App', stripe: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
-    const methodLabel = isRefund ? 'No payment - refund owed' : (names[method] || method);
+    const methodLabel = isRefund ? 'No payment - refund owed' : isEven ? 'No payment - credit covers stay in full' : (names[method] || method);
     // Build confirm link - use agreement URL (has signame+ts) when available, otherwise current URL
     const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
     const r = await fetch('/.netlify/functions/send-email', {
@@ -2035,10 +2065,12 @@ async function _notifyJesse(method) {
         to: ['jessejonesrealestate@gmail.com'],
         subject: isRefund
           ? `🔄 Signed - Refund Owed - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`
+          : isEven
+          ? `✅ Signed - No Balance Due - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`
           : `💰 Payment Sent - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
         <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
-          <strong style="font-size:16px;">${isRefund ? '🔄 Updated Agreement Signed - Refund Owed' : '💰 Payment Sent - Verify &amp; Confirm'}</strong>
+          <strong style="font-size:16px;">${isRefund ? '🔄 Updated Agreement Signed - Refund Owed' : isEven ? '✅ Updated Agreement Signed - No Balance Due' : '💰 Payment Sent - Verify &amp; Confirm'}</strong>
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -2051,16 +2083,18 @@ async function _notifyJesse(method) {
             <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
             ${isRefund
               ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Refund Owed</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(refundDue)}</td></tr>`
+              : isEven
+              ? `<tr><td style="padding:5px 0;color:#166534;">Balance Due</td><td style="padding:5px 0;font-weight:700;color:#166534;">${fmt(0)}</td></tr>`
               : `<tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Verify in Venmo/Cash App/Zelle' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${_receivedNowForMethod(method) > 0 ? fmt(_receivedNowForMethod(method)) : 'Nothing sent yet - full cash at check-in'}</td></tr>
             ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}`
             }
             <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
             ${contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="padding:5px 0;font-weight:700;">${contactPref === 'text' ? '💬 Text' : contactPref === 'email' ? '📧 Email' : '📧💬 Both'}</td></tr>` : ''}
           </table>
-          ${!isRefund && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
-          ${isRefund ? '' : `<div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.</div>`}
+          ${!isRefund && !isEven && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
+          ${isRefund || isEven ? '' : `<div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.</div>`}
           <table role="presentation" style="width:100%;margin-top:14px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
-            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">${isRefund ? 'STEPS TO FINISH' : 'ONCE PAYMENT IS VERIFIED, TWO STEPS'}</td></tr>
+            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">${isRefund || isEven ? 'STEPS TO FINISH' : 'ONCE PAYMENT IS VERIFIED, TWO STEPS'}</td></tr>
             ${isRefund ? `<tr>
               <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
               <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Send their ${fmt(refundDue)} refund.</strong></td>
@@ -2198,14 +2232,14 @@ async function _notifyJesse(method) {
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
-      ${_isResend || methodName === 'Refund' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
+      ${_isResend || methodName === 'Refund' || methodName === 'Even' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
       ${_isResend ? '' : `
       <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;">
-        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">${methodName === 'Refund' ? 'STEPS TO FINISH' : 'TWO STEPS TO FINISH'}</div>
+        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">${methodName === 'Refund' || methodName === 'Even' ? 'STEPS TO FINISH' : 'TWO STEPS TO FINISH'}</div>
         ${methodName === 'Refund' ? `<div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
           <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">1</span>
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send their ${refundDue ? fmt2(refundDue) : ''} refund.</strong></span>
@@ -2469,10 +2503,12 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Sales Tax</span><strong>${fmtAmt2(taxSales)}</strong></div>
     ${priorCredit > 0 ? `
     ${stayCcFee > 0 ? `<div class="apr-si"><span>Credit Card Fee (3%)</span><strong>${fmtAmt2(stayCcFee)}</strong><div style="font-size:.62rem;text-transform:none;letter-spacing:normal;color:var(--muted);font-weight:400;margin-top:.1rem;">Non-refundable</div></div>` : ''}
-    <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(refundDue > 0.005 ? stayFullTotal + stayCcFee : (fullTotal || (apTotal + priorCredit)))}</strong></div>
+    <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(refundDue > 0.005 || isZeroBalance ? stayFullTotal + stayCcFee : (fullTotal || (apTotal + priorCredit)))}</strong></div>
     <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
     ${refundDue > 0.005
       ? `<div class="apr-si"><span style="color:#166534;font-weight:700;">Refund Due to You</span><strong style="color:#166534;">${fmtAmt2(refundDue)}</strong></div>`
+      : isZeroBalance
+      ? `<div class="apr-si"><span style="color:#166534;font-weight:700;">Nothing More to Pay</span><strong style="color:#166534;">${fmtAmt2(0)}</strong></div>`
       : `<div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong></div>` : ''}
