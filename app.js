@@ -145,6 +145,17 @@ let _selEnd        = null;
 let _calToday      = null;
 let _attestedRules = false;
 const _visitedTabs = new Set();
+// Declared early (not down by lgbAccordion/_checkAttestReady where it's actually used) because
+// showPage() now calls _resetAttestBtn() - which reads this - synchronously during the initial
+// deep-link routing IIFE at the bottom of this file. That runs before the parser would otherwise
+// reach a same-spot declaration, which threw "Cannot access '_ALL_TABS' before initialization"
+// on every direct /prop1, /prop2, /prop3 link (i.e. every guest arriving from a shared link,
+// not just ones who clicked through from the home page).
+const _ALL_TABS = ['rules','cancel','checkin','area','inunit','emergency','checkout'];
+// Which property's guidebook _visitedTabs/attestation currently reflects - each listing has its
+// own rules/amenities/access info, so reading and agreeing to prop1's doesn't count toward prop2's
+// gate. Reset whenever the active property page actually changes (see showPage()).
+let _guideProp = null;
 let _lastPropCalOffset = 0;
 const _calInst   = {}; // wrapId → { prop, wrap, sentinel, observer, months, startOffset }
 
@@ -1039,7 +1050,7 @@ function clearDates() {
 }
 
 function _resetAttestBtn() {
-  const btn = document.getElementById('attest-rules-btn');
+  const btn = document.querySelector('.page.active .lgb-attest-btn');
   if (!btn) return;
   const visited = _ALL_TABS ? _ALL_TABS.filter(t => _visitedTabs.has(t)).length : 1;
   const allDone = _ALL_TABS && visited === _ALL_TABS.length;
@@ -1170,7 +1181,7 @@ function attestHouseRules() {
   _attestedRules = true;
   _updateBbBtn();
   const bar = document.getElementById('booking-bar');
-  const btn = document.getElementById('attest-rules-btn');
+  const btn = document.querySelector('.page.active .lgb-attest-btn');
   // "click Request to Book in the bar below" only makes sense once dates are actually picked -
   // the booking bar only shows a real Request to Book action after that (see _showBookingBar()).
   // Guests can (and do) read and agree to the rules before ever touching the calendar, since
@@ -1192,7 +1203,10 @@ function attestHouseRules() {
 }
 
 function scrollToGuide() {
-  const section = document.querySelector('.listing-guidebook-section');
+  // Scoped to the active page - now that all 3 properties have their own guidebook section in the
+  // DOM at once (just hidden), an unscoped query always found prop1's regardless of which property
+  // the guest was actually looking at.
+  const section = document.querySelector('.page.active .listing-guidebook-section');
   if (!section) return;
   const header = document.querySelector('.site-header');
   const topBar = document.querySelector('.listing-top-bar');
@@ -1290,6 +1304,17 @@ function showPage(id, _skipHistory) {
   document.querySelectorAll('.main-nav a').forEach(a => a.classList.remove('active-nav'));
 
   if (!_calToday) { _calToday = new Date(); _calToday.setHours(0,0,0,0); }
+
+  // Landing on a DIFFERENT property's page than whatever guide state is currently tracked -
+  // reset the read-and-agree gate so it reflects THIS listing's rules, not whichever one was
+  // last browsed. Also repaints the button/counter for the newly-active page, which otherwise
+  // stays wherever _checkAttestReady() last left the DOM (e.g. still showing prop1's "7 of 7").
+  if (/^prop\d+$/.test(id) && id !== _guideProp) {
+    _guideProp = id;
+    _visitedTabs.clear();
+    _attestedRules = false;
+    _resetAttestBtn();
+  }
 
   if (id === 'stay') {
     // Render all 3 side-by-side calendars, default to timeline view
@@ -1577,17 +1602,19 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // ─── GUIDEBOOK TABS ───
+// Scoped by data-tab within the ACTIVE page's own guidebook section, not a bare id lookup - now
+// that all 3 properties have their own accordion, "rules"/"cancel"/etc would otherwise collide
+// (getElementById only ever finds the first one in the document, so every property but the first
+// would silently toggle prop1's hidden panels instead of its own).
 function lgbAccordion(id) {
-  const item = document.getElementById('lgb-acc-' + id);
+  const section = document.querySelector('.page.active .listing-guidebook-section');
+  const item = section && section.querySelector('.lgb-acc-item[data-tab="' + id + '"]');
   if (!item) return;
   const hd = item.querySelector('.lgb-acc-hd');
   const body = item.querySelector('.lgb-acc-body');
-  const section = item.closest('.listing-guidebook-section');
   const wasOpen = body && body.classList.contains('open');
-  // Close all in same section
-  ['rules','cancel','checkin','area','inunit','emergency','checkout'].forEach(tid => {
-    const it = section ? section.querySelector('#lgb-acc-' + tid) : document.getElementById('lgb-acc-' + tid);
-    if (!it) return;
+  // Close all others in this same section
+  section.querySelectorAll('.lgb-acc-item').forEach(it => {
     const h = it.querySelector('.lgb-acc-hd'); const b = it.querySelector('.lgb-acc-body');
     if (h) h.classList.remove('active'); if (b) b.classList.remove('open');
   });
@@ -1624,14 +1651,13 @@ function lgbTab(id, btn) {
   _checkAttestReady();
 }
 
-const _ALL_TABS = ['rules','cancel','checkin','area','inunit','emergency','checkout'];
 
 function _checkAttestReady() {
   const visited = _ALL_TABS.filter(t => _visitedTabs.has(t)).length;
   const allDone = visited === _ALL_TABS.length;
-  const countEl = document.getElementById('attest-tab-count');
+  const countEl = document.querySelector('.page.active .lgb-attest-count');
   if (countEl) countEl.textContent = visited;
-  const btn = document.getElementById('attest-rules-btn');
+  const btn = document.querySelector('.page.active .lgb-attest-btn');
   if (!btn || _attestedRules) return;
   if (allDone) {
     btn.disabled = false;
@@ -1644,20 +1670,27 @@ function _checkAttestReady() {
   }
 }
 
+// Each property page has its own copy of this calculator (own ids, suffixed -propN) - same
+// collision problem the guidebook accordion had, since getElementById only ever finds the first
+// -prop1 copy in the document otherwise. Suffix derived from whichever page is actually active.
 function cancelCalc() {
-  const val = document.getElementById('cancel-calc-date').value;
-  const result = document.getElementById('cancel-calc-result');
+  const activeId = document.querySelector('.page.active')?.id || '';
+  const m = activeId.match(/^page-(prop\d+)$/);
+  if (!m) return;
+  const sfx = '-' + m[1];
+  const val = document.getElementById('cancel-calc-date' + sfx)?.value;
+  const result = document.getElementById('cancel-calc-result' + sfx);
   if (!val || !result) return;
   const ci = new Date(val + 'T12:00:00');
   const fmt = d => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const fullCutoff = new Date(ci); fullCutoff.setDate(fullCutoff.getDate() - 5);
   const halfStart  = new Date(ci); halfStart.setDate(halfStart.getDate() - 4);
   const halfEnd    = new Date(ci); halfEnd.setDate(halfEnd.getDate() - 1);
-  document.getElementById('ccr-full').innerHTML =
+  document.getElementById('ccr-full' + sfx).innerHTML =
     `✅ <strong>Full refund:</strong> Cancel by <strong>${fmt(fullCutoff)}</strong>`;
-  document.getElementById('ccr-half').innerHTML =
+  document.getElementById('ccr-half' + sfx).innerHTML =
     `⚠️ <strong>50% refund:</strong> Cancel <strong>${fmt(halfStart)}</strong> through <strong>${fmt(halfEnd)}</strong>`;
-  document.getElementById('ccr-none').innerHTML =
+  document.getElementById('ccr-none' + sfx).innerHTML =
     `🚫 <strong>No refund:</strong> Cancellations on <strong>${fmt(ci)}</strong> (your check-in day) are not accepted`;
   result.style.display = '';
 }

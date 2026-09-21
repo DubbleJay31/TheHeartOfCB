@@ -474,7 +474,7 @@
 
     <div class="lgb-accordion">
 
-    <div class="lgb-acc-item" id="lgb-acc-rules">
+    <div class="lgb-acc-item" id="lgb-acc-rules" data-tab="rules">
       <button class="lgb-acc-hd" onclick="lgbAccordion('rules')">
         <span>📋 House Rules</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -556,7 +556,7 @@
       <p style="font-size:.82rem;color:var(--muted);margin-top:.6rem;line-height:1.5;font-style:italic;">These are standard baseline amounts. You remain responsible for the full cost of any remediation, repair, or replacement that exceeds a listed fee.</p>
     </div></div><!-- /lgb-acc-rules -->
 
-    <div class="lgb-acc-item" id="lgb-acc-cancel">
+    <div class="lgb-acc-item" id="lgb-acc-cancel" data-tab="cancel">
       <button class="lgb-acc-hd" onclick="lgbAccordion('cancel')">
         <span>📅 Cancellation</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -672,12 +672,12 @@
         <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
         <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
           <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
-          <input type="date" id="cancel-calc-date" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
+          <input type="date" id="cancel-calc-date-prop1" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
         </div>
-        <div id="cancel-calc-result" style="margin-top:1rem;display:none;">
-          <div id="ccr-full"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#f0f9f4;border-left:4px solid #15603a;font-size:.88rem;color:#15603a;"></div>
-          <div id="ccr-half"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fdf8ee;border-left:4px solid #b8882a;font-size:.88rem;color:#8a6010;"></div>
-          <div id="ccr-none"  style="padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.88rem;color:#9b1c1c;"></div>
+        <div id="cancel-calc-result-prop1" style="margin-top:1rem;display:none;">
+          <div id="ccr-full-prop1"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#f0f9f4;border-left:4px solid #15603a;font-size:.88rem;color:#15603a;"></div>
+          <div id="ccr-half-prop1"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fdf8ee;border-left:4px solid #b8882a;font-size:.88rem;color:#8a6010;"></div>
+          <div id="ccr-none-prop1"  style="padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.88rem;color:#9b1c1c;"></div>
         </div>
       </div>
 
@@ -699,7 +699,7 @@
 
     </div></div><!-- /lgb-acc-cancel -->
 
-    <div class="lgb-acc-item" id="lgb-acc-checkin">
+    <div class="lgb-acc-item" id="lgb-acc-checkin" data-tab="checkin">
       <button class="lgb-acc-hd" onclick="lgbAccordion('checkin')">
         <span>🔑 Check-In</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -722,7 +722,7 @@
       <p>Text or call Jesse at <strong>(910) 599-8118</strong> anytime before or during your stay.</p>
     </div></div><!-- /lgb-acc-checkin -->
 
-    <div class="lgb-acc-item" id="lgb-acc-area">
+    <div class="lgb-acc-item" id="lgb-acc-area" data-tab="area">
       <button class="lgb-acc-hd" onclick="lgbAccordion('area')">
         <span>🏖️ Local Area</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -748,7 +748,7 @@
       <p><strong>April 1 – September 30:</strong> Dogs allowed on beach before 9:00 AM and after 5:00 PM only.<br/><strong>October 1 – March 31:</strong> Dogs allowed on beach any time. Always carry a bag. <a href="https://www.carolinabeach.gov/293/Pet-Rules" target="_blank" rel="noopener" style="color:var(--navy);">View full town pet rules →</a></p>
     </div></div><!-- /lgb-acc-area -->
 
-    <div class="lgb-acc-item" id="lgb-acc-inunit">
+    <div class="lgb-acc-item" id="lgb-acc-inunit" data-tab="inunit">
       <button class="lgb-acc-hd" onclick="lgbAccordion('inunit')">
         <span>🛎️ In-Unit</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -793,7 +793,7 @@
       <p>Network name and password posted in unit.</p>
     </div></div><!-- /lgb-acc-inunit -->
 
-    <div class="lgb-acc-item" id="lgb-acc-emergency">
+    <div class="lgb-acc-item" id="lgb-acc-emergency" data-tab="emergency">
       <button class="lgb-acc-hd" onclick="lgbAccordion('emergency')">
         <span>🚨 Emergency</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -809,7 +809,7 @@
       <p>Emergency contact details are provided in your booking confirmation email and posted in the unit.</p>
     </div></div><!-- /lgb-acc-emergency -->
 
-    <div class="lgb-acc-item" id="lgb-acc-checkout">
+    <div class="lgb-acc-item" id="lgb-acc-checkout" data-tab="checkout">
       <button class="lgb-acc-hd" onclick="lgbAccordion('checkout')">
         <span>✅ Checkout</span><span class="lgb-acc-icon">▼</span>
       </button>
@@ -837,9 +837,9 @@
     <div style="margin-top:1.75rem;padding:1.25rem 1.5rem;background:#f9f6f0;border:1px solid #e5ddd0;border-radius:12px;text-align:center;">
       <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
         Review all <strong>7 sections</strong> above before booking -
-        <span id="attest-tab-count">0</span> of 7 reviewed
+        <span class="lgb-attest-count">0</span> of 7 reviewed
       </div>
-      <button id="attest-rules-btn" disabled onclick="attestHouseRules()"
+      <button class="lgb-attest-btn" disabled onclick="attestHouseRules()"
         style="width:100%;max-width:520px;padding:.9rem 1.5rem;background:#9ca3af;color:#fff;border:none;border-radius:50px;font-size:.9rem;font-weight:700;cursor:not-allowed;transition:background .3s,color .3s;">
         Click all tabs above to unlock (0 of 7 reviewed)
       </button>
@@ -899,7 +899,10 @@
       <button class="prop-sw-btn active" onclick="showPage('prop2')">🛎️ Left Suite</button>
       <button class="prop-sw-btn" onclick="showPage('prop3')">🛎️ Right Suite</button>
     </div>
-    <button id="ltb-check-dates-prop2" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop2-cal-wrap')">Check Dates ↓</button>
+    <div style="display:flex;gap:.5rem;pointer-events:auto;">
+      <button id="ltb-house-rules-prop2" class="btn btn-primary listing-check-dates-btn" onclick="scrollToHouseRules()">House Rules ↓</button>
+      <button id="ltb-check-dates-prop2" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop2-cal-wrap')">Check Dates ↓</button>
+    </div>
   </div>
 
   <!-- PHOTO GALLERY -->
@@ -996,38 +999,345 @@
       <h2>House Rules & Local Guide</h2>
       <p>Everything you need to know before and during your stay.</p>
     </div>
-    <div class="lgb-grid">
-      <div class="lgb-card">
-        <div class="lgb-icon">📋</div>
-        <h3>House Rules</h3>
-        <p class="lgb-placeholder">Check-in / check-out times, quiet hours, smoking policy, pet rules, and everything else guests need to know. <em>Content coming soon.</em></p>
+
+    <div class="lgb-accordion">
+
+    <div class="lgb-acc-item" id="lgb-acc-rules-prop2" data-tab="rules">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('rules')">
+        <span>📋 House Rules</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-rules-prop2">
+      <div class="lgb-quickglance">
+        <strong>Quick Glance - Key Rules</strong>
+        <ul>
+          <li>Max 2 guests, 1 dog - no exceptions</li>
+          <li>Quiet hours: 10:00 PM – 9:00 AM</li>
+          <li><strong>No parties, events, or outside visitors without approval</strong></li>
+          <li>No smoking inside - $500 fee. Designated outdoor area only.</li>
+          <li>No pets on furniture or bedding without your own covering</li>
+          <li>Dogs must be leashed outside at all times</li>
+          <li>Hose off sand outside before entering</li>
+          <li>White towels for people only - no dogs, beach, or spills</li>
+          <li>Report damage immediately - don't wait until checkout</li>
+          <li>Checkout 11:00 AM sharp · Exterior cameras on parking &amp; entrance</li>
+        </ul>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🔑</div>
-        <h3>Arrival & Access</h3>
-        <p class="lgb-placeholder">Self check-in instructions, parking details, lock box code info, and how to reach Jesse. <em>Content coming soon.</em></p>
+      <a class="lgb-print-btn" href="house-rules.html" target="_blank">🖨️ Print / Save Full Rules</a>
+
+      <h4>Low-Key Stays Only</h4>
+      <p>This suite is meant for relaxing beach stays, not parties. Please keep things low-key and respectful at all times. <strong>NOT allowed:</strong> Parties · Loud music · Roughhousing or horseplay · Heavy drinking or drug use · Beer pong / flip cup / drinking games · Rowdy or disruptive behavior. This is a private suite inside a shared property - the main home and the other suite are occupied by the owner and/or other guests, and walls are shared. Neighbors are close too. Everyone's peace matters.</p>
+
+      <h4>Guest Limit</h4>
+      <p>Maximum occupancy: <strong>2 people and 1 dog.</strong> No exceptions. Only registered guests and approved pets may be on the property. No booking for others under your account. You must be present for the entire stay if you made the reservation. No outside visitors without prior approval. Unauthorized guests: $150 per person per night.</p>
+
+      <h4>Quiet Hours</h4>
+      <p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> This suite shares walls with the rest of the property - be especially mindful after dark: walk softly, close doors gently, keep voices and music low. Any behavior that disturbs neighbors may result in immediate termination of the reservation without refund.</p>
+
+      <h4>No Parties or Events</h4>
+      <p>The suite may not be used for parties, events, or gatherings beyond the stated occupancy. No outside guests without prior approval. Unauthorized parties or events: <strong>$500 fee and immediate cancellation without refund.</strong></p>
+
+      <h4>Smoking</h4>
+      <p>No smoking inside the suite. Ask Jesse about the designated outdoor smoking area. Dispose of cigarette butts in the container provided - not on any porch, yard, or driveway. <strong>$500 fee for smoking inside.</strong></p>
+
+      <h4>Pets</h4>
+      <p>One dog is allowed - <strong>maximum 1 dog.</strong> No cats, ferrets, or other animals (including service animals - due to a severe family allergy). Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Bring your own towels for your dog. If allowing your dog on furniture or bedding, bring your own clean sheets/blankets. Do not use house towels on dogs. Do not bathe dogs inside the suite. No puppy pads or going to the bathroom inside. Use a kennel if your dog may chew, scratch doors, or bark excessively when left alone. Guests are responsible for any damage caused by pets. Unauthorized pets: $100 per pet per night. Note: Thursday night and holiday fireworks are a summer tradition here - loud and frequent. If your dog is sensitive to fireworks, plan accordingly.</p>
+
+      <h4>Neighborhood &amp; Property</h4>
+      <p>My neighbors' peace matters most, and so does the peace of whoever else is staying on the property. Keep it low-key and respectful, and keep any outside space you use spotless - no littering and no cigarette butts.</p>
+
+      <h4>Sand</h4>
+      <p>Hose off outside before coming in. Do not sit on wet or sandy furniture or beds. Shake out beach items outside.</p>
+
+      <h4>Towels &amp; Bedding</h4>
+      <p>Use only what you need. White towels are for people only - no pets, beach, or spills. Laundry is one of the biggest challenges with hosting and your help is greatly appreciated.</p>
+
+      <h4>Damage</h4>
+      <p>Please notify Jesse immediately of any damage - do not wait until checkout. Most issues are easy to resolve when addressed quickly. I work very hard to keep this property in excellent condition for all guests.</p>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks and summer holiday fireworks are a local tradition - but very loud. Typically 8:55 PM – 9:15 PM, Memorial Day through Labor Day. May upset dogs.</p>
+
+      <h4>Security Cameras</h4>
+      <p>Exterior security cameras monitor the parking area and entrance for safety. There are NO cameras inside the suite.</p>
+
+      <h4>Violation Fees</h4>
+      <ul>
+        <li>Unauthorized guests: <strong>$150 per person per night</strong></li>
+        <li>Unauthorized pets: <strong>$100 per pet per night</strong></li>
+        <li>Smoking inside: <strong>$500</strong></li>
+        <li>Unauthorized parties or events: <strong>$500 + immediate cancellation without refund</strong></li>
+        <li>Rule violation requiring host response: <strong>$150 per incident</strong></li>
+        <li>Excessive cleaning beyond normal turnover: <strong>$150</strong></li>
+      </ul>
+      <p style="font-size:.82rem;color:var(--muted);margin-top:.6rem;line-height:1.5;font-style:italic;">These are standard baseline amounts. You remain responsible for the full cost of any remediation, repair, or replacement that exceeds a listed fee.</p>
+    </div></div><!-- /lgb-acc-rules-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-cancel-prop2" data-tab="cancel">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('cancel')">
+        <span>📅 Cancellation</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-cancel-prop2">
+      <div style="background:var(--navy);border-radius:var(--radius);padding:1.4rem 1.6rem 1rem;margin-bottom:1.4rem;">
+        <p style="color:#c8d8f0;margin:0 0 .25rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Cancellation Policy</p>
+        <p style="color:var(--white);font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin:0 0 .6rem;">Know your refund window before you book.</p>
+        <p style="color:#bcd;font-size:.88rem;margin:0;line-height:1.6;">This property follows the <strong style="color:#fff;">Airbnb Moderate Cancellation Policy.</strong> The chart below shows exactly what applies, and the calculator lets you look up your specific dates.</p>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🏖️</div>
-        <h3>Around The Heart Of CB</h3>
-        <p class="lgb-placeholder">Best restaurants, beach access points, boardwalk tips, hidden gems, and Jesse's personal favorites nearby. <em>Content coming soon.</em></p>
+
+      <div style="display:grid;gap:.7rem;margin-bottom:1.6rem;">
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#15603a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#f0f9f4;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#15603a;font-size:.95rem;">5 or more days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancel at least 5 days ahead and you get everything back.</div>
+              </div>
+              <div style="background:#15603a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">Full refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#b8882a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fdf8ee;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#8a6010;font-size:.95rem;">1–4 days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Less than 5 days out, you'll receive half your accommodation cost back.</div>
+              </div>
+              <div style="background:#b8882a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">50% refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#9b1c1c;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fef2f2;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#9b1c1c;font-size:.95rem;">Same day (check-in day)</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancellations on your check-in day are not accepted - no refund, no exceptions. Cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.</div>
+              </div>
+              <div style="background:#9b1c1c;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">No refund</div>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🛎️</div>
-        <h3>Amenities & How-Tos</h3>
-        <p class="lgb-placeholder">WiFi password, TV setup, kitchen equipment, washer/dryer, HVAC, and anything with a learning curve. <em>Content coming soon.</em></p>
+
+      <div style="margin-bottom:1.6rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.7rem;font-size:.92rem;text-transform:uppercase;letter-spacing:.06em;">Quick Reference - Last Day to Cancel by Check-In Day</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.86rem;min-width:280px;">
+            <thead>
+              <tr style="background:var(--navy);color:var(--white);">
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;border-radius:var(--radius-sm) 0 0 0;">Your Check-In Day</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:var(--gold-light);">Last Day to Cancel - Full Refund</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:#f0d0a0;border-radius:0 var(--radius-sm) 0 0;">Last Day - 50% Refund</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Sunday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Tuesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Saturday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Monday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Wednesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Sunday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Tuesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Thursday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Monday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Wednesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Friday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Tuesday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Thursday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Saturday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Wednesday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Friday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Sunday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Thursday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Saturday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Monday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Friday</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🚨</div>
-        <h3>Emergencies & Contacts</h3>
-        <p class="lgb-placeholder">What to do in an emergency, local urgent care, nearest hospital, and how to reach Jesse any time. <em>Content coming soon.</em></p>
+
+      <!-- Date Calculator -->
+      <div style="background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem 1.4rem 1.4rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
+        <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
+        <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
+          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <input type="date" id="cancel-calc-date-prop2" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
+        </div>
+        <div id="cancel-calc-result-prop2" style="margin-top:1rem;display:none;">
+          <div id="ccr-full-prop2"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#f0f9f4;border-left:4px solid #15603a;font-size:.88rem;color:#15603a;"></div>
+          <div id="ccr-half-prop2"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fdf8ee;border-left:4px solid #b8882a;font-size:.88rem;color:#8a6010;"></div>
+          <div id="ccr-none-prop2"  style="padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.88rem;color:#9b1c1c;"></div>
+        </div>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">♻️</div>
-        <h3>Trash & Recycling</h3>
-        <p class="lgb-placeholder">Pickup days, bin locations, what goes where, and checkout cleanup expectations. <em>Content coming soon.</em></p>
+
+      <!-- Exceptions note -->
+      <div style="margin-top:1.2rem;padding:.9rem 1.1rem;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#555;line-height:1.65;">
+        <strong style="color:var(--navy);">Only two exceptions apply:</strong>
+        (1) Written approval from Jesse issued in advance, or
+        (2) Airbnb's <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600;">Major Disruptive Events Policy (MDEP) ↗</a> is officially activated for your specific dates and location.
+        Personal reasons and weather in your area of origin are not covered - if it is safe to travel in the Wilmington/Carolina Beach area and the property is available, the policy applies in full.
+        <br/><br/>Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.
       </div>
+
+      <!-- Rebook good-faith note -->
+      <div style="margin-top:1rem;padding:1rem 1.1rem 1.1rem;background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#444;line-height:1.7;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.5rem;font-size:.88rem;">🔄 If You Cancel - I Will Try to Rebook</div>
+        If you cancel, I will make every effort to rebook your dates - the sooner you cancel, the more time I have to find a new guest. Your reservation remains open either way - you are welcome to use it right up until check-in, and if you decide you want it back, just reach out. If I do successfully rebook your dates, refunding you - in full or in part - is entirely at my discretion, not a guaranteed exception to the policy above.
+        <p style="margin:.6rem 0 0;color:#888;font-size:.79rem;">This is a good-faith effort, not a guarantee. Whether and how I rebook is entirely at my discretion, but I will always try.</p>
+      </div>
+    </div></div><!-- /lgb-acc-cancel-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkin-prop2" data-tab="checkin">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkin')">
+        <span>🔑 Check-In</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkin-prop2">
+      <h4>Times</h4>
+      <p><strong>Check-In: 3:00 PM</strong> &nbsp;|&nbsp; <strong>Check-Out: 11:00 AM sharp</strong></p>
+
+      <h4>Access</h4>
+      <p>This is a private suite with its own entrance, separate from the main home. Your specific access instructions and door code are sent in your booking confirmation email.</p>
+
+      <div class="lgb-eta-box">
+        <strong>📍 PLEASE COMMUNICATE YOUR ETA</strong>
+        <span>Text Jesse your approximate arrival time as soon as you know it - even a rough idea helps. Text anytime: (910) 599-8118</span>
+      </div>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+
+      <h4>Questions?</h4>
+      <p>Text or call Jesse at <strong>(910) 599-8118</strong> anytime before or during your stay.</p>
+    </div></div><!-- /lgb-acc-checkin-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-area-prop2" data-tab="area">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('area')">
+        <span>🏖️ Local Area</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-area-prop2">
+      <h4>Location</h4>
+      <p>213 Harper Avenue, Carolina Beach, NC 28428. You're right in the heart of it all - walkable to everything.</p>
+      <ul>
+        <li>½ block to Lake Park</li>
+        <li>2 short blocks to the boardwalk &amp; beach</li>
+        <li>Shared on-site parking - Jesse will confirm your spot ahead of arrival</li>
+      </ul>
+
+      <h4>Map</h4>
+      <div class="lgb-map">
+        <iframe src="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428&t=h&z=17&output=embed" width="100%" height="320" style="border:0;display:block;" allowfullscreen="" loading="lazy" title="213 Harper Ave, Carolina Beach NC"></iframe>
+      </div>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks run all summer (Memorial Day – Labor Day), plus major holidays. Typically 8:55 – 9:15 PM. Loud but a great local tradition!</p>
+
+      <h4>Dog Beach Rules</h4>
+      <p><strong>April 1 – September 30:</strong> Dogs allowed on beach before 9:00 AM and after 5:00 PM only.<br/><strong>October 1 – March 31:</strong> Dogs allowed on beach any time. Always carry a bag. <a href="https://www.carolinabeach.gov/293/Pet-Rules" target="_blank" rel="noopener" style="color:var(--navy);">View full town pet rules →</a></p>
+    </div></div><!-- /lgb-acc-area-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-inunit-prop2" data-tab="inunit">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('inunit')">
+        <span>🛎️ In-Unit</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-inunit-prop2">
+      <h4>The Space</h4>
+      <p>Private guest suite · 1 bedroom (1 bed) · 1 full bathroom</p>
+
+      <h4>Amenities</h4>
+      <p>Full amenity, entertainment, and kitchen details are provided in your welcome guide at check-in.</p>
+
+      <h4>Laundry</h4>
+      <p>Ask Jesse about laundry access for your stay.</p>
+
+      <h4>Beach Gear</h4>
+      <ul class="lgb-amenity-list">
+        <li>🏖️ Beach towels available</li>
+        <li>🚿 Outdoor hose to rinse off</li>
+      </ul>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+    </div></div><!-- /lgb-acc-inunit-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-emergency-prop2" data-tab="emergency">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('emergency')">
+        <span>🚨 Emergency</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-emergency-prop2">
+      <h4>Property Issues</h4>
+      <p>For anything related to the property - maintenance, questions, or concerns - text or call Jesse directly:</p>
+      <p style="font-size:1.1rem;font-weight:700;color:var(--navy);">(910) 599-8118 - Text or call anytime</p>
+
+      <h4>Life-Threatening Emergency</h4>
+      <p><strong>Call 911.</strong></p>
+
+      <h4>Additional Emergency Contact</h4>
+      <p>Emergency contact details are provided in your booking confirmation email and posted in the unit.</p>
+    </div></div><!-- /lgb-acc-emergency-prop2 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkout-prop2" data-tab="checkout">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkout')">
+        <span>✅ Checkout</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkout-prop2">
+      <div class="lgb-checkout-time">⏰ Checkout: <strong>11:00 AM Sharp</strong></div>
+      <p>If you know your checkout time in advance - especially if leaving early - please let Jesse know so cleaning can be planned for the next guest.</p>
+
+      <h4>Checkout Checklist</h4>
+      <ul>
+        <li>Do <strong>not</strong> strip the bed - straighten sheets so nothing is left inside, blankets not balled up</li>
+        <li>Leave used towels in the bathroom</li>
+        <li>Wash used dishes</li>
+        <li>Remove all food and drinks from the refrigerator</li>
+        <li>Wipe up spills, pick up trash, return items where they belong</li>
+        <li>Take your trash to the outdoor cans - ask Jesse if you're not sure where</li>
+        <li>Do a final walk-through - make sure nothing is left behind</li>
+        <li><strong>Text Jesse when you leave: (910) 599-8118</strong></li>
+      </ul>
+      <p>Thank you for helping keep this property in excellent condition for every guest. I hope you had an incredible stay!</p>
+    </div></div><!-- /lgb-acc-checkout-prop2 -->
+
+    </div><!-- /lgb-accordion -->
+
+    <!-- ATTESTATION - unlocks booking bar after all tabs visited -->
+    <div style="margin-top:1.75rem;padding:1.25rem 1.5rem;background:#f9f6f0;border:1px solid #e5ddd0;border-radius:12px;text-align:center;">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        Review all <strong>7 sections</strong> above before booking -
+        <span class="lgb-attest-count">0</span> of 7 reviewed
+      </div>
+      <button class="lgb-attest-btn" disabled onclick="attestHouseRules()"
+        style="width:100%;max-width:520px;padding:.9rem 1.5rem;background:#9ca3af;color:#fff;border:none;border-radius:50px;font-size:.9rem;font-weight:700;cursor:not-allowed;transition:background .3s,color .3s;">
+        Click all tabs above to unlock (0 of 7 reviewed)
+      </button>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">
+        By clicking, you confirm you have read and agree to all house rules, cancellation policy, and guidelines.
+      </div>
+      <button onclick="scrollToGuide()" style="margin-top:.85rem;background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:.25rem .5rem;">↑ Back to top of guide</button>
     </div>
+
   </div>
 
   <!-- AVAILABILITY CALENDAR -->
@@ -1078,7 +1388,10 @@
       <button class="prop-sw-btn" onclick="showPage('prop2')">🛎️ Left Suite</button>
       <button class="prop-sw-btn active" onclick="showPage('prop3')">🛎️ Right Suite</button>
     </div>
-    <button id="ltb-check-dates-prop3" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop3-cal-wrap')">Check Dates ↓</button>
+    <div style="display:flex;gap:.5rem;pointer-events:auto;">
+      <button id="ltb-house-rules-prop3" class="btn btn-primary listing-check-dates-btn" onclick="scrollToHouseRules()">House Rules ↓</button>
+      <button id="ltb-check-dates-prop3" class="btn btn-primary listing-check-dates-btn" onclick="scrollToCalendar('prop3-cal-wrap')">Check Dates ↓</button>
+    </div>
   </div>
 
   <!-- PHOTO GALLERY -->
@@ -1168,38 +1481,344 @@
       <h2>House Rules & Local Guide</h2>
       <p>Everything you need to know before and during your stay.</p>
     </div>
-    <div class="lgb-grid">
-      <div class="lgb-card">
-        <div class="lgb-icon">📋</div>
-        <h3>House Rules</h3>
-        <p class="lgb-placeholder">Check-in / check-out times, quiet hours, smoking policy, pet rules, and everything else guests need to know. <em>Content coming soon.</em></p>
+    <div class="lgb-accordion">
+
+    <div class="lgb-acc-item" id="lgb-acc-rules-prop3" data-tab="rules">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('rules')">
+        <span>📋 House Rules</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-rules-prop3">
+      <div class="lgb-quickglance">
+        <strong>Quick Glance - Key Rules</strong>
+        <ul>
+          <li>Max 2 guests, 1 dog - no exceptions</li>
+          <li>Quiet hours: 10:00 PM – 9:00 AM</li>
+          <li><strong>No parties, events, or outside visitors without approval</strong></li>
+          <li>No smoking inside - $500 fee. Designated outdoor area only.</li>
+          <li>No pets on furniture or bedding without your own covering</li>
+          <li>Dogs must be leashed outside at all times</li>
+          <li>Hose off sand outside before entering</li>
+          <li>White towels for people only - no dogs, beach, or spills</li>
+          <li>Report damage immediately - don't wait until checkout</li>
+          <li>Checkout 11:00 AM sharp · Exterior cameras on parking &amp; entrance</li>
+        </ul>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🔑</div>
-        <h3>Arrival & Access</h3>
-        <p class="lgb-placeholder">Self check-in instructions, parking details, lock box code info, and how to reach Jesse. <em>Content coming soon.</em></p>
+      <a class="lgb-print-btn" href="house-rules.html" target="_blank">🖨️ Print / Save Full Rules</a>
+
+      <h4>Low-Key Stays Only</h4>
+      <p>This suite is meant for relaxing beach stays, not parties. Please keep things low-key and respectful at all times. <strong>NOT allowed:</strong> Parties · Loud music · Roughhousing or horseplay · Heavy drinking or drug use · Beer pong / flip cup / drinking games · Rowdy or disruptive behavior. This is a private suite inside a shared property - the main home and the other suite are occupied by the owner and/or other guests, and walls are shared. Neighbors are close too. Everyone's peace matters.</p>
+
+      <h4>Guest Limit</h4>
+      <p>Maximum occupancy: <strong>2 people and 1 dog.</strong> No exceptions. Only registered guests and approved pets may be on the property. No booking for others under your account. You must be present for the entire stay if you made the reservation. No outside visitors without prior approval. Unauthorized guests: $150 per person per night.</p>
+
+      <h4>Quiet Hours</h4>
+      <p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> This suite shares walls with the rest of the property - be especially mindful after dark: walk softly, close doors gently, keep voices and music low. Any behavior that disturbs neighbors may result in immediate termination of the reservation without refund.</p>
+
+      <h4>No Parties or Events</h4>
+      <p>The suite may not be used for parties, events, or gatherings beyond the stated occupancy. No outside guests without prior approval. Unauthorized parties or events: <strong>$500 fee and immediate cancellation without refund.</strong></p>
+
+      <h4>Smoking</h4>
+      <p>No smoking inside the suite. Ask Jesse about the designated outdoor smoking area. Dispose of cigarette butts in the container provided - not on any porch, yard, or driveway. <strong>$500 fee for smoking inside.</strong></p>
+
+      <h4>Pets</h4>
+      <p>One dog is allowed - <strong>maximum 1 dog.</strong> No cats, ferrets, or other animals (including service animals - due to a severe family allergy). Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Bring your own towels for your dog. If allowing your dog on furniture or bedding, bring your own clean sheets/blankets. Do not use house towels on dogs. Do not bathe dogs inside the suite. No puppy pads or going to the bathroom inside. Use a kennel if your dog may chew, scratch doors, or bark excessively when left alone. Guests are responsible for any damage caused by pets. Unauthorized pets: $100 per pet per night. Note: Thursday night and holiday fireworks are a summer tradition here - loud and frequent. If your dog is sensitive to fireworks, plan accordingly.</p>
+
+      <h4>Neighborhood &amp; Property</h4>
+      <p>My neighbors' peace matters most, and so does the peace of whoever else is staying on the property. Keep it low-key and respectful, and keep any outside space you use spotless - no littering and no cigarette butts.</p>
+
+      <h4>Sand</h4>
+      <p>Hose off outside before coming in. Do not sit on wet or sandy furniture or beds. Shake out beach items outside.</p>
+
+      <h4>Towels &amp; Bedding</h4>
+      <p>Use only what you need. White towels are for people only - no pets, beach, or spills. Laundry is one of the biggest challenges with hosting and your help is greatly appreciated.</p>
+
+      <h4>Damage</h4>
+      <p>Please notify Jesse immediately of any damage - do not wait until checkout. Most issues are easy to resolve when addressed quickly. I work very hard to keep this property in excellent condition for all guests.</p>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks and summer holiday fireworks are a local tradition - but very loud. Typically 8:55 PM – 9:15 PM, Memorial Day through Labor Day. May upset dogs.</p>
+
+      <h4>Security Cameras</h4>
+      <p>Exterior security cameras monitor the parking area and entrance for safety. There are NO cameras inside the suite.</p>
+
+      <h4>Violation Fees</h4>
+      <ul>
+        <li>Unauthorized guests: <strong>$150 per person per night</strong></li>
+        <li>Unauthorized pets: <strong>$100 per pet per night</strong></li>
+        <li>Smoking inside: <strong>$500</strong></li>
+        <li>Unauthorized parties or events: <strong>$500 + immediate cancellation without refund</strong></li>
+        <li>Rule violation requiring host response: <strong>$150 per incident</strong></li>
+        <li>Excessive cleaning beyond normal turnover: <strong>$150</strong></li>
+      </ul>
+      <p style="font-size:.82rem;color:var(--muted);margin-top:.6rem;line-height:1.5;font-style:italic;">These are standard baseline amounts. You remain responsible for the full cost of any remediation, repair, or replacement that exceeds a listed fee.</p>
+    </div></div><!-- /lgb-acc-rules-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-cancel-prop3" data-tab="cancel">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('cancel')">
+        <span>📅 Cancellation</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-cancel-prop3">
+      <div style="background:var(--navy);border-radius:var(--radius);padding:1.4rem 1.6rem 1rem;margin-bottom:1.4rem;">
+        <p style="color:#c8d8f0;margin:0 0 .25rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Cancellation Policy</p>
+        <p style="color:var(--white);font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin:0 0 .6rem;">Know your refund window before you book.</p>
+        <p style="color:#bcd;font-size:.88rem;margin:0;line-height:1.6;">This property follows the <strong style="color:#fff;">Airbnb Moderate Cancellation Policy.</strong> The chart below shows exactly what applies, and the calculator lets you look up your specific dates.</p>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🏖️</div>
-        <h3>Around The Heart Of CB</h3>
-        <p class="lgb-placeholder">Best restaurants, beach access points, boardwalk tips, hidden gems, and Jesse's personal favorites nearby. <em>Content coming soon.</em></p>
+
+      <div style="display:grid;gap:.7rem;margin-bottom:1.6rem;">
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#15603a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#f0f9f4;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#15603a;font-size:.95rem;">5 or more days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancel at least 5 days ahead and you get everything back.</div>
+              </div>
+              <div style="background:#15603a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">Full refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#b8882a;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fdf8ee;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#8a6010;font-size:.95rem;">1–4 days before check-in</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Less than 5 days out, you'll receive half your accommodation cost back.</div>
+              </div>
+              <div style="background:#b8882a;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">50% refund</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+          <div style="background:#9b1c1c;min-width:7px;flex-shrink:0;"></div>
+          <div style="background:#fef2f2;padding:1rem 1.1rem;flex:1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;">
+              <div>
+                <div style="font-weight:700;color:#9b1c1c;font-size:.95rem;">Same day (check-in day)</div>
+                <div style="color:#444;font-size:.83rem;margin-top:.2rem;">Cancellations on your check-in day are not accepted - no refund, no exceptions. Cash guests: the deposit is non-refundable and you owe the remaining unpaid balance of the stay.</div>
+              </div>
+              <div style="background:#9b1c1c;color:#fff;border-radius:50px;padding:.28rem .9rem;font-size:.85rem;font-weight:700;white-space:nowrap;">No refund</div>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🛎️</div>
-        <h3>Amenities & How-Tos</h3>
-        <p class="lgb-placeholder">WiFi password, TV setup, kitchen equipment, washer/dryer, HVAC, and anything with a learning curve. <em>Content coming soon.</em></p>
+
+      <div style="margin-bottom:1.6rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.7rem;font-size:.92rem;text-transform:uppercase;letter-spacing:.06em;">Quick Reference - Last Day to Cancel by Check-In Day</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.86rem;min-width:280px;">
+            <thead>
+              <tr style="background:var(--navy);color:var(--white);">
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;border-radius:var(--radius-sm) 0 0 0;">Your Check-In Day</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:var(--gold-light);">Last Day to Cancel - Full Refund</th>
+                <th style="padding:.55rem 1rem;text-align:left;font-weight:700;color:#f0d0a0;border-radius:0 var(--radius-sm) 0 0;">Last Day - 50% Refund</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Sunday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Tuesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Saturday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Monday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Wednesday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Sunday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Tuesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Thursday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Monday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Wednesday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Friday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Tuesday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Thursday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Saturday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Wednesday</td>
+              </tr>
+              <tr style="background:#faf7f2;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Friday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Sunday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Thursday</td>
+              </tr>
+              <tr style="background:#f0f9f4;">
+                <td style="padding:.5rem 1rem;font-weight:600;color:#15603a;">Saturday</td>
+                <td style="padding:.5rem 1rem;color:#15603a;font-weight:700;">Monday (prior week)</td>
+                <td style="padding:.5rem 1rem;color:#b8882a;font-weight:600;">Friday</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">🚨</div>
-        <h3>Emergencies & Contacts</h3>
-        <p class="lgb-placeholder">What to do in an emergency, local urgent care, nearest hospital, and how to reach Jesse any time. <em>Content coming soon.</em></p>
+
+      <!-- Date Calculator -->
+      <div style="background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem 1.4rem 1.4rem;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
+        <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
+        <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
+          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <input type="date" id="cancel-calc-date-prop3" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
+        </div>
+        <div id="cancel-calc-result-prop3" style="margin-top:1rem;display:none;">
+          <div id="ccr-full-prop3"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#f0f9f4;border-left:4px solid #15603a;font-size:.88rem;color:#15603a;"></div>
+          <div id="ccr-half-prop3"  style="margin-bottom:.5rem;padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fdf8ee;border-left:4px solid #b8882a;font-size:.88rem;color:#8a6010;"></div>
+          <div id="ccr-none-prop3"  style="padding:.7rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border-left:4px solid #9b1c1c;font-size:.88rem;color:#9b1c1c;"></div>
+        </div>
       </div>
-      <div class="lgb-card">
-        <div class="lgb-icon">♻️</div>
-        <h3>Trash & Recycling</h3>
-        <p class="lgb-placeholder">Pickup days, bin locations, what goes where, and checkout cleanup expectations. <em>Content coming soon.</em></p>
+
+      <!-- Exceptions note -->
+      <div style="margin-top:1.2rem;padding:.9rem 1.1rem;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#555;line-height:1.65;">
+        <strong style="color:var(--navy);">Only two exceptions apply:</strong>
+        (1) Written approval from Jesse issued in advance, or
+        (2) Airbnb's <a href="https://www.airbnb.com/help/article/1320" target="_blank" rel="noopener" style="color:var(--navy);font-weight:600;">Major Disruptive Events Policy (MDEP) ↗</a> is officially activated for your specific dates and location.
+        Personal reasons and weather in your area of origin are not covered - if it is safe to travel in the Wilmington/Carolina Beach area and the property is available, the policy applies in full.
+        <br/><br/>Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.
       </div>
+
+      <!-- Rebook good-faith note -->
+      <div style="margin-top:1rem;padding:1rem 1.1rem 1.1rem;background:var(--sand2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.83rem;color:#444;line-height:1.7;">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.5rem;font-size:.88rem;">🔄 If You Cancel - I Will Try to Rebook</div>
+        If you cancel, I will make every effort to rebook your dates - the sooner you cancel, the more time I have to find a new guest. Your reservation remains open either way - you are welcome to use it right up until check-in, and if you decide you want it back, just reach out. If I do successfully rebook your dates, refunding you - in full or in part - is entirely at my discretion, not a guaranteed exception to the policy above.
+        <p style="margin:.6rem 0 0;color:#888;font-size:.79rem;">This is a good-faith effort, not a guarantee. Whether and how I rebook is entirely at my discretion, but I will always try.</p>
+      </div>
+    </div></div><!-- /lgb-acc-cancel-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkin-prop3" data-tab="checkin">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkin')">
+        <span>🔑 Check-In</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkin-prop3">
+      <h4>Times</h4>
+      <p><strong>Check-In: 3:00 PM</strong> &nbsp;|&nbsp; <strong>Check-Out: 11:00 AM sharp</strong></p>
+
+      <h4>Access</h4>
+      <p>This is a private suite with its own entrance, separate from the main home. Your specific access instructions and door code are sent in your booking confirmation email.</p>
+
+      <div class="lgb-eta-box">
+        <strong>📍 PLEASE COMMUNICATE YOUR ETA</strong>
+        <span>Text Jesse your approximate arrival time as soon as you know it - even a rough idea helps. Text anytime: (910) 599-8118</span>
+      </div>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+
+      <h4>Questions?</h4>
+      <p>Text or call Jesse at <strong>(910) 599-8118</strong> anytime before or during your stay.</p>
+    </div></div><!-- /lgb-acc-checkin-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-area-prop3" data-tab="area">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('area')">
+        <span>🏖️ Local Area</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-area-prop3">
+      <h4>Location</h4>
+      <p>213 Harper Avenue, Carolina Beach, NC 28428. You're right in the heart of it all - walkable to everything.</p>
+      <ul>
+        <li>½ block to Lake Park</li>
+        <li>2 short blocks to the boardwalk &amp; beach</li>
+        <li>Shared on-site parking - Jesse will confirm your spot ahead of arrival</li>
+      </ul>
+
+      <h4>Map</h4>
+      <div class="lgb-map">
+        <iframe src="https://maps.google.com/maps?q=213+Harper+Ave,+Carolina+Beach,+NC+28428&t=h&z=17&output=embed" width="100%" height="320" style="border:0;display:block;" allowfullscreen="" loading="lazy" title="213 Harper Ave, Carolina Beach NC"></iframe>
+      </div>
+
+      <h4>Fireworks</h4>
+      <p>Thursday night boardwalk fireworks run all summer (Memorial Day – Labor Day), plus major holidays. Typically 8:55 – 9:15 PM. Loud but a great local tradition!</p>
+
+      <h4>Dog Beach Rules</h4>
+      <p><strong>April 1 – September 30:</strong> Dogs allowed on beach before 9:00 AM and after 5:00 PM only.<br/><strong>October 1 – March 31:</strong> Dogs allowed on beach any time. Always carry a bag. <a href="https://www.carolinabeach.gov/293/Pet-Rules" target="_blank" rel="noopener" style="color:var(--navy);">View full town pet rules →</a></p>
+    </div></div><!-- /lgb-acc-area-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-inunit-prop3" data-tab="inunit">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('inunit')">
+        <span>🛎️ In-Unit</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-inunit-prop3">
+      <h4>The Space</h4>
+      <p>Private guest suite · 1 bedroom (1 bed) · 1 full bathroom</p>
+
+      <h4>Amenities</h4>
+      <p>Full amenity, entertainment, and kitchen details are provided in your welcome guide at check-in.</p>
+
+      <h4>Laundry</h4>
+      <p>Ask Jesse about laundry access for your stay.</p>
+
+      <h4>Beach Gear</h4>
+      <ul class="lgb-amenity-list">
+        <li>🏖️ Beach towels available</li>
+        <li>🚿 Outdoor hose to rinse off</li>
+      </ul>
+
+      <h4>WiFi</h4>
+      <p>Network name and password posted in unit.</p>
+    </div></div><!-- /lgb-acc-inunit-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-emergency-prop3" data-tab="emergency">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('emergency')">
+        <span>🚨 Emergency</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-emergency-prop3">
+      <h4>Property Issues</h4>
+      <p>For anything related to the property - maintenance, questions, or concerns - text or call Jesse directly:</p>
+      <p style="font-size:1.1rem;font-weight:700;color:var(--navy);">(910) 599-8118 - Text or call anytime</p>
+
+      <h4>Life-Threatening Emergency</h4>
+      <p><strong>Call 911.</strong></p>
+
+      <h4>Additional Emergency Contact</h4>
+      <p>Emergency contact details are provided in your booking confirmation email and posted in the unit.</p>
+    </div></div><!-- /lgb-acc-emergency-prop3 -->
+
+    <div class="lgb-acc-item" id="lgb-acc-checkout-prop3" data-tab="checkout">
+      <button class="lgb-acc-hd" onclick="lgbAccordion('checkout')">
+        <span>✅ Checkout</span><span class="lgb-acc-icon">▼</span>
+      </button>
+      <div class="lgb-acc-body" id="lgb-checkout-prop3">
+      <div class="lgb-checkout-time">⏰ Checkout: <strong>11:00 AM Sharp</strong></div>
+      <p>If you know your checkout time in advance - especially if leaving early - please let Jesse know so cleaning can be planned for the next guest.</p>
+
+      <h4>Checkout Checklist</h4>
+      <ul>
+        <li>Do <strong>not</strong> strip the bed - straighten sheets so nothing is left inside, blankets not balled up</li>
+        <li>Leave used towels in the bathroom</li>
+        <li>Wash used dishes</li>
+        <li>Remove all food and drinks from the refrigerator</li>
+        <li>Wipe up spills, pick up trash, return items where they belong</li>
+        <li>Take your trash to the outdoor cans - ask Jesse if you're not sure where</li>
+        <li>Do a final walk-through - make sure nothing is left behind</li>
+        <li><strong>Text Jesse when you leave: (910) 599-8118</strong></li>
+      </ul>
+      <p>Thank you for helping keep this property in excellent condition for every guest. I hope you had an incredible stay!</p>
+    </div></div><!-- /lgb-acc-checkout-prop3 -->
+
+    </div><!-- /lgb-accordion -->
+
+    <!-- ATTESTATION - unlocks booking bar after all tabs visited -->
+    <div style="margin-top:1.75rem;padding:1.25rem 1.5rem;background:#f9f6f0;border:1px solid #e5ddd0;border-radius:12px;text-align:center;">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        Review all <strong>7 sections</strong> above before booking -
+        <span class="lgb-attest-count">0</span> of 7 reviewed
+      </div>
+      <button class="lgb-attest-btn" disabled onclick="attestHouseRules()"
+        style="width:100%;max-width:520px;padding:.9rem 1.5rem;background:#9ca3af;color:#fff;border:none;border-radius:50px;font-size:.9rem;font-weight:700;cursor:not-allowed;transition:background .3s,color .3s;">
+        Click all tabs above to unlock (0 of 7 reviewed)
+      </button>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">
+        By clicking, you confirm you have read and agree to all house rules, cancellation policy, and guidelines.
+      </div>
+      <button onclick="scrollToGuide()" style="margin-top:.85rem;background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:.25rem .5rem;">↑ Back to top of guide</button>
     </div>
+
   </div>
 
   <!-- AVAILABILITY CALENDAR -->
