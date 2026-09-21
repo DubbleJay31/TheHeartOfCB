@@ -3037,7 +3037,7 @@ function openReservationDetail(code) {
   backdrop.innerHTML = `
     <div class="conf-modal">
       <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
-      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${_STATUS_COLOR[r.status]};">${_STATUS_LABEL[r.status] || r.status}</span></h3>
+      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${r.status === 'confirmed' && !r.confirmation_sent_at ? '#b45309' : _STATUS_COLOR[r.status]};">${r.status === 'confirmed' && !r.confirmation_sent_at ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status)}</span></h3>
       <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)} · Code ${_esc(r.code)}</div>
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
