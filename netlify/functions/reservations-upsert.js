@@ -54,7 +54,7 @@ exports.handler = async function(event) {
       // that signed state in the dashboard even though signed_name/signed_at never actually
       // changed. This read also catches a stale/deleted `code` before the write, instead of
       // PATCHing zero rows and reporting success anyway.
-      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out,guest,email,phone,prop,prop_label,nights,url,host_notes,credit,contact_pref,signed_name,signed_at,prior_terms`);
+      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out,guest,email,phone,prop,prop_label,nights,url,host_notes,credit,contact_pref,signed_name,signed_at,cancelled_at,prior_terms`);
       const cur = curResp.ok ? await curResp.json() : [];
       if (!cur.length) {
         return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
