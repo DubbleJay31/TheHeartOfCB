@@ -2882,7 +2882,7 @@ function openReservationDetail(code) {
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions">
         ${confirmUrl ? `
-        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">✓ Confirm Reservation</button>` : ''}
+        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}')">↻ Resend Confirmation</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
