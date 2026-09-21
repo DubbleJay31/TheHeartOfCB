@@ -3083,6 +3083,14 @@ function openReservationDetail(code) {
   const _hasFee = !r.credit && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
   const _feeAmt = _hasFee ? Math.max(0, (parseFloat(r.total) || 0) - _noFeeTotal(r)) : 0;
   const _feeLabel = r.payment_method === 'paypal' ? 'PayPal fee' : 'card fee';
+  // 'Refund'/'Even' mark a confirm that collected no NEW payment (a Change Reservation whose
+  // credit already covered the updated stay) - the generic "Amount Paid: $0.00 (via Refund)" line
+  // further below reads like the guest paid zero dollars using a payment method literally called
+  // "Refund," which is exactly backwards: they're not out anything new, they already paid enough
+  // before this edit. The ORIGINAL payment method isn't tracked separately once this column gets
+  // overwritten by the confirm - if Jesse logged it in his own private note (as he does for Stripe
+  // sessions), that's the only place it survives, so this just avoids asserting a false "$0.00
+  // payment" instead of trying to reconstruct it.
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -3103,6 +3111,8 @@ function openReservationDetail(code) {
         <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
         ${r.payment_method ? `<div style="color:var(--muted);font-size:.85em;">Originally paid via ${_esc(r.payment_method === 'stripe' ? 'Credit/Debit Card' : r.payment_method)}</div>` : ''}
         ${(r.payment_method === 'stripe' || r.payment_method === 'paypal') ? `<div style="color:var(--muted);font-size:.78em;">Stripe/PayPal keep their processing fee on a refund - it won't come back to you either way.</div>` : ''}
+        ` : (r.payment_method === 'Refund' || r.payment_method === 'Even') ? `
+        <div style="color:var(--muted);"><b>${r.payment_method === 'Refund' ? 'No new payment - credit already covered the refund above' : 'No new payment - credit landed exactly on the new total'}</b></div>
         ` : r.payment_method ? `
         ${_cashDepositAmt > 0 ? `
         <div style="color:#166534;"><b>Deposit Received:</b> ${fmt$(_cashDepositAmt)} <span style="color:var(--muted);font-size:.82em;">(refundable - full ${fmt$(Math.max(0, _noFeeTotal(r) - (r.credit||0)))} due in cash at check-in)</span></div>
