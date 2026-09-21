@@ -207,10 +207,11 @@ a { color: inherit; text-decoration: none; }
   transition: all .2s; display: flex; align-items: center; justify-content: center; gap: .4rem;
 }
 .link-btn.copy {
-  background: var(--navy); color: var(--white);
+  background: var(--sand2); color: var(--navy);
+  border: 1.5px solid var(--border);
 }
-.link-btn.copy:hover { background: var(--navy2); }
-.link-btn.copy.copied { background: var(--green); }
+.link-btn.copy:hover { background: var(--border); }
+.link-btn.copy.copied { background: var(--green); color: var(--white); border-color: var(--green); }
 .link-btn.preview {
   background: var(--sand2); color: var(--navy);
   border: 1.5px solid var(--border);
@@ -218,21 +219,24 @@ a { color: inherit; text-decoration: none; }
 .link-btn.preview:hover { background: var(--border); }
 .link-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* ── SEND OPTIONS ── */
+/* ── SEND OPTIONS ── these are the main options (vs. the secondary Copy Link/Open Live Link
+     buttons below them), so they get a visibly bolder treatment - a solid gold border and shadow
+     instead of the plain grey outline the link-actions buttons use. */
 .send-opts { display: flex; flex-direction: column; gap: .6rem; }
 .send-opt {
   display: flex; align-items: center; gap: .75rem;
-  padding: .85rem 1rem;
-  border: 1.5px solid var(--border);
+  padding: .9rem 1.1rem;
+  border: 2px solid var(--gold);
   border-radius: 10px;
-  background: var(--sand);
-  cursor: pointer; transition: border-color .2s, background .2s;
+  background: var(--white);
+  box-shadow: 0 2px 8px rgba(184,136,42,.15);
+  cursor: pointer; transition: border-color .2s, background .2s, box-shadow .2s;
   text-decoration: none; color: var(--text);
 }
-.send-opt:hover { border-color: var(--gold); background: rgba(184,136,42,.04); }
-.send-opt .so-icon { font-size: 1.3rem; flex-shrink: 0; }
-.send-opt .so-label { font-size: .82rem; font-weight: 700; color: var(--navy); }
-.send-opt .so-sub { font-size: .72rem; color: var(--muted); }
+.send-opt:hover { border-color: var(--gold2); background: rgba(184,136,42,.06); box-shadow: 0 4px 14px rgba(184,136,42,.22); }
+.send-opt .so-icon { font-size: 1.5rem; flex-shrink: 0; }
+.send-opt .so-label { font-size: .9rem; font-weight: 800; color: var(--navy); }
+.send-opt .so-sub { font-size: .74rem; color: var(--muted); }
 
 /* ── PROPERTY CARDS ── */
 .prop-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-bottom: .9rem; }
