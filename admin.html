@@ -1501,26 +1501,33 @@ function _loadIntoForm(code) {
   // fresh invoice for the new (possibly lower) total as if nothing had been paid yet, instead of
   // crediting what's already in hand and refunding the difference if the new total is less. Cash
   // is excluded - the credit field is only for money already collected electronically, per its
-  // own field hint; a cash deposit belongs in Deposit to Hold instead. Only kicks in when this
-  // row has no credit of its own yet - a reservation already on its second edit keeps whatever
-  // credit that earlier edit established rather than guessing again from `total`.
+  // own field hint; a cash deposit belongs in Deposit to Hold instead.
   // Stripe and PayPal both charged the guest a processing-fee surcharge on top of the base price
   // (see CC_FEE) - that fee is never refunded to Jesse by either processor regardless of what
   // happens to the reservation afterward, so crediting the FULL gross amount toward new terms (or
   // refunding it) would cost Jesse the fee out of pocket on top of whatever else is being given
   // back. Defaults to net-of-fee to protect against that; "Also refund the card fee" below
   // switches to gross for when Jesse wants to cover it himself.
-  const _hasOrigFee = !r.credit && r.status === 'confirmed' && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
-  _origPaidGross = (!r.credit && r.status === 'confirmed' && r.payment_method && r.payment_method !== 'Cash')
-    ? (_hasOrigFee ? (parseFloat(r.total) || 0) : _noFeeTotal(r))
-    : 0;
+  // Reads r.last_paid_total (set by reservations-confirm.js/stripe-webhook.js on every confirm,
+  // never touched by an edit) instead of r.total or the old `!r.credit` guard - `total` gets
+  // overwritten by the NEXT edit's new terms, and r.credit goes stale the moment a re-confirm
+  // happens, so both broke this on a reservation's second-or-later edit even though the original
+  // payment genuinely had a fee. last_paid_total always reflects the most recent real payment,
+  // however many edits have happened since.
+  const _lastPaid = parseFloat(r.last_paid_total) || 0;
+  const _hasOrigFee = r.status === 'confirmed' && _lastPaid > 0 && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
+  _origPaidGross = (r.status === 'confirmed' && _lastPaid > 0 && r.payment_method && r.payment_method !== 'Cash') ? _lastPaid : 0;
   _origFeeAmt = _hasOrigFee ? Math.max(0, _origPaidGross - _noFeeTotal(r)) : 0;
   const creditEl = document.getElementById('f-credit');
   const refundFeeEl = document.getElementById('f-refund-fee');
   const refundFeeRow = document.getElementById('refund-fee-row');
   if (refundFeeEl) refundFeeEl.checked = false;
   if (refundFeeRow) refundFeeRow.style.display = _origFeeAmt > 0 ? 'flex' : 'none';
-  if (creditEl) creditEl.value = r.credit || (_origPaidGross > 0 ? Math.max(0, _origPaidGross - _origFeeAmt).toFixed(2) : '');
+  // Fresh auto-fill wins whenever this is a just-confirmed reservation starting a new edit (r.credit
+  // at that point is stale leftover from whatever was decided on a PRIOR edit cycle, not something
+  // relevant to this one) - only falls back to r.credit for a change-pending row being reopened
+  // mid-edit, where it's the actual, current, still-relevant saved value.
+  if (creditEl) creditEl.value = _origPaidGross > 0 ? Math.max(0, _origPaidGross - _origFeeAmt).toFixed(2) : (r.credit || '');
 
   const badge = document.getElementById('editing-badge');
   if (badge) {

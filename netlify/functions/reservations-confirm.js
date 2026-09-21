@@ -98,6 +98,12 @@ exports.handler = async function(event) {
       signed_ip: signed_ip || null,
       contact_pref: contact_pref || null
     };
+    // Separate from `total` (which the NEXT Change Reservation edit will overwrite with the new,
+    // not-yet-paid terms) - this is a dedicated record of what was actually collected THIS confirm,
+    // so admin.html's credit auto-fill can still find the real fee rate on a reservation's second
+    // or later edit, not just its first (previously derived straight from `total`/`!r.credit`,
+    // which broke the moment a second edit's total no longer matched what was actually paid).
+    row.last_paid_total = row.total;
     if (host_notes) row.host_notes = host_notes;
     if (payment_method) row.payment_method = payment_method;
 

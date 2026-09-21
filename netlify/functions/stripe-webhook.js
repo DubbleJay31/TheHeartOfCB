@@ -209,7 +209,11 @@ exports.handler = async function(event) {
         prior_terms: null,
         updated_at: new Date().toISOString(),
         host_notes: hostNotes,
-        payment_method: 'stripe'
+        payment_method: 'stripe',
+        // Same reasoning as reservations-confirm.js's own last_paid_total - a dedicated record of
+        // what was actually charged, so a later Change Reservation edit's credit auto-fill still
+        // has the real fee rate to work with instead of losing it after the first edit.
+        last_paid_total: amount
       })
     });
     if (!r.ok) {
