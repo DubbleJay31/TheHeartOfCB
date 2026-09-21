@@ -319,6 +319,12 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer; transition: border-color .15s, box-shadow .15s;
 }
 .conf-row:hover { border-color: var(--gold); box-shadow: 0 1px 6px rgba(184,136,42,.15); }
+/* "Ball in your court" rows - something here needs Jesse's action specifically (confirm, verify
+   payment, send a refund, send the confirmation), not just a status waiting on the guest. Solid
+   gold border + a subtle tint make it findable at a glance in a long list, not just via the badge
+   text next to the guest's name. */
+.conf-row.action-needed { border: 2px solid var(--gold); background: #fffdf7; }
+.conf-row.action-needed:hover { box-shadow: 0 1px 8px rgba(184,136,42,.3); }
 .conf-row-icon { font-size: 1.4rem; flex-shrink: 0; }
 .conf-row-info { flex: 1; min-width: 0; }
 .conf-row-guest { font-size: .93rem; font-weight: 700; color: var(--navy); }
@@ -781,7 +787,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   <div class="adm-tabs-nav">
     <div class="adm-tabs-scroll">
       <button class="adm-tab-btn active" id="adm-tab-btn-confirmed" onclick="switchAdmTab('confirmed')">✅ Reservations</button>
-      <button class="adm-tab-btn" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">🕐 Quotes</button>
+      <button class="adm-tab-btn" id="adm-tab-btn-booking" onclick="switchAdmTab('booking')">📝 Quote Builder</button>
       <button class="adm-tab-btn" id="adm-tab-btn-pricing" onclick="switchAdmTab('pricing')">💰 Pricing</button>
       <button class="adm-tab-btn" id="adm-tab-btn-photos" onclick="switchAdmTab('photos')">📸 Photos</button>
       <button class="adm-tab-btn" id="adm-tab-btn-stats" onclick="switchAdmTab('stats')">📊 Stats</button>
@@ -1080,8 +1086,11 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       </div>
     </div>
     <div id="res-conflict-banner" style="display:none;margin-bottom:1rem;background:#faeaea;border:1.5px solid #7a1f1f;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#7a1f1f;line-height:1.6;"></div>
+    <input type="text" id="conf-search" placeholder="🔍 Search by guest, code, email, phone, property…" oninput="renderConfirmedPanel()"
+      style="width:100%;box-sizing:border-box;padding:.65rem .9rem;margin-bottom:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;" />
     <div class="conf-filter-pills">
       <button class="conf-filter-pill active" id="conf-filter-all" onclick="_setConfFilter('all')">All</button>
+      <button class="conf-filter-pill" id="conf-filter-action" onclick="_setConfFilter('action')" style="border-color:var(--gold);color:#92400e;">🔔 Action Needed</button>
       <button class="conf-filter-pill" id="conf-filter-inquiry" onclick="_setConfFilter('inquiry')">Inquiries</button>
       <button class="conf-filter-pill" id="conf-filter-quoted" onclick="_setConfFilter('quoted')">Quoted</button>
       <button class="conf-filter-pill" id="conf-filter-signed" onclick="_setConfFilter('signed')">Signed</button>
@@ -2904,10 +2913,20 @@ function _reservationLinks(r) {
 let _confFilter = 'all';
 function _setConfFilter(filter) {
   _confFilter = filter;
-  ['all', 'inquiry', 'quoted', 'signed', 'confirmed', 'cancelled'].forEach(f => {
+  ['all', 'action', 'inquiry', 'quoted', 'signed', 'confirmed', 'cancelled'].forEach(f => {
     document.getElementById('conf-filter-' + f)?.classList.toggle('active', f === filter);
   });
   renderConfirmedPanel();
+}
+
+// Single source of truth for "does this row need Jesse to do something" - shared by the list's
+// Action Needed filter and the gold-border/sub-status rendering below, so the two can't drift
+// apart from computing the same three conditions two different ways.
+function _rowActionState(r) {
+  const isChangePending = (r.status === 'quoted' || r.status === 'signed') && !!r.payment_method;
+  const needsSend = r.status === 'confirmed' && !r.confirmation_sent_at;
+  const needsFirstConfirm = r.status === 'signed' && !isChangePending;
+  return { isChangePending, needsSend, needsFirstConfirm, isActionNeeded: isChangePending || needsSend || needsFirstConfirm };
 }
 
 // Backs the Reservations tab - every reservation at every stage, from a brand-new inquiry
@@ -2917,8 +2936,11 @@ function _setConfFilter(filter) {
 function renderConfirmedPanel() {
   const el = document.getElementById('confirmed-res-list');
   if (!el) return;
+  const searchVal = (document.getElementById('conf-search')?.value || '').trim().toLowerCase();
   const list = _reservationsCache
-    .filter(r => _confFilter === 'all' || r.status === _confFilter)
+    .filter(r => _confFilter === 'all' ? true : _confFilter === 'action' ? _rowActionState(r).isActionNeeded : r.status === _confFilter)
+    .filter(r => !searchVal || [r.guest, r.code, r.email, r.phone, r.prop_label, PROPS[r.prop]?.name, r.host_notes]
+      .some(f => (f || '').toLowerCase().includes(searchVal)))
     .sort((a, b) => (a.check_in || '9999').localeCompare(b.check_in || '9999'));
 
   el.className = '';
@@ -2947,20 +2969,25 @@ function renderConfirmedPanel() {
     // way to revert just the pending change back to the prior terms) - so this routes to the same
     // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
-    const isChangePending = (r.status === 'quoted' || r.status === 'signed') && !!r.payment_method;
-    // Confirmed only ever means the DB status flipped - it says nothing about whether the guest
-    // was actually notified (e.g. confirmed via the list's own quick-confirm button, which never
-    // sends anything). Flagged here the same way the detail modal's own button already does, so
-    // it's visible without opening the row.
-    const needsSend = r.status === 'confirmed' && !r.confirmation_sent_at;
-    const statusLabel = isChangePending ? '🔄 Change Pending' : needsSend ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status);
-    const statusColor = isChangePending ? '#7c3aed' : needsSend ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
+    const { isChangePending, needsSend, needsFirstConfirm, isActionNeeded } = _rowActionState(r);
+    // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
+    // sending a refund, or just confirming a wash - three different next steps that all collapsed
+    // into one vague label. Sub-status derived from the same payment_method Change Reservation
+    // already stamps on the row.
+    const changePendingLabel = r.payment_method === 'Refund' ? '💰 Refund Owed - Confirm'
+      : r.payment_method === 'Even' ? '✅ No Balance - Confirm'
+      : '💳 Payment Submitted - Confirm';
+    const statusLabel = isChangePending ? changePendingLabel
+      : needsSend ? '✅ Confirmed - Send Confirmation'
+      : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
+      : (_STATUS_LABEL[r.status] || r.status);
+    const statusColor = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
     return `
-    <div class="conf-row" onclick="${clickable}">
+    <div class="conf-row${isActionNeeded ? ' action-needed' : ''}" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
         <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${statusColor};">${statusLabel}</span></div>
-        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))}</div>
+        <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))} · <span style="color:var(--muted2);">${_esc(r.code)}</span></div>
       </div>
       <div class="conf-row-actions" style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
