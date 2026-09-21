@@ -2019,6 +2019,12 @@ async function _notifyJesse(method) {
     } catch (e) { console.error('Failed to backfill signing info:', e); }
   }
   const _alreadyConfirmed = _resvStatus === 'confirmed';
+  // Set only by the detail modal's "Resend Confirmation" button - distinct from _alreadyConfirmed,
+  // which is also true the moment a reservation is freshly confirmed (via the list's quick-confirm
+  // button, or Stripe's webhook) and this screen opens for the very first time. In that fresh case
+  // the Airbnb-blocking/payment-verification reminders below are exactly what's still needed; only
+  // an explicit resend of an already-fully-handled reservation should skip them.
+  const _isResend = get('resend') === '1';
   const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   // The guest confirmation email's "View & Print Your Signed Agreement" link, and this page's own
@@ -2073,13 +2079,14 @@ async function _notifyJesse(method) {
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
-      ${methodName === 'Refund' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
+      ${_isResend ? '' : methodName === 'Refund' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${refundDue ? fmt2(refundDue) : ''} refund, then send confirmation.
       </div>` : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
+      ${_isResend ? '' : `
       <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;">
         <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">TWO STEPS TO FINISH</div>
         <div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
@@ -2091,6 +2098,7 @@ async function _notifyJesse(method) {
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send the guest's confirmation</strong> using the buttons below.</span>
         </div>
       </div>
+      `}
       ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
       ${_alreadyConfirmed ? '' : `
       <button id="confirm-resv-btn" onclick="confirmReservationOnly()"
