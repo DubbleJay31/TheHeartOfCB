@@ -1879,7 +1879,15 @@ function toggleCashOptions() {
 function _cashBase() {
   const sub = parseFloat(document.getElementById('f-rate')?.value) || 0;
   if (sub <= 0) return 0;
-  return sub + sub * TAX_OCC + sub * TAX_SALES; // preTax = what guest pays without CC fee
+  const preTax = sub + sub * TAX_OCC + sub * TAX_SALES; // preTax = what guest pays without CC fee
+  // A cash discount is a discount on what the guest still actually owes, not on the full contract
+  // value - a credited reservation ignored this and computed the discount off the full preTax, so
+  // typing "10%" on a $505 stay with a $400 credit already applied discounted the WHOLE $505
+  // (bringing the flat total to $454.50) instead of the real $105 still due (which should discount
+  // to $94.50). Guest-facing math (book.html's cashTotal) was already correct - only this admin-
+  // side calculator and the email preview inherited the wrong base.
+  const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
+  return Math.max(0, preTax - credit);
 }
 
 function cashDiscAmtInput() {
@@ -2276,17 +2284,23 @@ function sendEmail() {
        <tr><td colspan="2" style="padding:4px 0 0;font-size:12px;color:#166534;">Signing below is still required for this change to take effect - nothing charges or changes automatically.</td></tr>`
     : `<tr><td style="padding:6px 0;color:#666;font-size:13px;">Credit Applied</td><td style="padding:6px 0;text-align:right;font-size:13px;color:#166534;">&minus;${fmt(credit)}</td></tr>`) : '';
 
+  // Was baking the cash discount straight into "Full Stay Total" whenever credit>0 (preTax minus
+  // the discount, mislabeled as the contract's full value) - two different numbers both claiming
+  // to be "the total" is exactly the confusing math Jesse flagged. Full Stay Total/Balance Due now
+  // always show the plain undiscounted figures, matching the non-cash branch below and the live
+  // booking page's own breakdown panel; the cash price is its own clearly-labeled line underneath.
   const priceBlock = cashOn ? `
         <tr>
-          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'} <span style="font-size:12px;font-weight:600;color:#166534;">(Cash Price)</span></td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(credit > 0 ? preTax - cashDiscAmt : cashPrice)}</td>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'}</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
         </tr>
         ${creditRow}
         ${credit > 0 && refundDue <= 0.005 ? `<tr>
-          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Cash Balance Due</td>
-          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(cashPrice)}</td>
+          <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Balance Due</td>
+          <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(creditedBase)}</td>
         </tr>` : ''}
-        <tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
+        <tr><td colspan="2" style="padding:8px 0 2px;font-size:15px;font-weight:700;color:#166534;">💵 Or ${fmt(cashPrice)} if paying 100% cash</td></tr>
+        <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
         <tr>
           <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #f0ebe0;">Room Fare (${_nights} night${_nights!==1?'s':''})</td>
           <td style="padding:8px 0;text-align:right;font-size:14px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(subtotal)}</td>
