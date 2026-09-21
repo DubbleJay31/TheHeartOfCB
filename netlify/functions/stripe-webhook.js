@@ -42,9 +42,17 @@ async function _notifyJesseReservation(row, amount) {
         <tr><td style="padding:4px 0;color:#666;width:110px;">Dates</td><td style="padding:4px 0;font-weight:600;">${fmtD(row.check_in)} → ${fmtD(row.check_out)}</td></tr>
         ${prefLabel ? `<tr><td style="padding:4px 0;color:#666;">Prefers</td><td style="padding:4px 0;font-weight:700;">${prefLabel}</td></tr>` : ''}
       </table>
-      <div style="margin-top:10px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
-        📧 Send the guest's confirmation via their preferred method, and 📅 block these dates on your Airbnb calendar so they don't get double-booked.
-      </div>
+      <table role="presentation" style="width:100%;margin-top:10px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
+        <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">TWO STEPS TO FINISH</td></tr>
+        <tr>
+          <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
+          <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">2</span></td>
+          <td style="padding:4px 14px 10px 0;font-size:13px;color:#92400e;"><strong>Send the guest's confirmation</strong> via their preferred method.</td>
+        </tr>
+      </table>
       <p style="margin-top:14px;"><a href="${adminUrl}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:7px;font-weight:700;">Open in Admin & Send Confirmation</a></p>
     </div>`;
     await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
