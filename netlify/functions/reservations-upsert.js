@@ -54,7 +54,7 @@ exports.handler = async function(event) {
       // that signed state in the dashboard even though signed_name/signed_at never actually
       // changed. This read also catches a stale/deleted `code` before the write, instead of
       // PATCHing zero rows and reporting success anyway.
-      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out`);
+      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out,guest,email,phone,prop,prop_label,nights,url,host_notes,credit,contact_pref,signed_name,signed_at,prior_terms`);
       const cur = curResp.ok ? await curResp.json() : [];
       if (!cur.length) {
         return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
@@ -68,6 +68,15 @@ exports.handler = async function(event) {
       if ((c.status === 'confirmed' || c.status === 'signed') && sameTerms) {
         delete row.status;
         delete row.cancelled_at;
+      } else if ((c.status === 'confirmed' || c.status === 'signed') && !c.prior_terms) {
+        // Terms are genuinely changing on a reservation that was already confirmed/signed - stash
+        // everything needed to put it back exactly as it was if Jesse decides not to go through
+        // with the change after all (admin's "Keep Original Terms" button, reservations-revert.js).
+        // Skipped if a snapshot is already sitting there unresolved - that first snapshot is the
+        // true prior state; a second edit before the first is resolved must not overwrite it with
+        // an already-changed intermediate state.
+        const { prior_terms, ...snapshot } = c;
+        row.prior_terms = snapshot;
       }
 
       const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {

@@ -87,6 +87,9 @@ exports.handler = async function(event) {
     // the admin dashboard and any tax reporting.
     const row = {
       status: 'confirmed',
+      // Clears any snapshot reservations-upsert.js stashed for a pending change - the change
+      // just became the real, confirmed reservation, so there's nothing left to revert to.
+      prior_terms: null,
       updated_at: new Date().toISOString(),
       total: submittedTotal >= totalFloor - 0.01 ? submittedTotal : (parseFloat(existing[0].total) || totalFloor),
       rate: dbRate,
