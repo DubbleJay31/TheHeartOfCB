@@ -1763,7 +1763,10 @@ function renderGuestBreakdown() {
     const refundDue = Math.max(0, credit - displayTotal) + _refundFeeShare(Math.max(0, credit - displayTotal));
     html += `<div style="border-top:2px solid var(--border);margin:.25rem 0;"></div>`;
     html += r('Credit Applied', '&minus;' + fmt(credit));
-    if (refundDue > 0) {
+    // > 0.005 (half a cent), not > 0 - floating-point residue from the fee-rate multiplication
+    // above can leave refundDue at something like $0.0000003, which reads as "Refund Owed To
+    // Guest $0.00" once rounded for display instead of the Balance Due row it actually belongs in.
+    if (refundDue > 0.005) {
       html += r('<strong style="color:#7c1d1d;">Refund Owed To Guest</strong>', `<strong style="color:#7c1d1d;">${fmt(refundDue)}</strong>`, true);
       html += `<div style="font-size:.72rem;color:var(--muted);padding:.15rem 0;">Stripe/PayPal keep their processing fee on a refund - it won't come back to you either way.</div>`;
     } else {
@@ -2124,7 +2127,7 @@ function generate() {
     p.set('credit',     credit.toFixed(2));
     p.set('full_total', preTax.toFixed(2));
   }
-  if (refundDue > 0) p.set('refund_due', refundDue.toFixed(2));
+  if (refundDue > 0.005) p.set('refund_due', refundDue.toFixed(2));
   if (due)  p.set('due',  due);
   if (overrideCc) p.set('no_card', '1');
   if (cash) p.set('cash', '1');
@@ -2202,7 +2205,7 @@ function sendEmail() {
   const cashDiscAmt = parseFloat(document.getElementById('f-cash-disc-amt')?.value) || 0;
   const cashPrice = Math.max(0, creditedBase - cashDiscAmt);
 
-  const creditRow = credit > 0 ? (refundDue > 0
+  const creditRow = credit > 0 ? (refundDue > 0.005
     ? `<tr><td colspan="2" style="padding:8px 0 0;font-size:13px;font-weight:700;color:#7c1d1d;">Credit of ${fmt(credit)} exceeds the new total - ${fmt(refundDue)} refund owed</td></tr>`
     : `<tr><td style="padding:6px 0;color:#666;font-size:13px;">Credit Applied</td><td style="padding:6px 0;text-align:right;font-size:13px;color:#166534;">&minus;${fmt(credit)}</td></tr>`) : '';
 
@@ -2212,7 +2215,7 @@ function sendEmail() {
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(credit > 0 ? preTax - cashDiscAmt : cashPrice)}</td>
         </tr>
         ${creditRow}
-        ${credit > 0 && refundDue === 0 ? `<tr>
+        ${credit > 0 && refundDue <= 0.005 ? `<tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Cash Balance Due</td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(cashPrice)}</td>
         </tr>` : ''}
@@ -2234,7 +2237,7 @@ function sendEmail() {
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;">${fmt(preTax)}</td>
         </tr>
         ${creditRow}
-        ${credit > 0 && refundDue === 0 ? `<tr>
+        ${credit > 0 && refundDue <= 0.005 ? `<tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Balance Due</td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(creditedBase)}</td>
         </tr>` : ''}
@@ -2928,7 +2931,10 @@ function openReservationDetail(code) {
   if (r.payment_method === 'Cash' && r.url) {
     try { _cashDepositAmt = parseFloat(new URL(r.url).searchParams.get('cdep')) || 0; } catch { /* malformed saved url */ }
   }
-  const _refundOwed = r.credit && (_noFeeTotal(r) - r.credit) < 0 ? (r.credit - _noFeeTotal(r)) : 0;
+  // > 0.005 (half a cent), not < 0 - guards the same floating-point-residue case as the live
+  // quote-builder breakdown: a near-exact match can leave a few-thousandths-of-a-cent difference
+  // that would otherwise render as a stray "Refund Owed To Guest $0.00" instead of Amount Paid.
+  const _refundOwed = r.credit && (r.credit - _noFeeTotal(r)) > 0.005 ? (r.credit - _noFeeTotal(r)) : 0;
   // Jesse wants to see the TRUE total including the card/PayPal fee right in the main total row -
   // not the amount that actually lands in his account (that's a separate, deliberate deduction),
   // but what the guest was actually charged. Only applies to the plain (no-credit) Total line -
