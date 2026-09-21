@@ -1718,10 +1718,17 @@ let _total = 0;
 let _rate = 0;
 let _taxOcc = 0;
 let _taxSales = 0;
-const TAX_OCC   = 0.06; // Room Occupancy Tax
-const TAX_SALES = 0.07; // Sales Tax
-
-const CC_FEE = 0.03;
+// Defaults match host-config.json's current values exactly, so nothing changes before the fetch
+// below resolves - single source of truth for these three numbers instead of independently
+// hardcoding the same values app.js's public-site estimate also hardcoded (now fixed the same way).
+let TAX_OCC   = 0.06; // Room Occupancy Tax
+let TAX_SALES = 0.07; // Sales Tax
+let CC_FEE    = 0.03;
+fetch('host-config.json').then(r => r.json()).then(cfg => {
+  if (cfg?.tax?.occupancyPct != null) TAX_OCC = cfg.tax.occupancyPct / 100;
+  if (cfg?.tax?.salesPct != null) TAX_SALES = cfg.tax.salesPct / 100;
+  if (cfg?.tax?.creditCardFeePct != null) CC_FEE = cfg.tax.creditCardFeePct / 100;
+}).catch(e => console.warn('host-config.json not loaded, using default tax rates', e));
 
 function calcTotal() {
   const subtotal = parseFloat(document.getElementById('f-rate').value) || 0;

@@ -1133,6 +1133,8 @@ body.timeline-mode .stay-sticky-header { position: relative; top: auto; }
 .bb-price { flex: 2; min-width: 200px; }
 .bb-price-compact { display: flex; align-items: baseline; gap: .75rem; }
 .bb-price-total-est { font-size: .8rem; color: rgba(255,255,255,.6); }
+.bb-cc-note { font-size: .85em; opacity: .75; }
+@media (max-width: 480px) { .bb-cc-note { display: none; } }
 .bb-price-breakdown { display: flex; gap: 1.4rem; flex-wrap: wrap; align-items: baseline; }
 .bb-price-main { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--gold2); }
 .bb-per-night { font-family: inherit; font-size: .8rem; font-weight: 400; color: rgba(255,255,255,.6); margin-left: .1rem; }

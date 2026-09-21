@@ -8,6 +8,19 @@
 // immediately, while it's still there.
 const _initialQuery = location.search;
 
+// Tax/fee rates - defaults match host-config.json's current values exactly, so nothing changes
+// before the fetch below resolves. Previously these were bare literals (0.07/0.06/0.03) scattered
+// through _calcEstimate() with no connection to host-config.json's own tax block, which nothing
+// actually read - admin.html independently hardcoded the same three numbers too. They happened to
+// agree, but a future rate change meant hand-editing both files in lockstep with no single source
+// of truth. `let`, not `const`, so the fetch can update them in place once it resolves.
+let TAX_SALES = 0.07, TAX_OCC = 0.06, CC_FEE = 0.03;
+fetch('host-config.json').then(r => r.json()).then(cfg => {
+  if (cfg?.tax?.salesPct != null) TAX_SALES = cfg.tax.salesPct / 100;
+  if (cfg?.tax?.occupancyPct != null) TAX_OCC = cfg.tax.occupancyPct / 100;
+  if (cfg?.tax?.creditCardFeePct != null) CC_FEE = cfg.tax.creditCardFeePct / 100;
+}).catch(e => console.warn('host-config.json not loaded, using default tax rates', e));
+
 // All emails send via Resend through /.netlify/functions/send-email - see _sendEmail() below.
 async function _sendEmail(to, subject, html) {
   try {
@@ -269,10 +282,10 @@ function _calcEstimate(start, end, prop, ranges) {
   // already-rounded subtotal, compounding error against admin's unrounded math. That drift meant
   // the guest's pre-inquiry price estimate didn't exactly match what Jesse's dashboard would later
   // quote for the same dates.
-  const salesTax = subtotal * 0.07;
-  const occTax   = subtotal * 0.06;
+  const salesTax = subtotal * TAX_SALES;
+  const occTax   = subtotal * TAX_OCC;
   const preTax   = subtotal + salesTax + occTax;
-  const ccFee    = preTax * 0.03;
+  const ccFee    = preTax * CC_FEE;
   const total    = preTax + ccFee;
   return { nights, subtotal, salesTax, occTax, ccFee, preTax, total };
 }
@@ -288,9 +301,12 @@ function _showBookingBar(start, end) {
     `<strong>${fmt(start)}</strong> – <strong>${fmt(end)}</strong> · ${est.nights} night${est.nights>1?'s':''} · ${propNames[_calProp]}`;
 
   const avgNightly = Math.round(est.subtotal / est.nights);
-  const totalRounded = Math.round(est.total);
+  // preTax (fare+tax, no card fee), not total (which adds the 3% CC fee) - a "total" here should
+  // never quietly include a fee that only applies if they end up paying by card. The fee note is
+  // its own small aside, not baked into the headline number.
+  const totalRounded = Math.round(est.preTax);
   document.getElementById('bb-price').innerHTML =
-    `<div class="bb-price-compact"><div class="bb-price-main">~$${avgNightly}<span class="bb-per-night">/night +tax</span></div><span class="bb-price-total-est">est. $${totalRounded} total</span></div>`;
+    `<div class="bb-price-compact"><div class="bb-price-main">~$${avgNightly}<span class="bb-per-night">/night +tax</span></div><span class="bb-price-total-est">est. $${totalRounded} total<span class="bb-cc-note"> · +3% if paying by card</span></span></div>`;
   const hiddenEst = document.getElementById('form-est-total');
   if (hiddenEst) hiddenEst.value = `~$${totalRounded} total ($${avgNightly}/night avg, ${est.nights} nights)`;
   // Store for inquiry auto-fill in admin
