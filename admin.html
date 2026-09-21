@@ -2938,9 +2938,22 @@ function _setConfFilter(filter) {
 // apart from computing the same three conditions two different ways.
 function _rowActionState(r) {
   const isChangePending = (r.status === 'quoted' || r.status === 'signed') && !!r.payment_method;
+  // A change-pending row splits into two real stages, not one - and only the second is actually
+  // "ball in Jesse's court." At 'quoted', Jesse has built the edit but the GUEST hasn't signed it
+  // yet - there's nothing for Jesse to confirm, verify, or refund, because none of that is real
+  // until the guest agrees to the new terms. Labeling it "Refund Owed - Confirm" at that point (as
+  // it used to, unconditionally) asserted a refund that isn't owed yet and asked Jesse to act on
+  // something the guest hasn't actually done. At 'signed', the guest HAS submitted the new terms,
+  // so the specific sub-status (refund/payment/balance) is now real and it's genuinely Jesse's
+  // move.
+  const isChangePendingQuoted = isChangePending && r.status === 'quoted';
+  const isChangePendingSigned = isChangePending && r.status === 'signed';
   const needsSend = r.status === 'confirmed' && !r.confirmation_sent_at;
   const needsFirstConfirm = r.status === 'signed' && !isChangePending;
-  return { isChangePending, needsSend, needsFirstConfirm, isActionNeeded: isChangePending || needsSend || needsFirstConfirm };
+  return {
+    isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm,
+    isActionNeeded: isChangePendingSigned || needsSend || needsFirstConfirm
+  };
 }
 
 // Backs the Reservations tab - every reservation at every stage, from a brand-new inquiry
@@ -2952,7 +2965,15 @@ function renderConfirmedPanel() {
   if (!el) return;
   const searchVal = (document.getElementById('conf-search')?.value || '').trim().toLowerCase();
   const list = _reservationsCache
-    .filter(r => _confFilter === 'all' ? true : _confFilter === 'action' ? _rowActionState(r).isActionNeeded : r.status === _confFilter)
+    .filter(r => {
+      if (_confFilter === 'all') return true;
+      if (_confFilter === 'action') return _rowActionState(r).isActionNeeded;
+      // A change-pending row's literal status (quoted/signed) already matches that same filter on
+      // its own - it's really still a confirmed reservation underneath, just mid-edit, so it
+      // belongs under Confirmed too, not just wherever its edit currently sits.
+      if (_confFilter === 'confirmed') return r.status === 'confirmed' || _rowActionState(r).isChangePending;
+      return r.status === _confFilter;
+    })
     .filter(r => !searchVal || [r.guest, r.code, r.email, r.phone, r.prop_label, PROPS[r.prop]?.name, r.host_notes]
       .some(f => (f || '').toLowerCase().includes(searchVal)))
     .sort((a, b) => (a.check_in || '9999').localeCompare(b.check_in || '9999'));
@@ -2983,15 +3004,18 @@ function renderConfirmedPanel() {
     // way to revert just the pending change back to the prior terms) - so this routes to the same
     // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
-    const { isChangePending, needsSend, needsFirstConfirm, isActionNeeded } = _rowActionState(r);
+    const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, isActionNeeded } = _rowActionState(r);
     // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
     // sending a refund, or just confirming a wash - three different next steps that all collapsed
     // into one vague label. Sub-status derived from the same payment_method Change Reservation
-    // already stamps on the row.
+    // already stamps on the row - only shown once the guest has actually signed (isChangePendingSigned);
+    // at the quoted stage nothing is real yet, so it just says a change is quoted, not what it'll
+    // turn out to mean.
     const changePendingLabel = r.payment_method === 'Refund' ? '💰 Refund Owed - Confirm'
       : r.payment_method === 'Even' ? '✅ No Balance - Confirm'
       : '💳 Payment Submitted - Confirm';
-    const statusLabel = isChangePending ? changePendingLabel
+    const statusLabel = isChangePendingQuoted ? '🔄 Confirmed - Change Quoted'
+      : isChangePendingSigned ? changePendingLabel
       : needsSend ? '✅ Confirmed - Send Confirmation'
       : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
       : (_STATUS_LABEL[r.status] || r.status);
