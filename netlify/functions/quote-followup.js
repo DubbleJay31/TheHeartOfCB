@@ -1,7 +1,7 @@
 // Runs daily alongside reminder.js. For any quote expiring tomorrow that's still sitting at
 // status='quoted' (never signed, never booked elsewhere), sends the guest a low-pressure nudge
 // and lets Jesse know. Reads/writes the reservations table directly now - no JSONBin involved.
-const { sbReservations, propLabel } = require('./_reservations');
+const { sbReservations, propLabel, escapeHtml } = require('./_reservations');
 
 exports.handler = async function(event) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
@@ -70,7 +70,7 @@ async function _sendGuestNudge(q, RESEND_KEY) {
       <p style="color:#c9a84c;margin:.4rem 0 0;font-size:.85rem;">The Heart Of CB · Carolina Beach, NC</p>
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-      <p>Hi ${firstName},</p>
+      <p>Hi ${escapeHtml(firstName)},</p>
       <p>Just noticed your quote for ${propLabel(q.prop)} is set to expire tomorrow. No pressure at all - plans change, and I get it!</p>
       <p>But if you're still weighing it, I'd love to have you. If something about the dates, price, or space isn't quite right, let me know - happy to see what I can work out. And if you just haven't had a chance to finish up, your link's still good:</p>
       <div style="text-align:center;margin:22px 0;">
@@ -111,7 +111,7 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
       <div style="color:#c8b99a;font-size:12px;margin-top:2px;">The Heart of CB</div>
     </div>
     <div style="padding:28px 32px;">
-      <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#0a1f3a;">${q.guest}'s quote hasn't converted yet</p>
+      <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#0a1f3a;">${escapeHtml(q.guest)}'s quote hasn't converted yet</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
         <tr><td style="padding:5px 0;color:#666;width:110px;">Property</td><td style="color:#0a1f3a;">${propLabel(q.prop)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Dates</td><td style="color:#0a1f3a;">${fmtD(q.check_in)} – ${fmtD(q.check_out)}</td></tr>

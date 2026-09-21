@@ -1,4 +1,4 @@
-const { sbReservations, propLabel } = require('./_reservations');
+const { sbReservations, propLabel, escapeHtml } = require('./_reservations');
 
 exports.handler = async function(event) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
@@ -115,7 +115,7 @@ function buildReminderHtml(res) {
       <p style="color:#c9a84c;margin:.4rem 0 0;font-size:.85rem;">The Heart Of CB · Carolina Beach, NC</p>
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-      <p>Hi ${res.guest},</p>
+      <p>Hi ${escapeHtml(res.guest)},</p>
       <p>Just a quick reminder - your stay is one week away! Your full check-in details, door code, and house rules are all in your confirmation email, so we'll keep this one short.</p>
       <div style="background:#f8f6f0;border-radius:8px;padding:18px 20px;margin:16px 0;font-size:.93rem;">
         <div style="margin-bottom:8px;"><strong>Property:</strong> ${propLabel(res.prop)}</div>

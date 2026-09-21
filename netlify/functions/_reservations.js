@@ -44,4 +44,20 @@ function propLabel(prop) {
   return PROP_LABELS[prop] || prop || 'Your Stay';
 }
 
-module.exports = { SB_URL, SB_KEY, sbHeaders, sbReservations, genCode, PROP_LABELS, propLabel, hostConfig };
+// Guest-controlled fields (guest name, host_notes typed by a guest via the public inquiry form,
+// any free-text message) get interpolated into HTML emails - to the guest themselves in some
+// cases, but also into emails sent to Jesse (reminder.js, checkout-reminder.js, quote-followup.js,
+// arrival-reminder.js, stripe-webhook.js's host notifications). None of those escaped before this
+// - a crafted name/message became live HTML in Jesse's own inbox. Not full sanitization (no email
+// client executes <script>), just enough that guest text can't inject markup/links.
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+module.exports = { SB_URL, SB_KEY, sbHeaders, sbReservations, genCode, PROP_LABELS, propLabel, hostConfig, escapeHtml };

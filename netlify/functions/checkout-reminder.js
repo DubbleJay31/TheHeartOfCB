@@ -2,7 +2,7 @@
 // checking out today - mirrors the Airbnb "checkout instructions" auto-message, adapted for
 // direct bookings (no Airbnb private-review system here, so the review ask points to a reply
 // email instead, matching how the homepage testimonials are actually sourced).
-const { sbReservations } = require('./_reservations');
+const { sbReservations, escapeHtml } = require('./_reservations');
 
 exports.handler = async function(event) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
@@ -85,7 +85,7 @@ function _buildCheckoutHtml(res) {
       <p style="color:#c9a84c;margin:.4rem 0 0;font-size:.85rem;">The Heart Of CB · Carolina Beach, NC</p>
     </div>
     <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-      <p>Hi ${firstName}!</p>
+      <p>Hi ${escapeHtml(firstName)}!</p>
       <p>I hope you've enjoyed your stay! This is an automated reminder that checkout is <strong>11:00 AM</strong> - about 3 hours from now.</p>
       <div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:16px 18px;margin:18px 0;font-size:.9rem;">
         <p style="margin:0 0 8px;font-weight:700;color:#0a1f3a;">Checkout Instructions</p>
