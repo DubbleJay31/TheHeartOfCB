@@ -899,9 +899,9 @@ a { color: inherit; text-decoration: none; }
   <div class="success-box">
     <div class="success-icon">📋</div>
     <h2>Agreement Received!</h2>
-    <p style="font-size:.95rem;font-weight:600;color:var(--navy);">You're not done yet - payment is the next required step.</p>
-    <p style="margin-top:.75rem;font-weight:700;color:#dc2626;">⚠️ Your booking is NOT confirmed and your dates are NOT blocked until payment is received. Anyone can still book them.</p>
-    <button onclick="unlockAndPay()" style="margin-top:1.5rem;width:100%;padding:1rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Take Me to the Payment Screen →</button>
+    <p id="success-overlay-sub" style="font-size:.95rem;font-weight:600;color:var(--navy);">You're not done yet - payment is the next required step.</p>
+    <p id="success-overlay-warn" style="margin-top:.75rem;font-weight:700;color:#dc2626;">⚠️ Your booking is NOT confirmed and your dates are NOT blocked until payment is received. Anyone can still book them.</p>
+    <button id="success-overlay-btn" onclick="unlockAndPay()" style="margin-top:1.5rem;width:100%;padding:1rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Take Me to the Payment Screen →</button>
   </div>
 </div>
 
@@ -1357,6 +1357,19 @@ async function submitAgreement() {
   const printBtn = document.getElementById('print-agreement-btn');
   if (printBtn) printBtn.style.display = '';
 
+  // Refund case has nothing to pay - "payment is the next required step" and "NOT confirmed
+  // until payment is received" are both actively wrong here, and the button led to a payment
+  // screen showing methods that don't apply. Swap in wording that matches what's actually left
+  // to do (nothing but confirming).
+  if (refundDue > 0) {
+    const sub = document.getElementById('success-overlay-sub');
+    const warn = document.getElementById('success-overlay-warn');
+    const btn2 = document.getElementById('success-overlay-btn');
+    if (sub) sub.textContent = 'No payment needed - you\'re due a refund on your updated dates.';
+    if (warn) warn.textContent = '⚠️ Your reservation isn\'t updated yet - confirm below to finish.';
+    if (btn2) btn2.textContent = 'Take Me to Confirm →';
+  }
+
   // Show overlay
   document.getElementById('success-overlay').classList.add('show');
 }
@@ -1367,8 +1380,12 @@ function unlockAndPay() {
   document.getElementById('pay-lock-banner').style.display = 'none';
   _activatePayLinks();
   if (refundDue > 0) {
-    // Nothing to pay - show the refund card instead of the normal payment methods.
+    // Nothing to pay - show the refund card instead of the normal payment methods. Previously
+    // this only left #pay-methods in its "locked" (dimmed, unclickable) state rather than hiding
+    // it outright, so a full list of payment options a guest has no reason to touch still sat
+    // there, greyed out, right below "No payment needed."
     document.getElementById('pay-refund-card').style.display = '';
+    document.getElementById('pay-methods').style.display = 'none';
   } else {
     document.getElementById('pay-methods').classList.remove('locked');
     document.getElementById('pay-unlock-banner').classList.add('show');
