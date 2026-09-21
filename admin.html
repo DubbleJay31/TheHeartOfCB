@@ -902,6 +902,14 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
                 <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
               </div>
               <span class="field-hint">For a new contract replacing an old one - the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
+              <!-- Only shown when editing a confirmed reservation that was paid by card/PayPal -
+                   Stripe/PayPal keep their processing fee on any refund, so the auto-filled credit
+                   above defaults to net-of-fee. Checking this recredits the full gross amount for
+                   when Jesse wants to cover the fee himself instead of passing that cost through. -->
+              <div id="refund-fee-row" style="display:none;align-items:center;gap:.4rem;margin-top:.4rem;">
+                <input type="checkbox" id="f-refund-fee" onchange="_onRefundFeeToggle()" style="width:15px;height:15px;cursor:pointer;" />
+                <label for="f-refund-fee" style="font-size:.78rem;color:var(--muted);font-weight:400;cursor:pointer;">Also refund the card fee (Stripe/PayPal don't give it back to you - only check this if you want to cover it)</label>
+              </div>
             </div>
           </div>
         </div>
@@ -1482,11 +1490,23 @@ function _loadIntoForm(code) {
   // own field hint; a cash deposit belongs in Deposit to Hold instead. Only kicks in when this
   // row has no credit of its own yet - a reservation already on its second edit keeps whatever
   // credit that earlier edit established rather than guessing again from `total`.
-  const _autoPaid = (!r.credit && r.status === 'confirmed' && r.payment_method && r.payment_method !== 'Cash')
-    ? (r.payment_method === 'stripe' ? (parseFloat(r.total) || 0) : _noFeeTotal(r))
+  // Stripe and PayPal both charged the guest a processing-fee surcharge on top of the base price
+  // (see CC_FEE) - that fee is never refunded to Jesse by either processor regardless of what
+  // happens to the reservation afterward, so crediting the FULL gross amount toward new terms (or
+  // refunding it) would cost Jesse the fee out of pocket on top of whatever else is being given
+  // back. Defaults to net-of-fee to protect against that; "Also refund the card fee" below
+  // switches to gross for when Jesse wants to cover it himself.
+  const _hasOrigFee = !r.credit && r.status === 'confirmed' && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
+  _origPaidGross = (!r.credit && r.status === 'confirmed' && r.payment_method && r.payment_method !== 'Cash')
+    ? (_hasOrigFee ? (parseFloat(r.total) || 0) : _noFeeTotal(r))
     : 0;
+  _origFeeAmt = _hasOrigFee ? Math.max(0, _origPaidGross - _noFeeTotal(r)) : 0;
   const creditEl = document.getElementById('f-credit');
-  if (creditEl) creditEl.value = r.credit || (_autoPaid > 0 ? _autoPaid.toFixed(2) : '');
+  const refundFeeEl = document.getElementById('f-refund-fee');
+  const refundFeeRow = document.getElementById('refund-fee-row');
+  if (refundFeeEl) refundFeeEl.checked = false;
+  if (refundFeeRow) refundFeeRow.style.display = _origFeeAmt > 0 ? 'flex' : 'none';
+  if (creditEl) creditEl.value = r.credit || (_origPaidGross > 0 ? Math.max(0, _origPaidGross - _origFeeAmt).toFixed(2) : '');
 
   const badge = document.getElementById('editing-badge');
   if (badge) {
@@ -1494,7 +1514,11 @@ function _loadIntoForm(code) {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
     document.getElementById('editing-badge-text').textContent =
       `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`
-      + (_autoPaid > 0 ? ` Already-paid $${_autoPaid.toFixed(2)} auto-credited below - clear it if that's not right.` : '');
+      + (_origPaidGross > 0
+          ? (_origFeeAmt > 0
+              ? ` Already-paid $${_origPaidGross.toFixed(2)} (of that, $${_origFeeAmt.toFixed(2)} was the card fee - not refundable, so $${(_origPaidGross - _origFeeAmt).toFixed(2)} is auto-credited below) - clear it or check "Also refund the card fee" if that's not right.`
+              : ` Already-paid $${_origPaidGross.toFixed(2)} auto-credited below - clear it if that's not right.`)
+          : '');
   }
 
   const inqBox = document.getElementById('inquiry-details-box');
@@ -1741,6 +1765,7 @@ function renderGuestBreakdown() {
     html += r('Credit Applied', '&minus;' + fmt(credit));
     if (refundDue > 0) {
       html += r('<strong style="color:#7c1d1d;">Refund Owed To Guest</strong>', `<strong style="color:#7c1d1d;">${fmt(refundDue)}</strong>`, true);
+      html += `<div style="font-size:.72rem;color:var(--muted);padding:.15rem 0;">Stripe/PayPal keep their processing fee on a refund - it won't come back to you either way.</div>`;
     } else {
       html += r('<strong>Balance Due (no card fee)</strong>', `<strong>${fmt(creditedBase)}</strong>`, true);
       html += `<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem;color:var(--muted);"><span>If paid by card</span><span>${fmt(creditedTotal)}</span></div>`;
@@ -1887,6 +1912,13 @@ let _generatedUrl = '';
 let _qtok = '';
 let _editingCode = null; // code of the reservation currently loaded in the form, or null if this is a brand-new one not yet saved
 let _contactPref = '';
+// What was actually collected on the reservation currently loaded (gross, and the card/PayPal
+// fee portion of it) - set by _loadIntoForm, read by _onRefundFeeToggle. Stripe/PayPal never
+// refund their processing fee, so the "Already Paid / Credit" auto-fill defaults to crediting
+// only the net amount; these two track what the full gross and the fee actually were so toggling
+// "Also refund the card fee" can recompute without re-deriving it from the reservation again.
+let _origPaidGross = 0;
+let _origFeeAmt = 0;
 
 // Shows a "★ Guest prefers this" badge next to whichever send option (email/text) matches
 // the guest's stated preference - both options always stay fully usable either way.
@@ -1953,6 +1985,16 @@ async function _finalizeEmailPreviewLink() {
   }
   return url;
 }
+// Recomputes the Credit field from the original payment when "Also refund the card fee" is
+// toggled - switches between crediting the net amount (default, protects Jesse from covering a
+// fee Stripe/PayPal never give back) and the full gross amount (Jesse's choice to eat it).
+function _onRefundFeeToggle() {
+  const checked = document.getElementById('f-refund-fee')?.checked;
+  const creditEl = document.getElementById('f-credit');
+  if (creditEl) creditEl.value = Math.max(0, _origPaidGross - (checked ? 0 : _origFeeAmt)).toFixed(2);
+  generate();
+}
+
 // "✕ New Instead" used to only clear the editing-code tracking, not a single form field - guest
 // name, dates, rate, and payment terms all stayed exactly as loaded from whatever reservation was
 // just being "escaped," despite the label implying a blank slate. If Jesse didn't manually clear
@@ -1970,10 +2012,13 @@ function _clearEditing() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['f-cash','f-override-cc'].forEach(id => {
+  ['f-cash','f-override-cc','f-refund-fee'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
+  _origPaidGross = 0; _origFeeAmt = 0;
+  const refundFeeRow = document.getElementById('refund-fee-row');
+  if (refundFeeRow) refundFeeRow.style.display = 'none';
   // These default to something useful for a fresh quote rather than blank - see
   // _defaultExpDate()/_DEFAULT_GUEST_NOTE.
   document.getElementById('f-exp').value = _defaultExpDate();
@@ -2894,6 +2939,7 @@ function openReservationDetail(code) {
         ${_refundOwed > 0 ? `
         <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
         ${r.payment_method ? `<div style="color:var(--muted);font-size:.85em;">Originally paid via ${_esc(r.payment_method === 'stripe' ? 'Credit/Debit Card' : r.payment_method)}</div>` : ''}
+        ${(r.payment_method === 'stripe' || r.payment_method === 'paypal') ? `<div style="color:var(--muted);font-size:.78em;">Stripe/PayPal keep their processing fee on a refund - it won't come back to you either way.</div>` : ''}
         ` : r.payment_method ? `
         ${_cashDepositAmt > 0 ? `
         <div style="color:#166534;"><b>Deposit Received:</b> ${fmt$(_cashDepositAmt)} <span style="color:var(--muted);font-size:.82em;">(refundable - full ${fmt$(Math.max(0, _noFeeTotal(r) - (r.credit||0)))} due in cash at check-in)</span></div>
