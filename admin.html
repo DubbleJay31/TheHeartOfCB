@@ -2794,18 +2794,32 @@ function renderConfirmedPanel() {
     // Quotes tab with the form pre-filled - that's where you actually work on a quote.
     const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
       ? `openReservationDetail('${r.code}')` : `_openInQuotesForm('${r.code}')`;
+    // A 'quoted'/'signed' row can mean two very different things: a brand-new lead that's never
+    // been confirmed, or an ALREADY-confirmed reservation mid-edit via Change Reservation, reset
+    // to 'quoted' pending the guest's re-signature for the new terms - upsert resets status but
+    // never clears payment_method, which is only ever set once, by a real confirm, so its presence
+    // here reliably tells the two apart even though status alone can't. The label and the
+    // rejection action both need to differ for this case too: it isn't a lead to decline (the
+    // Decline flow's "sorry, I can't accommodate this request" email would be actively wrong to
+    // send an existing guest), it's an existing booking that would be fully CANCELLED (there's no
+    // way to revert just the pending change back to the prior terms) - so this routes to the same
+    // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
+    // cancellation-notify flow, instead of the decline pipeline.
+    const isChangePending = (r.status === 'quoted' || r.status === 'signed') && !!r.payment_method;
+    const statusLabel = isChangePending ? '🔄 Change Pending' : (_STATUS_LABEL[r.status] || r.status);
+    const statusColor = isChangePending ? '#7c3aed' : (_STATUS_COLOR[r.status] || '#666');
     return `
     <div class="conf-row" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
       <div class="conf-row-info">
-        <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${_STATUS_COLOR[r.status] || '#666'};">${_STATUS_LABEL[r.status] || r.status}</span></div>
+        <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${statusColor};">${statusLabel}</span></div>
         <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
         <div style="display:flex;gap:.3rem;">
           ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm Reservation</button>` : ''}
-          ${(r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7a1f1f;color:#7a1f1f;" onclick="event.stopPropagation();_openDeclineModal('${r.code}')">🚫 Decline</button>` : ''}
+          ${(r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7a1f1f;color:#7a1f1f;" onclick="event.stopPropagation();${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
         </div>
       </div>
     </div>`;
