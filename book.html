@@ -2380,7 +2380,9 @@ async function _notifyJesse(method) {
     ${priorCredit > 0 ? `
     <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(fullTotal || (apTotal + priorCredit))}</strong></div>
     <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
-    <div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>
+    ${refundDue > 0.005
+      ? `<div class="apr-si"><span style="color:#166534;font-weight:700;">Refund Due to You</span><strong style="color:#166534;">${fmtAmt2(refundDue)}</strong></div>`
+      : `<div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong></div>` : ''}
     ${apRecvNow > 0 ? `<div class="apr-si"><span>${apIsCash ? 'Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
