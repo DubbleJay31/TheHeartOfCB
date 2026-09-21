@@ -20,7 +20,7 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing code' }) };
   }
   try {
-    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=guest,email,check_in,check_out,signed_name,signed_at,payment_method`);
+    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=guest,email,check_in,check_out,signed_name,signed_at,payment_method,status`);
     const rows = r.ok ? await r.json() : [];
     if (!rows.length) {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) };
@@ -42,6 +42,7 @@ exports.handler = async function(event) {
         signed_name: row.signed_name || null,
         signed_at: row.signed_at || null,
         payment_method: row.payment_method || null,
+        status: row.status || null,
         tok
       })
     };

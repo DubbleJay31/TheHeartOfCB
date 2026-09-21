@@ -1996,19 +1996,29 @@ async function _notifyJesse(method) {
   // above (they only ever existed in the guest's own browser at signing time, for the manual
   // one-click-link path). Backfill from the DB in that case.
   let _backfilled = false;
-  if (!sigName && code) {
+  let _resvStatus = null;
+  // Needed regardless of whether we're backfilling signing state - this is the only way this page
+  // knows if the reservation is already confirmed (Stripe auto-confirmed it, or it was confirmed
+  // earlier and this is just a resend) versus still awaiting confirmation, which decides whether
+  // to show the "Confirm Reservation" step below.
+  const _needsBackfill = !sigName;
+  if (code) {
     try {
       const infoR = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
       if (infoR.ok) {
         const info = await infoR.json();
-        if (info.signed_name) { sigName = info.signed_name; _backfilled = true; }
-        if (info.signed_at) sigTs = info.signed_at;
-        if (info.tok) sigTok = info.tok;
-        if (info.signed_ip) sigIp = info.signed_ip;
-        if (info.payment_method) methodName = info.payment_method === 'stripe' ? 'stripe' : info.payment_method;
+        _resvStatus = info.status || null;
+        if (_needsBackfill) {
+          if (info.signed_name) { sigName = info.signed_name; _backfilled = true; }
+          if (info.signed_at) sigTs = info.signed_at;
+          if (info.tok) sigTok = info.tok;
+          if (info.signed_ip) sigIp = info.signed_ip;
+          if (info.payment_method) methodName = info.payment_method === 'stripe' ? 'stripe' : info.payment_method;
+        }
       }
     } catch (e) { console.error('Failed to backfill signing info:', e); }
   }
+  const _alreadyConfirmed = _resvStatus === 'confirmed';
   const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   // The guest confirmation email's "View & Print Your Signed Agreement" link, and this page's own
@@ -2081,23 +2091,62 @@ async function _notifyJesse(method) {
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send the guest's confirmation</strong> using the buttons below.</span>
         </div>
       </div>
-      <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
-        <strong>Email sends the full confirmation to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
-        Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.<br/><br/>
-        <strong>Text sends a shorter note</strong>${phone ? ` to ${_esc(phone)}` : ' (no phone on file)'} with a link to the full details online.
-      </div>
       ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
-      <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
-        style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:.6rem;">
-        ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}${contactPref === 'email' || contactPref === 'either' ? ' ★' : ''}
+      ${_alreadyConfirmed ? '' : `
+      <button id="confirm-resv-btn" onclick="confirmReservationOnly()"
+        style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:1rem;">
+        ✓ Confirm Reservation
       </button>
-      <button id="send-confirm-text-btn" onclick="sendGuestConfirmationText()" ${phone ? '' : 'disabled'}
-        style="width:100%;padding:1rem;background:${phone ? '#166534' : '#d1d5db'};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:${phone ? 'pointer' : 'not-allowed'};letter-spacing:.01em;">
-        💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}${contactPref === 'text' || contactPref === 'either' ? ' ★' : ''}
-      </button>
+      `}
+      <div id="send-confirm-buttons" style="${_alreadyConfirmed ? '' : 'display:none;'}">
+        <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
+          <strong>Email sends the full confirmation to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
+          Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.<br/><br/>
+          <strong>Text sends a shorter note</strong>${phone ? ` to ${_esc(phone)}` : ' (no phone on file)'} with a link to the full details online.
+        </div>
+        <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
+          style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:.6rem;">
+          ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}${contactPref === 'email' || contactPref === 'either' ? ' ★' : ''}
+        </button>
+        <button id="send-confirm-text-btn" onclick="sendGuestConfirmationText()" ${phone ? '' : 'disabled'}
+          style="width:100%;padding:1rem;background:${phone ? '#166534' : '#d1d5db'};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:${phone ? 'pointer' : 'not-allowed'};letter-spacing:.01em;">
+          💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}${contactPref === 'text' || contactPref === 'either' ? ' ★' : ''}
+        </button>
+      </div>
       <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
     </div>`;
   document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+
+  // Primary action for a not-yet-confirmed reservation (manual payment methods only - Stripe and
+  // resends skip straight to the send buttons, see _alreadyConfirmed above). Confirming used to
+  // only happen as a side effect of clicking Email or Text, which meant the reservation stayed
+  // unconfirmed until Jesse picked a notification method - now it's its own explicit step, and the
+  // send buttons don't even appear until it succeeds.
+  window.confirmReservationOnly = async function() {
+    const btn = document.getElementById('confirm-resv-btn');
+    const status = document.getElementById('confirm-status');
+    if (!btn || btn.disabled) return;
+    btn.textContent = 'Confirming…'; btn.disabled = true; btn.style.opacity = '.7';
+    try {
+      const resv = await _confirmReservation();
+      if (resv.ok) {
+        btn.textContent = '✓ Reservation Confirmed';
+        btn.style.background = '#16a34a'; btn.style.opacity = '';
+        const sendBox = document.getElementById('send-confirm-buttons');
+        if (sendBox) sendBox.style.display = '';
+        if (status) status.innerHTML = `<span style="color:#16a34a;">Reservation confirmed - now send the guest their confirmation below.</span>`;
+      } else {
+        btn.textContent = '✓ Confirm Reservation';
+        btn.disabled = false; btn.style.opacity = '';
+        if (status) status.innerHTML = `<span style="color:#dc2626;">Confirm failed - check console, or confirm manually in Admin.</span>`;
+      }
+    } catch (err) {
+      btn.textContent = '✓ Confirm Reservation';
+      btn.disabled = false; btn.style.opacity = '';
+      if (status) status.innerHTML = `<span style="color:#dc2626;">Confirm failed - check console.</span>`;
+      console.error('Confirm failed:', err);
+    }
+  };
 
   window.sendGuestConfirmation = async function() {
     const btn = document.getElementById('send-confirm-btn');
