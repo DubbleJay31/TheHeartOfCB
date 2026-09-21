@@ -1090,7 +1090,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       style="width:100%;box-sizing:border-box;padding:.65rem .9rem;margin-bottom:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;" />
     <div class="conf-filter-pills">
       <button class="conf-filter-pill active" id="conf-filter-all" onclick="_setConfFilter('all')">All</button>
-      <button class="conf-filter-pill" id="conf-filter-action" onclick="_setConfFilter('action')" style="border-color:var(--gold);color:#92400e;">🔔 Action Needed</button>
+      <button class="conf-filter-pill" id="conf-filter-action" onclick="_setConfFilter('action')" style="display:none;border-color:var(--gold);color:#92400e;">🔔 Action Needed</button>
       <button class="conf-filter-pill" id="conf-filter-inquiry" onclick="_setConfFilter('inquiry')">Inquiries</button>
       <button class="conf-filter-pill" id="conf-filter-quoted" onclick="_setConfFilter('quoted')">Quoted</button>
       <button class="conf-filter-pill" id="conf-filter-signed" onclick="_setConfFilter('signed')">Signed</button>
@@ -2963,6 +2963,23 @@ function _rowActionState(r) {
 function renderConfirmedPanel() {
   const el = document.getElementById('confirmed-res-list');
   if (!el) return;
+  // The Action Needed pill is only worth showing at all when there's something to act on - a
+  // permanently-visible filter for a set that's usually empty is just noise. Shows a live count so
+  // it also doubles as an at-a-glance "how many things need me" indicator, not just a filter toggle.
+  const actionCount = _reservationsCache.filter(r => _rowActionState(r).isActionNeeded).length;
+  const actionPill = document.getElementById('conf-filter-action');
+  if (actionPill) {
+    actionPill.style.display = actionCount > 0 ? '' : 'none';
+    actionPill.textContent = `🔔 Action Needed (${actionCount})`;
+  }
+  // Was filtering by Action Needed when the last one just got resolved - an empty filtered view
+  // behind a now-hidden pill has no way back to "All" except knowing to click it blind.
+  if (_confFilter === 'action' && actionCount === 0) {
+    _confFilter = 'all';
+    ['all', 'action', 'inquiry', 'quoted', 'signed', 'confirmed', 'cancelled'].forEach(f => {
+      document.getElementById('conf-filter-' + f)?.classList.toggle('active', f === 'all');
+    });
+  }
   const searchVal = (document.getElementById('conf-search')?.value || '').trim().toLowerCase();
   const list = _reservationsCache
     .filter(r => {
