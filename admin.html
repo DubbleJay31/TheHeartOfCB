@@ -371,6 +371,18 @@ a { color: inherit; text-decoration: none; }
   .field-row.three { grid-template-columns: 1fr 1fr; }
   .prop-selector { grid-template-columns: 1fr; }
   .adm-header { padding: .8rem 1rem; }
+  /* A reservation row's icon+guest-info and its action buttons used to stay side-by-side down to
+     any width, squeezing guest name/property/dates into a narrow column that wrapped one word per
+     line while the buttons themselves got cramped - stack instead: info on top, buttons full-width
+     below, each button readable and tappable. */
+  .conf-row { flex-wrap: wrap; }
+  .conf-row-actions { align-items: stretch; width: 100%; margin-top: .5rem; }
+  .conf-row-actions .conf-row-booked { text-align: left; }
+  .conf-row-actions > div[style*="justify-content:flex-end"] { justify-content: flex-start !important; }
+  /* The editing-badge's text + "New Instead" button squeezed side-by-side on a long reservation
+     description (guest name, status, dates) - stack them instead of cramming both into one row. */
+  .editing-badge-row { flex-direction: column; align-items: flex-start !important; }
+  .editing-badge-row button { align-self: flex-start; }
 }
 
 /* ══════════════════════════════════════════
@@ -783,7 +795,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
       <!-- EDITING BADGE (shown when the form is loaded from an existing reservation, not a blank new one) -->
       <div id="editing-badge" style="display:none;margin-bottom:1rem;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#92400e;font-weight:600;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;">
+        <div class="editing-badge-row" style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;">
           <span id="editing-badge-text">✏️ Editing an existing reservation.</span>
           <button type="button" onclick="_clearEditing()" style="background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:.2rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer;flex-shrink:0;">✕ New Instead</button>
         </div>
@@ -1338,6 +1350,14 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <span style="color:#b8882a;font-weight:700;font-size:1rem;letter-spacing:.04em;">EMAIL PREVIEW</span>
       <button onclick="closeEmailModal()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;">✕</button>
     </div>
+    <!-- Actions - above the preview, not below it. This modal's preview can run long (a full
+         branded email), and the buttons are what Jesse actually needs to act on - burying them
+         at the bottom meant scrolling through the whole email first, especially painful on mobile. -->
+    <div style="padding:1.2rem 1.6rem;display:flex;gap:.8rem;border-bottom:1px solid #eee;background:#fafafa;flex-wrap:wrap;">
+      <button id="modal-send-direct-btn" onclick="sendEmailFromModal()" style="flex:1;min-width:140px;background:#2a7a3b;color:#fff;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:700;font-size:.95rem;cursor:pointer;">⚡ Send Direct</button>
+      <button id="copy-email-btn" onclick="copyEmailHtml()" style="flex:1;min-width:120px;background:#b8882a;color:#fff;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:700;font-size:.95rem;cursor:pointer;">📋 Copy Email</button>
+      <button onclick="closeEmailModal()" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:600;font-size:.9rem;cursor:pointer;">✕ Close</button>
+    </div>
     <!-- Instructions -->
     <div style="background:#f0f4ff;border-bottom:1px solid #dde3f0;padding:.85rem 1.6rem;font-size:.82rem;color:#444;display:flex;align-items:center;gap:.7rem;">
       <span style="font-size:1.1rem;">💡</span>
@@ -1345,12 +1365,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     </div>
     <!-- Email preview -->
     <div id="email-preview-body" style="padding:0;"></div>
-    <!-- Actions -->
-    <div style="padding:1.2rem 1.6rem;display:flex;gap:.8rem;border-top:1px solid #eee;background:#fafafa;flex-wrap:wrap;">
-      <button id="modal-send-direct-btn" onclick="sendEmailFromModal()" style="flex:1;min-width:140px;background:#2a7a3b;color:#fff;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:700;font-size:.95rem;cursor:pointer;">⚡ Send Direct</button>
-      <button id="copy-email-btn" onclick="copyEmailHtml()" style="flex:1;min-width:120px;background:#b8882a;color:#fff;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:700;font-size:.95rem;cursor:pointer;">📋 Copy Email</button>
-      <button onclick="closeEmailModal()" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.75rem 1rem;font-weight:600;font-size:.9rem;cursor:pointer;">✕ Close</button>
-    </div>
   </div>
 </div>
 
@@ -2894,10 +2908,17 @@ function renderConfirmedPanel() {
         <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${statusColor};">${statusLabel}</span></div>
         <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
+      <div class="conf-row-actions" style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
         <div style="display:flex;gap:.3rem;flex-wrap:wrap;justify-content:flex-end;">
-          ${(r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm Reservation</button>` : ''}
+          <!-- 'signed' only, not 'quoted' too - reservations-confirm.js hard-requires status
+               'signed' (a guest actually has to have signed before Jesse can confirm on their
+               behalf), so offering this on a still-quoted row - guest hasn't signed anything yet -
+               always 409'd, surfacing as a confusing "Save failed - check console" with no real
+               explanation. Hiding it here is the correct fix, not just the working one: Jesse
+               confirming a reservation nobody's actually agreed to would be wrong even if the
+               server allowed it. -->
+          ${r.status === 'signed' ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();confirmFromQuote('${r.code}',this)">✓ Confirm Reservation</button>` : ''}
           ${isChangePending && r.prior_terms ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="event.stopPropagation();undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
           ${(r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7a1f1f;color:#7a1f1f;" onclick="event.stopPropagation();${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
         </div>
