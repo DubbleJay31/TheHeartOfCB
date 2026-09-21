@@ -137,9 +137,10 @@ const _calInst   = {}; // wrapId → { prop, wrap, sentinel, observer, months, s
 
 // Returns null (not []) specifically on a failed fetch, distinct from a genuinely empty-but-
 // successful response (a property with zero current bookings is a real, valid state) - callers
-// need to tell these apart, since after tonight's change this calendar is the SOLE source of
-// truth for what's booked. Silently treating a failed fetch as "nothing is booked" would show
-// every date as available, including ones genuinely blocked on Airbnb.
+// need to tell these apart, since this is the PRIMARY source of what's booked (Airbnb-side
+// bookings have no other channel to reach this calendar at all). Silently treating a failed
+// fetch as "nothing is booked" would show every date as available, including ones genuinely
+// blocked on Airbnb.
 async function _fetchICS(url) {
   if (!url) return [];
   try {
@@ -148,6 +149,20 @@ async function _fetchICS(url) {
     const txt = await r.text();
     return _parseICS(txt);
   } catch(e) { return null; }
+}
+
+// Second, best-effort source alongside _fetchICS - this site's own confirmed reservations,
+// known the instant a booking confirms, rather than waiting on Airbnb's own sync schedule
+// (which can take hours) just to reflect a booking THIS site already knows about. Unlike
+// _fetchICS, a failure here doesn't block the calendar - it just means this specific booking
+// might not show up until Airbnb's sync catches up instead, same as before this existed.
+async function _fetchConfirmedRanges(prop) {
+  try {
+    const r = await fetch(`/.netlify/functions/reservations-busy-dates?prop=${encodeURIComponent(prop)}`);
+    if (!r.ok) return [];
+    const rows = await r.json();
+    return rows.map(x => ({ s: _keyToDate(x.check_in), e: _keyToDate(x.check_out) }));
+  } catch(e) { return []; }
 }
 
 function _parseICS(txt) {
@@ -330,10 +345,12 @@ async function renderCalInto(prop, wrapId, startOffset) {
   _calInst[wrapId] = inst;
 
   if (!_calCache[prop]) {
-    // Availability shown here follows Airbnb's iCal feed only - a reservation confirmed on this
-    // site doesn't block anything on the public calendar until Jesse actually blocks those dates
-    // on Airbnb himself. (Admin's own quote-builder separately warns him if he's about to quote
-    // dates that overlap an existing confirmed reservation - that check is unrelated to this one.)
+    // Availability merges two sources: Airbnb's iCal feed (bookings made through Airbnb) and
+    // this site's own confirmed reservations (bookings made directly through this site) - the
+    // latter is known the instant it confirms and shouldn't have to wait on Airbnb's own sync
+    // schedule (hours-scale) just to show up on THIS site's own calendar. ical-export.js is the
+    // separate, one-way feed that makes Airbnb aware of this site's bookings; _fetchConfirmedRanges
+    // is what makes this site aware of them immediately, without that round trip.
     const fetched = await _fetchICS(ICAL_URLS[prop]);
     if (fetched === null) {
       // Guard: instance may have been replaced if user navigated away quickly
@@ -342,7 +359,8 @@ async function renderCalInto(prop, wrapId, startOffset) {
         '⚠️ Couldn\'t load live availability right now. Please text/call <a href="tel:9105998118" style="color:#7c1d1d;font-weight:700;">(910) 599-8118</a> to check dates, or try reloading the page.</div>';
       return;
     }
-    _calCache[prop] = fetched;
+    const confirmedRanges = await _fetchConfirmedRanges(prop);
+    _calCache[prop] = fetched.concat(confirmedRanges);
   }
 
   // Guard: instance may have been replaced if user navigated away quickly
