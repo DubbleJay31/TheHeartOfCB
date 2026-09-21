@@ -276,6 +276,9 @@ a { color: inherit; text-decoration: none; }
 .pay-lock-banner { background: var(--sand2); border: 1.5px dashed var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; text-align: center; font-size: .88rem; color: var(--muted); margin-bottom: 1rem; }
 .pay-methods { display: flex; flex-direction: column; gap: .65rem; margin-bottom: 1.25rem; }
 .pay-methods.locked .pay-method-card { opacity: .4; pointer-events: none; user-select: none; }
+/* Pre-signing refund state - same dimmed treatment as .pay-methods.locked, so "No payment needed"
+   visibly needs the agreement signed first instead of looking immediately actionable. */
+#pay-refund-card.locked { opacity: .5; pointer-events: none; user-select: none; }
 .pay-method-card { display: flex; align-items: center; gap: .9rem; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: .85rem 1rem; transition: border-color .15s; }
 .pay-method-card:hover { border-color: var(--gold); }
 .pm-icon { font-size: 1.4rem; flex-shrink: 0; width: 1.8rem; text-align: center; }
@@ -964,6 +967,15 @@ const refundDue = parseFloat(get('refund_due')) || 0;
 // showing the guest the full contract value and what's being credited toward it.
 const priorCredit = parseFloat(get('credit')) || 0;
 const fullTotal   = parseFloat(get('full_total')) || 0;
+// Guest already paid a card-processing fee on their original payment - the portion of that fee
+// covering the stay they're keeping doesn't come back just because a refund is owed on the rest
+// (see _refundFeeShare in admin.html). `total`/`ccFee` above are both 0 in this scenario (the
+// balance floors to 0 once credit exceeds the new stay), which used to make the fee vanish from
+// every guest-facing price breakdown - "Full Stay Total" and the refund figure sitting right below
+// it read as a silent mismatch (paid $500, stay is $400, but refund isn't exactly $100) with
+// nothing explaining why. Computed once here, shared by every breakdown table on this page.
+const stayFullTotal = fullTotal || (rate + taxOcc + taxSales);
+const stayCcFee = refundDue > 0.005 ? stayFullTotal * CC_FEE_RATE : 0;
 const dueRaw  = get('due')     || '';
 // Set when Jesse checks "Override - no card option" in admin.html - lets him intentionally leave
 // card payment off a specific quote (e.g. cash/Venmo-only arrangement), now that Stripe would
@@ -1055,13 +1067,6 @@ addRow(`Room Fare (${nights} night${nights!=1?'s':''} · ${fmt(nights > 0 ? Math
 if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
-// Guest already paid a card-processing fee on their original payment - the portion of that fee
-// covering the stay they're keeping doesn't come back just because a refund is owed on the rest
-// (see _refundFeeShare in admin.html). Left out entirely before, so "Full Stay Total" and the
-// refund figure below it read as a silent mismatch (paid $500, stay is $400, but refund isn't
-// exactly $100) with no explanation why.
-const stayFullTotal = fullTotal || (rate + taxOcc + taxSales);
-const stayCcFee = refundDue > 0.005 ? stayFullTotal * CC_FEE_RATE : 0;
 if (priorCredit > 0) {
   if (stayCcFee > 0) addRow('Credit Card Fee (3%)', fmt(stayCcFee));
   addRow('Full Stay Total', fmt(stayFullTotal + stayCcFee));
@@ -1185,6 +1190,13 @@ if (expRaw && get('action') !== 'confirm') {
     inner.innerHTML = `📋 Jesse has received your submission and will send an official confirmation once everything is verified.`;
   } else if (diff < 0) {
     _showQuoteBlockedPage('This quote has expired. Please check your email for a new quote link, or contact Jesse directly.');
+  } else if (refundDue > 0.005) {
+    // A shortened-stay change where the guest already paid more than the new total - nothing to
+    // pay, so the usual "not blocked until you pay" warning is actively wrong here (there's no
+    // payment coming from them at all) and was leaving guests unsure whether they still needed to
+    // do anything.
+    inner.className = 'expiry-banner warn';
+    inner.innerHTML = `💰 You have a ${fmt(refundDue)} refund coming your way - but it only goes out once you sign the updated agreement below. Your dates are <strong>not blocked</strong> until then.`;
   } else {
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `⚠️ Your booking is not complete until payment is received. Your dates are <strong>not blocked</strong> - anyone can book them until you pay.`;
@@ -1305,6 +1317,21 @@ function toggleCheck(e) {
     }
   }
 })();
+
+// A refund-owed guest has nothing to pay - showing the full payment-methods list (even dimmed,
+// pre-signing) suggested a payment step that doesn't exist and could read as "pay now, get change
+// later" instead of what it actually is. Lead with the same "No payment needed" card shown after
+// signing, just locked/greyed until they actually sign - never the payment methods at all.
+if (refundDue > 0.005) {
+  const payMethodsEl = document.getElementById('pay-methods');
+  const refundCard = document.getElementById('pay-refund-card');
+  const lockBanner = document.getElementById('pay-lock-banner');
+  const refundBtn = document.getElementById('confirm-refund-btn');
+  if (payMethodsEl) payMethodsEl.style.display = 'none';
+  if (refundCard) { refundCard.style.display = ''; refundCard.classList.add('locked'); }
+  if (lockBanner) lockBanner.textContent = '🔒 Submit your signed agreement above to receive your refund.';
+  if (refundBtn) refundBtn.disabled = true;
+}
 
 // Payment links stay at their static href="#" (see markup) until this runs. The .locked CSS
 // class on #pay-methods only blocks mouse clicks (pointer-events:none) - it never stops keyboard
@@ -1429,11 +1456,13 @@ function unlockAndPay() {
   document.getElementById('pay-lock-banner').style.display = 'none';
   _activatePayLinks();
   if (refundDue > 0) {
-    // Nothing to pay - show the refund card instead of the normal payment methods. Previously
-    // this only left #pay-methods in its "locked" (dimmed, unclickable) state rather than hiding
-    // it outright, so a full list of payment options a guest has no reason to touch still sat
-    // there, greyed out, right below "No payment needed."
-    document.getElementById('pay-refund-card').style.display = '';
+    // Nothing to pay - the refund card was already showing (locked/greyed) before signing; unlock
+    // it now instead of the normal payment methods, which stay hidden throughout.
+    const refundCard = document.getElementById('pay-refund-card');
+    refundCard.style.display = '';
+    refundCard.classList.remove('locked');
+    const refundBtn = document.getElementById('confirm-refund-btn');
+    if (refundBtn) refundBtn.disabled = false;
     document.getElementById('pay-methods').style.display = 'none';
   } else {
     document.getElementById('pay-methods').classList.remove('locked');
@@ -1703,7 +1732,8 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Room Fare (' + sigData.nights + ' night' + (sigData.nights !== 1 ? 's' : '') + ')', fmt2(rate), '#f9f6f0')}
     ${ROW('Room Occupancy Tax', fmt2(taxOcc), '#f2ede3')}
     ${ROW('Sales Tax', fmt2(taxSales), '#f9f6f0')}
-    ${ROW(priorCredit > 0 ? 'Full Stay Total' : 'Total', fmt2(fullTotal || (noFee + priorCredit)), '#f2ede3')}
+    ${stayCcFee > 0 ? ROW('Credit Card Fee (3%)', fmt2(stayCcFee), '#f9f6f0') : ''}
+    ${ROW(priorCredit > 0 ? 'Full Stay Total' : 'Total', fmt2(priorCredit > 0 ? stayFullTotal + stayCcFee : (fullTotal || (noFee + priorCredit))), '#f2ede3')}
     ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') : ''}
     ${refundDue > 0
       ? `<tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">💰 Refund Due to You</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(refundDue)}</td></tr>`
@@ -2028,17 +2058,19 @@ async function _notifyJesse(method) {
             ${contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="padding:5px 0;font-weight:700;">${contactPref === 'text' ? '💬 Text' : contactPref === 'email' ? '📧 Email' : '📧💬 Both'}</td></tr>` : ''}
           </table>
           ${!isRefund && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
-          <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">
-            ${isRefund ? `🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${fmt(refundDue)} refund, then confirm below.` : `⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.`}
-          </div>
-          <table role="presentation" style="width:100%;margin-top:8px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
-            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">ONCE PAYMENT IS VERIFIED, TWO STEPS</td></tr>
-            <tr>
+          ${isRefund ? '' : `<div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.</div>`}
+          <table role="presentation" style="width:100%;margin-top:14px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
+            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">${isRefund ? 'STEPS TO FINISH' : 'ONCE PAYMENT IS VERIFIED, TWO STEPS'}</td></tr>
+            ${isRefund ? `<tr>
               <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
+              <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Send their ${fmt(refundDue)} refund.</strong></td>
+            </tr>` : ''}
+            <tr>
+              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${isRefund ? '2' : '1'}</span></td>
               <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</td>
             </tr>
             <tr>
-              <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">2</span></td>
+              <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${isRefund ? '3' : '2'}</span></td>
               <td style="padding:4px 14px 10px 0;font-size:13px;color:#92400e;"><strong>Send the guest's confirmation</strong> via their preferred method.</td>
             </tr>
           </table>
@@ -2166,22 +2198,24 @@ async function _notifyJesse(method) {
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
-      ${_isResend ? '' : methodName === 'Refund' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
-        🔄 No payment to verify - guest signed the updated (shorter) agreement. Send their ${refundDue ? fmt2(refundDue) : ''} refund, then send confirmation.
-      </div>` : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
+      ${_isResend || methodName === 'Refund' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
       </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
         ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
       ${_isResend ? '' : `
       <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;">
-        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">TWO STEPS TO FINISH</div>
-        <div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
+        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">${methodName === 'Refund' ? 'STEPS TO FINISH' : 'TWO STEPS TO FINISH'}</div>
+        ${methodName === 'Refund' ? `<div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
           <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">1</span>
+          <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send their ${refundDue ? fmt2(refundDue) : ''} refund.</strong></span>
+        </div>` : ''}
+        <div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
+          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${methodName === 'Refund' ? '2' : '1'}</span>
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</span>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.5rem;">
-          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">2</span>
+          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${methodName === 'Refund' ? '3' : '2'}</span>
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send the guest's confirmation</strong> using the buttons below.</span>
         </div>
       </div>
@@ -2434,7 +2468,8 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Room Occupancy Tax</span><strong>${fmtAmt2(taxOcc)}</strong></div>
     <div class="apr-si"><span>Sales Tax</span><strong>${fmtAmt2(taxSales)}</strong></div>
     ${priorCredit > 0 ? `
-    <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(fullTotal || (apTotal + priorCredit))}</strong></div>
+    ${stayCcFee > 0 ? `<div class="apr-si"><span>Credit Card Fee (3%)</span><strong>${fmtAmt2(stayCcFee)}</strong></div>` : ''}
+    <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(refundDue > 0.005 ? stayFullTotal + stayCcFee : (fullTotal || (apTotal + priorCredit)))}</strong></div>
     <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
     ${refundDue > 0.005
       ? `<div class="apr-si"><span style="color:#166534;font-weight:700;">Refund Due to You</span><strong style="color:#166534;">${fmtAmt2(refundDue)}</strong></div>`
