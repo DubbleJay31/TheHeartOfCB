@@ -1027,6 +1027,17 @@ function bookNowTop(wrapId) {
   else scrollToCalendar(wrapId);
 }
 
+// The site-wide header/mobile-bar "Book Now!" link always sent guests to the general Stay
+// overview (all 3 listings), even one who'd already picked dates on a specific listing's calendar
+// and just navigated elsewhere (e.g. back to Home) - losing their place instead of picking up
+// where they left off. Same bbListingPage() routing as bookNowTop() above: with dates already
+// selected, this takes them straight to the top of that specific listing (or house rules, or the
+// booking form, depending how far they'd already gotten) instead of the generic overview page.
+function bookNowNav() {
+  if (_selStart && _selEnd) bbListingPage();
+  else showPage('stay');
+}
+
 function clearDates() {
   _selStart = null; _selEnd = null;
   _attestedRules = false;
