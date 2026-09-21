@@ -2231,6 +2231,12 @@ async function _notifyJesse(method) {
     }
   }
 
+  // Same guest-facing link sendGuestConfirmation()/sendGuestConfirmationText() build fresh at
+  // click-time (see _signedBookUrl calls below) - computed once here too so Copy Link/Open Live
+  // Link can offer the identical URL Jesse would see in admin's own Guest Booking Link card,
+  // instead of a separately-derived one that could drift from it.
+  const _guestLiveUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
+
   const div = document.createElement('div');
   div.style.cssText = 'max-width:520px;margin:2.5rem auto;padding:0 1.25rem 3rem;font-family:Inter,sans-serif;';
   div.innerHTML = `
@@ -2284,10 +2290,37 @@ async function _notifyJesse(method) {
           style="width:100%;padding:1rem;background:${phone ? '#166534' : '#d1d5db'};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:${phone ? 'pointer' : 'not-allowed'};letter-spacing:.01em;">
           💬 Text Confirmation to ${_esc(guest.split(' ')[0])}${phone ? '' : ' (no phone on file)'}${contactPref === 'text' || contactPref === 'either' ? ' ★' : ''}
         </button>
+        <div style="display:flex;gap:.6rem;margin-top:.6rem;">
+          <button id="confirm-copy-link-btn" onclick="_copyConfirmLink()"
+            style="flex:1;padding:.7rem 1rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;">
+            📋 Copy Link
+          </button>
+          <a href="${_guestLiveUrl}" target="_blank"
+            style="flex:1;padding:.7rem 1rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box;">
+            🔗 Open Live Link
+          </a>
+        </div>
       </div>
       <div id="confirm-status" style="margin-top:1rem;font-size:.88rem;color:#6b7280;min-height:1.2rem;"></div>
     </div>`;
   document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+
+  // Same link Copy Link offers in admin's own Guest Booking Link card - lets Jesse grab it
+  // straight from this popup too instead of needing to go back to Quote Builder for it.
+  window._copyConfirmLink = async function() {
+    const btn = document.getElementById('confirm-copy-link-btn');
+    try {
+      await navigator.clipboard.writeText(_guestLiveUrl);
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 1800);
+      }
+    } catch (e) {
+      console.error('Copy failed:', e);
+      if (btn) btn.textContent = '⚠️ Copy failed';
+    }
+  };
 
   // Primary action for a not-yet-confirmed reservation (manual payment methods only - Stripe and
   // resends skip straight to the send buttons, see _alreadyConfirmed above). Confirming used to
