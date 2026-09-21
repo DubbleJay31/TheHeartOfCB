@@ -1019,7 +1019,9 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <div>
 
 
-      <!-- GENERATED LINK -->
+      <!-- GUEST BOOKING LINK - one section, was two ("Guest Booking Link" + "Send To Guest"
+           separately) until Jesse asked for them merged, in this specific order: Email, Text,
+           Copy Link, Open Live Link, Save Now. -->
       <div class="adm-card">
         <div class="adm-card-header"><h3>🔗 Guest Booking Link</h3></div>
         <div class="adm-card-body">
@@ -1027,29 +1029,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             <div class="link-label">Shareable Link</div>
             <div class="link-url empty" id="link-display">Fill in the form to generate a link…</div>
           </div>
-          <div class="link-actions">
-            <button class="link-btn copy" id="copy-btn" onclick="copyLink()" disabled>📋 Copy Link</button>
-            <button class="link-btn preview" id="preview-btn" onclick="previewLink()" disabled>🔗 Open Live Link</button>
-          </div>
-          <!-- One save control, same for a brand-new quote or an edit to an existing one - it used
-               to only exist inside the editing badge, so a new quote being built from scratch had
-               no visible way to just save without also copying/sending/previewing something. Every
-               action below already saves automatically (_getShareableUrl is the shared choke point
-               for all of them) - this button and note exist to make that fact visible, not to add
-               a new requirement. -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
-            <button type="button" onclick="_getShareableUrl()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Now</button>
-            <span id="save-changes-status" style="font-size:.75rem;color:#92400e;"></span>
-          </div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:.45rem;">Copy, Preview, and everything under Send To Guest below all save automatically first - Save Now just saves without copying or sending anything.</div>
-        </div>
-      </div>
-
-      <!-- SEND OPTIONS -->
-      <div class="adm-card">
-        <div class="adm-card-header"><h3>📤 Send To Guest</h3></div>
-        <div class="adm-card-body">
-          <div class="send-opts">
+          <div class="send-opts" style="margin-top:.7rem;">
             <a class="send-opt" id="send-email" href="#" onclick="return sendEmail()">
               <div class="so-icon">✉️</div>
               <div>
@@ -1065,6 +1045,21 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
               </div>
             </a>
           </div>
+          <div class="link-actions" style="margin-top:.7rem;">
+            <button class="link-btn copy" id="copy-btn" onclick="copyLink()" disabled>📋 Copy Link</button>
+            <button class="link-btn preview" id="preview-btn" onclick="previewLink()" disabled>🔗 Open Live Link</button>
+          </div>
+          <!-- One save control, same for a brand-new quote or an edit to an existing one - it used
+               to only exist inside the editing badge, so a new quote being built from scratch had
+               no visible way to just save without also copying/sending/previewing something. Every
+               action above already saves automatically (_getShareableUrl is the shared choke point
+               for all of them) - this button and note exist to make that fact visible, not to add
+               a new requirement. -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
+            <button type="button" onclick="_getShareableUrl()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Now</button>
+            <span id="save-changes-status" style="font-size:.75rem;color:#92400e;"></span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.45rem;">Email, Text, Copy Link, and Open Live Link above all save automatically first - Save Now just saves without sending or copying anything.</div>
         </div>
       </div>
 
