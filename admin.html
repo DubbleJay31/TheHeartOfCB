@@ -2447,7 +2447,9 @@ async function sendEmailFromModal() {
     });
     if (!r.ok) throw new Error(await r.text());
     btn.textContent = '✅ Sent!'; btn.style.background = '#1a5c2b';
-    setTimeout(() => closeEmailModal(), 1800);
+    // Sending is the end of this workflow, same as Save Now - close out back to the list instead
+    // of leaving the guest booking link screen open with nothing left to do on it.
+    setTimeout(() => { closeEmailModal(); switchAdmTab('confirmed'); }, 1800);
   } catch(e) {
     console.error(e);
     btn.textContent = '⚠️ Failed - try Copy or Gmail';
