@@ -1452,9 +1452,15 @@ function chooseCash() {
       cancelTextEl.innerHTML = `Cancel by <strong>${cd.fullBy}</strong>: full refund. ` +
         `Cancel <strong>${cd.halfStart}&ndash;${cd.halfEnd}</strong>: 50% refund. ` +
         `<strong>${cd.ciFormatted} (check-in day): no cancellations &mdash; no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}</strong> ` +
-        `Only exceptions: Jesse&rsquo;s written approval or Airbnb&rsquo;s Major Disruptive Events Policy. Personal reasons and weather at your origin are not covered.`;
+        `Only exceptions: Jesse&rsquo;s written approval or Airbnb&rsquo;s Major Disruptive Events Policy. Personal reasons and weather at your origin are not covered.` +
+        // A guest paying by cash now but carrying priorCredit from an earlier card/PayPal payment
+        // (a Change Reservation that switched their method) still has a non-refundable fee baked
+        // into that credit - the main agreement checklist already says so unconditionally; this
+        // condensed cash-specific summary only needs to when it's actually relevant.
+        (priorCredit > 0 ? ` Any credit card or PayPal processing fee already paid on this reservation is non-refundable.` : '');
     } else {
-      cancelTextEl.textContent = `5+ days: full refund. 1–4 days: 50% refund. Same day: not accepted - no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}`;
+      cancelTextEl.textContent = `5+ days: full refund. 1–4 days: 50% refund. Same day: not accepted - no refund.${cashDep > 0 ? ' Cash guests: deposit is non-refundable and you owe the remaining unpaid balance.' : ''}` +
+        (priorCredit > 0 ? ` Any credit card or PayPal processing fee already paid on this reservation is non-refundable.` : '');
     }
   }
   depSection.style.display = '';
@@ -1499,6 +1505,10 @@ async function handleCashConfirm() {
 
 // ── CONFIRM UPDATED RESERVATION (shortened stay, no payment - refund owed instead) ──
 async function confirmRefundReservation() {
+  // Every other payment path (handleCashConfirm, handlePayClick, copyZelleNum) guards on
+  // _agreementSent before doing anything - this one didn't, so calling it straight from devtools
+  // (no signature, no agreement) still fired off a convincing "refund owed" email to Jesse.
+  if (!_agreementSent) return;
   const btn = document.getElementById('confirm-refund-btn');
   if (!btn || btn.disabled) return;
   btn.disabled = true; btn.textContent = '⏳ Confirming - notifying Jesse…';
@@ -1912,7 +1922,7 @@ async function _notifyGuest(method) {
           <strong style="font-size:16px;">📋 Booking Request Received</strong>
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
-          <p style="margin:0 0 12px;font-size:14px;">Hi ${firstName || guest},</p>
+          <p style="margin:0 0 12px;font-size:14px;">Hi ${_esc(firstName || guest)},</p>
           <p style="margin:0 0 16px;font-size:14px;">Your booking request has been received! Jesse is reviewing it and will send you an official confirmation shortly.</p>
           <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
             <tr><td style="padding:5px 0;color:#666;width:120px;">Property</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${prop}</td></tr>
@@ -1952,9 +1962,9 @@ async function _notifyJesse(method) {
         </div>
         <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <tr><td style="padding:5px 0;color:#666;width:120px;">Guest</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${guest}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Email</td><td style="padding:5px 0;">${email || '-'}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Phone</td><td style="padding:5px 0;">${phone || '-'}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;width:120px;">Guest</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${_esc(guest)}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Email</td><td style="padding:5px 0;">${_esc(email) || '-'}</td></tr>
+            <tr><td style="padding:5px 0;color:#666;">Phone</td><td style="padding:5px 0;">${_esc(phone) || '-'}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Property</td><td style="padding:5px 0;font-weight:600;">${prop}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
             <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
@@ -2387,7 +2397,7 @@ async function _notifyJesse(method) {
         `Only three exceptions: (1) Written approval from Jesse, (2) Airbnb's Major Disruptive Events Policy is officially activated for your dates and location, or (3) Jesse successfully re-books your dates - confirmed in writing by Jesse. ` +
         `Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
     } else {
-      cancelEl.innerHTML = `<strong>5+ days before check-in:</strong> Full refund. <strong>1–4 days:</strong> 50% refund. <strong>Same day:</strong> Not accepted - no refund. Any credit card or PayPal processing fee already paid is non-refundable.`;
+      cancelEl.innerHTML = `<strong>5+ days before check-in:</strong> Full refund. <strong>1–4 days:</strong> 50% refund. <strong>Same day:</strong> Not accepted - no refund. Any credit card or PayPal processing fee already paid is non-refundable, regardless of which refund tier applies.`;
     }
   }
 
