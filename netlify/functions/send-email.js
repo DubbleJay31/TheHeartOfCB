@@ -7,6 +7,16 @@ const ALLOWED_ORIGINS = [
   'https://www.heartofcarolinabeach.com'
 ];
 
+// Best-effort in-process rate limit - resets whenever Netlify recycles this function's
+// container, and doesn't coordinate across multiple concurrent containers, so it's a real but
+// partial mitigation, not a guarantee (a fully robust limit needs external state, e.g. a
+// Supabase-backed counter - not built yet, flagged as a possible follow-up). Still meaningfully
+// raises the bar against a naive abuse script hammering this endpoint in a burst, which is the
+// realistic threat for a small single-host site, at zero infrastructure cost.
+const _sendTimestamps = [];
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT_MAX = 30;
+
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -24,6 +34,13 @@ exports.handler = async function(event) {
   if (!ALLOWED_ORIGINS.includes(origin)) {
     return { statusCode: 403, body: JSON.stringify({ message: 'Origin not allowed' }) };
   }
+
+  const now = Date.now();
+  while (_sendTimestamps.length && now - _sendTimestamps[0] > RATE_LIMIT_WINDOW_MS) _sendTimestamps.shift();
+  if (_sendTimestamps.length >= RATE_LIMIT_MAX) {
+    return { statusCode: 429, body: JSON.stringify({ message: 'Too many emails sent recently - try again shortly.' }) };
+  }
+  _sendTimestamps.push(now);
 
   const RESEND_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_KEY) {
