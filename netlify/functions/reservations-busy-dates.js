@@ -17,17 +17,27 @@ exports.handler = async function(event) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing prop' }) };
   }
   try {
+    // Also includes a change-pending row (status reset to quoted/signed by an in-progress Change
+    // Reservation edit on what's still a real, already-paying guest - same signal
+    // renderConfirmedPanel's isChangePending uses in admin.html) - status=eq.confirmed alone
+    // let an already-booked guest's dates show available to a brand-new visitor for as long as
+    // their edit sat unresolved. payment_method (never touched by the edit itself) is still the
+    // only field that tells the two apart; check_in/check_out are the only fields ever returned.
     const r = await sbReservations(
-      `?prop=eq.${encodeURIComponent(prop)}&status=eq.confirmed&select=check_in,check_out`
+      `?prop=eq.${encodeURIComponent(prop)}&select=status,payment_method,check_in,check_out`
     );
     if (!r.ok) {
       return { statusCode: 500, body: JSON.stringify({ message: await r.text() }) };
     }
     const rows = await r.json();
+    const busy = rows.filter(x =>
+      x.check_in && x.check_out &&
+      (x.status === 'confirmed' || ((x.status === 'quoted' || x.status === 'signed') && x.payment_method))
+    ).map(x => ({ check_in: x.check_in, check_out: x.check_out }));
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' },
-      body: JSON.stringify(rows.filter(x => x.check_in && x.check_out))
+      body: JSON.stringify(busy)
     };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ message: String(e) }) };

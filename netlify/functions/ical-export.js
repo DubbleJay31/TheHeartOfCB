@@ -20,8 +20,17 @@ exports.handler = async function(event) {
   }
 
   try {
-    const r = await sbReservations(`?prop=eq.${encodeURIComponent(prop)}&status=eq.confirmed&select=code,check_in,check_out`);
-    const rows = r.ok ? await r.json() : [];
+    // Also includes a change-pending row (status reset to quoted/signed by an in-progress Change
+    // Reservation edit on what's still a real, already-paying guest) - status=eq.confirmed alone
+    // would drop those dates from Airbnb's feed for as long as the edit sits unresolved, risking
+    // Airbnb releasing them to someone else during that window. Same signal
+    // renderConfirmedPanel's isChangePending uses: payment_method survives the edit even though
+    // status doesn't.
+    const r = await sbReservations(`?prop=eq.${encodeURIComponent(prop)}&select=code,status,payment_method,check_in,check_out`);
+    const allRows = r.ok ? await r.json() : [];
+    const rows = allRows.filter(row =>
+      row.status === 'confirmed' || ((row.status === 'quoted' || row.status === 'signed') && row.payment_method)
+    );
 
     // All-day events use bare YYYYMMDD (VALUE=DATE, no time/timezone) - matches the format
     // Airbnb's own exported feeds use, and what _parseICS() in app.js already expects when
