@@ -3037,7 +3037,12 @@ function openReservationDetail(code) {
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions">
         ${confirmUrl ? `
-        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}&resend=1')">↻ Resend Confirmation</button>` : ''}
+        <!-- This modal only ever opens for a confirmed/cancelled reservation, but "confirmed" and
+             "someone actually got the confirmation" aren't the same thing - a reservation confirmed
+             via the list's quick button has status='confirmed' with nobody notified yet.
+             r.confirmation_sent_at (set only once the full Email/Text confirmation actually goes
+             out) is what tells a genuine resend apart from a first send that just hasn't happened. -->
+        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✓ Confirm Reservation'}</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
         <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>

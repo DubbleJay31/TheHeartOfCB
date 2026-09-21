@@ -2119,7 +2119,13 @@ async function _notifyJesse(method) {
       + (methodName ? '&method=' + encodeURIComponent(methodName) : '');
   }
 
-  async function _confirmReservation() {
+  // markSent - true only from sendGuestConfirmation()/sendGuestConfirmationText(), which are the
+  // only two calls that actually deliver the full confirmation to the guest.
+  // confirmReservationOnly() calls this same function to flip the DB status without sending
+  // anything - without this flag, admin.html's detail-modal button had no way to tell "confirmed,
+  // and the guest was actually notified" from "confirmed, but nobody's told them yet" apart from
+  // status alone, so it said "Resend Confirmation" even when nothing had ever been sent.
+  async function _confirmReservation(markSent) {
     try {
       const r = await fetch('/.netlify/functions/reservations-confirm', {
         method: 'POST',
@@ -2134,7 +2140,8 @@ async function _notifyJesse(method) {
           signed_ip: sigIp,
           tok: sigTok,
           contact_pref: contactPref || undefined,
-          payment_method: methodName || undefined
+          payment_method: methodName || undefined,
+          mark_sent: !!markSent
         })
       });
       const j = await r.json().catch(() => ({}));
@@ -2249,7 +2256,7 @@ async function _notifyJesse(method) {
       btn.textContent = '✅ Confirmation Sent!';
       btn.style.background = '#16a34a'; btn.style.opacity = '';
 
-      const resv = await _confirmReservation();
+      const resv = await _confirmReservation(true);
       if (resv.ok) {
         const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
         if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}${note}</span>`;
@@ -2277,7 +2284,7 @@ async function _notifyJesse(method) {
       // backgrounds this tab immediately, and a backgrounded tab's in-flight fetch can get
       // silently suspended/dropped (iOS Safari in particular) before it ever completes. Doing the
       // database write first means it's done by the time anything could interrupt the page.
-      const resv = await _confirmReservation();
+      const resv = await _confirmReservation(true);
 
       const bookUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
       const firstName = guest.split(' ')[0];

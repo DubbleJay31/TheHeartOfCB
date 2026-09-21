@@ -24,13 +24,28 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { code, guest, email, check_in, check_out, total, rate, tax_occ, tax_sales, signed_ip, host_notes, contact_pref, payment_method } = body;
+  const { code, guest, email, check_in, check_out, total, rate, tax_occ, tax_sales, signed_ip, host_notes, contact_pref, payment_method, mark_sent } = body;
   if (!code || !guest || !check_in || !check_out) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing code, guest, check_in, or check_out' }) };
   }
 
+  // Only ever set once - marks that the FULL confirmation (door code, house rules, etc. - what
+  // sendGuestConfirmation()/sendGuestConfirmationText() actually deliver) has gone out at least
+  // once, as distinct from the reservation merely being status='confirmed' (which can happen with
+  // nobody notified yet, e.g. admin's quick-confirm list button). Lets admin.html's detail-modal
+  // button say "Resend" only when something was truly already sent, not just whenever status
+  // happens to be confirmed.
+  async function _markSentIfNeeded(row) {
+    if (!mark_sent || row.confirmation_sent_at) return;
+    await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ confirmation_sent_at: new Date().toISOString() })
+    }).catch(e => console.error('Failed to mark confirmation_sent_at:', e));
+  }
+
   try {
-    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out,rate,tax_occ,tax_sales,total,credit`);
+    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out,rate,tax_occ,tax_sales,total,credit,confirmation_sent_at`);
     const existing = existingResp.ok ? await existingResp.json() : [];
 
     // Already confirmed, and the caller already knows this exact reservation's guest/dates (not
@@ -41,6 +56,7 @@ exports.handler = async function(event) {
     // that was already saved.
     if (existing.length && existing[0].status === 'confirmed'
         && existing[0].guest === guest && existing[0].check_in === check_in && existing[0].check_out === check_out) {
+      await _markSentIfNeeded(existing[0]);
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
 
@@ -55,6 +71,7 @@ exports.handler = async function(event) {
       return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
     }
     if (existing[0].status === 'confirmed') {
+      await _markSentIfNeeded(existing[0]);
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
     // A valid `tok` only proves identity/dates match - it's handed to the guest's own browser at
@@ -104,6 +121,9 @@ exports.handler = async function(event) {
     // or later edit, not just its first (previously derived straight from `total`/`!r.credit`,
     // which broke the moment a second edit's total no longer matched what was actually paid).
     row.last_paid_total = row.total;
+    // This branch only ever runs on a signed->confirmed transition - the very first confirm this
+    // reservation has ever had, so confirmation_sent_at can't already be set here.
+    if (mark_sent) row.confirmation_sent_at = new Date().toISOString();
     if (host_notes) row.host_notes = host_notes;
     if (payment_method) row.payment_method = payment_method;
 
