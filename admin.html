@@ -899,7 +899,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
               <label>Already Paid / Credit <span style="font-weight:400;text-transform:none;letter-spacing:0;">- optional</span></label>
               <div class="field-prefix">
                 <span>$</span>
-                <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="generate()" />
+                <input type="number" id="f-credit" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()" />
               </div>
               <span class="field-hint">For a new contract replacing an old one - the contract still shows the full stay total, this amount is credited toward it, and the guest only owes the difference. Only for money already paid electronically (Venmo/Zelle/card/etc). Any additional cash deposit still goes in the Deposit to Hold field below, not here.</span>
               <!-- Only shown when editing a confirmed reservation that was paid by card/PayPal -
@@ -1632,10 +1632,17 @@ function _checkDateConflict() {
     // Bail if the form moved on while we were debouncing.
     if (prop !== _prop || ci !== document.getElementById('f-ci').value || co !== document.getElementById('f-co').value) return;
     try {
-      const [icalRanges, reservations] = await Promise.all([
+      const [icalRanges, allReservations] = await Promise.all([
         _fetchAdmIcal(prop),
-        fetch('/.netlify/functions/reservations-list?status=confirmed', { headers: _adminAuthHeader() }).then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch('/.netlify/functions/reservations-list', { headers: _adminAuthHeader() }).then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
+      // status=confirmed alone used to miss a change-pending reservation (renderConfirmedPanel's
+      // isChangePending - status reset to quoted/signed by an in-progress Change Reservation edit
+      // on what's still a real, already-paying guest) - meaning building a brand-new quote for a
+      // different guest over those same dates showed no warning at all.
+      const reservations = (allReservations || []).filter(r =>
+        r.status === 'confirmed' || ((r.status === 'quoted' || r.status === 'signed') && r.payment_method)
+      );
       const start = new Date(ci + 'T12:00:00');
       const end   = new Date(co + 'T12:00:00');
       // _fetchAdmIcal builds its ranges at local midnight, not noon - comparing noon against
@@ -1651,7 +1658,7 @@ function _checkDateConflict() {
         start < new Date(r.check_out + 'T12:00:00') && end > new Date(r.check_in + 'T12:00:00')
       );
       if (conflictingRes) {
-        warnEl.textContent = `⚠️ These dates overlap an existing confirmed reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) - double check before sending this quote.`;
+        warnEl.textContent = `⚠️ These dates overlap an existing reservation for ${conflictingRes.guest} (${PROPS[prop]?.short || prop}) - double check before sending this quote.`;
         warnEl.style.display = 'block';
       } else if (overlapsIcal) {
         warnEl.textContent = `⚠️ These dates overlap a blocked date on your Airbnb calendar for ${PROPS[prop]?.short || prop} - double check before sending this quote.`;
@@ -2244,7 +2251,7 @@ function sendEmail() {
         ${ccFee > 0 ? `<tr><td colspan="2" style="padding:2px 0 8px;font-size:11px;color:#999;">+ 3% if paying by credit card, + 3.5% via PayPal - free with Venmo, Cash App, or Zelle</td></tr>` : ''}`;
 
   const noteRow = note ? `
-    <tr><td colspan="2" style="padding:12px 0 0;font-style:italic;color:#555;font-size:14px;border-top:1px solid #e8e0d0;">"${note}"</td></tr>` : '';
+    <tr><td colspan="2" style="padding:12px 0 0;font-style:italic;color:#555;font-size:14px;border-top:1px solid #e8e0d0;">"${_esc(note)}"</td></tr>` : '';
 
   const dueRow = due ? `
     <tr>
@@ -2931,10 +2938,20 @@ function openReservationDetail(code) {
   if (r.payment_method === 'Cash' && r.url) {
     try { _cashDepositAmt = parseFloat(new URL(r.url).searchParams.get('cdep')) || 0; } catch { /* malformed saved url */ }
   }
-  // > 0.005 (half a cent), not < 0 - guards the same floating-point-residue case as the live
-  // quote-builder breakdown: a near-exact match can leave a few-thousandths-of-a-cent difference
-  // that would otherwise render as a stray "Refund Owed To Guest $0.00" instead of Amount Paid.
-  const _refundOwed = r.credit && (r.credit - _noFeeTotal(r)) > 0.005 ? (r.credit - _noFeeTotal(r)) : 0;
+  // Reads the already-resolved figure from the saved link's own query string (refund_due, set by
+  // generate() at save time) rather than recomputing from r.credit alone - recomputing here has no
+  // way to know whether "Also refund the card fee" was checked when this was saved (that checkbox
+  // state was never persisted anywhere else), so it would silently show the guest less than what
+  // generate()'s own math - and whatever Jesse actually told them - already promised. Same recovery
+  // pattern as cdep just above. Falls back to the plain recompute for a reservation saved before
+  // refund_due existed, or a malformed/missing url.
+  let _refundOwed = 0;
+  if (r.url) {
+    try { _refundOwed = parseFloat(new URL(r.url).searchParams.get('refund_due')) || 0; } catch { /* malformed saved url */ }
+  }
+  if (_refundOwed <= 0.005) {
+    _refundOwed = r.credit && (r.credit - _noFeeTotal(r)) > 0.005 ? (r.credit - _noFeeTotal(r)) : 0;
+  }
   // Jesse wants to see the TRUE total including the card/PayPal fee right in the main total row -
   // not the amount that actually lands in his account (that's a separate, deliberate deduction),
   // but what the guest was actually charged. Only applies to the plain (no-credit) Total line -
@@ -3033,7 +3050,14 @@ async function confirmFromQuote(code, btn) {
     tax_occ: q.tax_occ != null ? parseFloat(q.tax_occ) || 0 : null,
     tax_sales: q.tax_sales != null ? parseFloat(q.tax_sales) || 0 : null,
     host_notes: q.host_notes || '',
-    contact_pref: q.contact_pref || undefined
+    contact_pref: q.contact_pref || undefined,
+    // Without SOME payment_method, this reservation would have none set at all (this button skips
+    // the guest-facing confirm screen where a method normally gets recorded) - and payment_method
+    // is what renderConfirmedPanel's isChangePending check uses to tell "already confirmed once"
+    // from "brand-new lead" after a later Change Reservation edit resets status back to quoted.
+    // Without this, that later edit would misroute to the Decline flow's "sorry, can't accommodate
+    // this request" copy instead of Cancel, for a guest who was actually already confirmed.
+    payment_method: q.payment_method || 'Manual'
   };
   try {
     const r = await fetch('/.netlify/functions/reservations-confirm', {
