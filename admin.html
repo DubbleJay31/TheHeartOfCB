@@ -1467,15 +1467,27 @@ function _loadIntoForm(code) {
   toggleCashOptions();
   const expEl = document.getElementById('f-exp');
   if (expEl) expEl.value = r.exp || _defaultExpDate();
+  // A reservation that's already been paid and confirmed once needs whatever was actually
+  // collected credited toward the new terms - otherwise Change Reservation quietly builds a
+  // fresh invoice for the new (possibly lower) total as if nothing had been paid yet, instead of
+  // crediting what's already in hand and refunding the difference if the new total is less. Cash
+  // is excluded - the credit field is only for money already collected electronically, per its
+  // own field hint; a cash deposit belongs in Deposit to Hold instead. Only kicks in when this
+  // row has no credit of its own yet - a reservation already on its second edit keeps whatever
+  // credit that earlier edit established rather than guessing again from `total`.
+  const _autoPaid = (!r.credit && r.status === 'confirmed' && r.payment_method && r.payment_method !== 'Cash')
+    ? (r.payment_method === 'stripe' ? (parseFloat(r.total) || 0) : _noFeeTotal(r))
+    : 0;
   const creditEl = document.getElementById('f-credit');
-  if (creditEl) creditEl.value = r.credit || '';
+  if (creditEl) creditEl.value = r.credit || (_autoPaid > 0 ? _autoPaid.toFixed(2) : '');
 
   const badge = document.getElementById('editing-badge');
   if (badge) {
     badge.style.display = 'flex';
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
     document.getElementById('editing-badge-text').textContent =
-      `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`;
+      `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`
+      + (_autoPaid > 0 ? ` Already-paid $${_autoPaid.toFixed(2)} auto-credited below - clear it if that's not right.` : '');
   }
 
   const inqBox = document.getElementById('inquiry-details-box');
