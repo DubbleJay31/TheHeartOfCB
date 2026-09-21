@@ -787,10 +787,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
           <span id="editing-badge-text">✏️ Editing an existing reservation.</span>
           <button type="button" onclick="_clearEditing()" style="background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:.2rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer;flex-shrink:0;">✕ New Instead</button>
         </div>
-        <div style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem;">
-          <button type="button" onclick="_getShareableUrl()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Changes</button>
-          <span id="save-changes-status" style="font-size:.75rem;color:#92400e;"></span>
-        </div>
       </div>
 
       <!-- INQUIRY DETAILS (guests/pets/message from the public inquiry form) - the only other
@@ -1015,6 +1011,17 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
             <button class="link-btn copy" id="copy-btn" onclick="copyLink()" disabled>📋 Copy Link</button>
             <button class="link-btn preview" id="preview-btn" onclick="previewLink()" disabled>👁 Preview</button>
           </div>
+          <!-- One save control, same for a brand-new quote or an edit to an existing one - it used
+               to only exist inside the editing badge, so a new quote being built from scratch had
+               no visible way to just save without also copying/sending/previewing something. Every
+               action below already saves automatically (_getShareableUrl is the shared choke point
+               for all of them) - this button and note exist to make that fact visible, not to add
+               a new requirement. -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
+            <button type="button" onclick="_getShareableUrl()" id="save-changes-btn" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;">💾 Save Now</button>
+            <span id="save-changes-status" style="font-size:.75rem;color:#92400e;"></span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.45rem;">Copy, Preview, and everything under Send To Guest below all save automatically first - Save Now just saves without copying or sending anything.</div>
         </div>
       </div>
 
