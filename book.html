@@ -2099,19 +2099,21 @@ async function _notifyJesse(method) {
             ${contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="padding:5px 0;font-weight:700;">${contactPref === 'text' ? '💬 Text' : contactPref === 'email' ? '📧 Email' : '📧💬 Both'}</td></tr>` : ''}
           </table>
           ${!isRefund && !isEven && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
-          ${isRefund || isEven ? '' : `<div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#92400e;">⏳ Guest says payment sent. Verify receipt in ${methodLabel}, then send confirmation.</div>`}
           <table role="presentation" style="width:100%;margin-top:14px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
-            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">${isRefund || isEven ? 'STEPS TO FINISH' : 'ONCE PAYMENT IS VERIFIED, TWO STEPS'}</td></tr>
+            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">STEPS TO FINISH</td></tr>
             ${isRefund ? `<tr>
               <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
               <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Send their ${fmt(refundDue)} refund.</strong></td>
+            </tr>` : (!isEven && method) ? `<tr>
+              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
+              <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Verify receipt in ${methodLabel}.</strong></td>
             </tr>` : ''}
             <tr>
-              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${isRefund ? '2' : '1'}</span></td>
+              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${(isRefund || (!isEven && method)) ? '2' : '1'}</span></td>
               <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</td>
             </tr>
             <tr>
-              <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${isRefund ? '3' : '2'}</span></td>
+              <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${(isRefund || (!isEven && method)) ? '3' : '2'}</span></td>
               <td style="padding:4px 14px 10px 0;font-size:13px;color:#92400e;"><strong>Send the guest's confirmation</strong> via their preferred method.</td>
             </tr>
           </table>
@@ -2247,28 +2249,33 @@ async function _notifyJesse(method) {
       ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
       ${_isResend || methodName === 'Refund' || methodName === 'Even' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
-      </div>` : methodName === 'Manual' ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
-        ⏳ Verify payment was actually received before confirming, then send confirmation.
-      </div>` : methodName ? `<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#92400e;line-height:1.6;">
-        ⏳ Guest says payment sent. Verify receipt in <strong>${methodName}</strong>, then send confirmation.
       </div>` : ''}
-      ${_isResend ? '' : `
+      ${_isResend ? '' : (() => {
+        // Verifying a claimed payment used to sit in a separate banner above this box, disconnected
+        // from the numbered steps - folded into the list itself as step 1 (same pattern already
+        // used for "Send their refund"), so it isn't something that can get skipped past.
+        const needsVerify = methodName && methodName !== 'stripe' && methodName !== 'Refund' && methodName !== 'Even';
+        const _verifyNames = { venmo: 'Venmo', cashapp: 'Cash App', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
+        const step1 = methodName === 'Refund' ? `Send their ${refundDue ? fmt2(refundDue) : ''} refund.`
+          : needsVerify ? (methodName === 'Manual' ? 'Verify payment was actually received.' : `Verify receipt in ${_verifyNames[methodName] || methodName}.`)
+          : null;
+        const offset = step1 ? 1 : 0;
+        return `
       <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;">
-        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">${methodName === 'Refund' || methodName === 'Even' ? 'STEPS TO FINISH' : 'TWO STEPS TO FINISH'}</div>
-        ${methodName === 'Refund' ? `<div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
+        <div style="font-size:.72rem;font-weight:800;color:#92400e;letter-spacing:.04em;margin-bottom:.5rem;">STEPS TO FINISH</div>
+        ${step1 ? `<div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
           <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">1</span>
-          <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send their ${refundDue ? fmt2(refundDue) : ''} refund.</strong></span>
+          <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>${step1}</strong></span>
         </div>` : ''}
         <div style="display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;">
-          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${methodName === 'Refund' ? '2' : '1'}</span>
+          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${1 + offset}</span>
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</span>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.5rem;">
-          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${methodName === 'Refund' ? '3' : '2'}</span>
+          <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#92400e;color:#fff;font-weight:800;font-size:.72rem;border-radius:50%;width:20px;height:20px;">${2 + offset}</span>
           <span style="font-size:.85rem;color:#92400e;line-height:1.5;"><strong>Send the guest's confirmation</strong> using the buttons below.</span>
         </div>
-      </div>
-      `}
+      </div>`; })()}
       ${sigName ? `<div style="background:#f9f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:.65rem .9rem;margin-bottom:1.5rem;text-align:left;font-size:.82rem;color:#6b7280;">Signed by <strong style="color:#0f1e3d;">${_esc(sigName)}</strong></div>` : ''}
       ${_alreadyConfirmed ? '' : `
       <button id="confirm-resv-btn" onclick="confirmReservationOnly()"
