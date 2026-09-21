@@ -2242,6 +2242,11 @@ async function _notifyJesse(method) {
   if (!view) return;
   view.style.display = 'block';
   window.scrollTo({ top: 0 });
+  // The "Jesse has received your submission, pending verification" banner is only accurate
+  // before this page is reachable at all (a valid tok means it already IS verified) - this is
+  // the guest's actual receipt, so that banner never belongs above it.
+  const expiryBannerEl = document.getElementById('expiry-banner');
+  if (expiryBannerEl) expiryBannerEl.style.display = 'none';
 
   const sigName = decodeURIComponent(get('signame') || '');
   const sigTs   = get('ts') ? new Date(decodeURIComponent(get('ts'))).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }) : '';
@@ -2257,6 +2262,7 @@ async function _notifyJesse(method) {
   const apIsCash = apMethod === 'Cash';
   const apRecvNow = apMethod ? _receivedNowForMethod(apMethod) : 0;
   const apTotal = apIsCash ? cashTotal : (noFeeTotal > 0 ? noFeeTotal : total);
+  const apFee = !apIsCash && apRecvNow > apTotal ? apRecvNow - apTotal : 0;
   const sumEl = document.getElementById('apr-summary');
   if (sumEl) sumEl.innerHTML = `
     <div class="apr-si"><span>Guest</span><strong>${_esc(guest)}</strong></div>
@@ -2264,12 +2270,16 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Check-In</span><strong>${fmtDate(ciRaw)}</strong></div>
     <div class="apr-si"><span>Check-Out</span><strong>${fmtDate(coRaw)}</strong></div>
     <div class="apr-si"><span>Nights</span><strong>${nights}</strong></div>
+    <div class="apr-si"><span>Room Fare (${nights} night${nights !== 1 ? 's' : ''})</span><strong>${fmtAmt2(rate)}</strong></div>
+    <div class="apr-si"><span>Room Occupancy Tax</span><strong>${fmtAmt2(taxOcc)}</strong></div>
+    <div class="apr-si"><span>Sales Tax</span><strong>${fmtAmt2(taxSales)}</strong></div>
     ${priorCredit > 0 ? `
     <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(fullTotal || (apTotal + priorCredit))}</strong></div>
     <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
     <div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>
     ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
-    ${apRecvNow > 0 ? `<div class="apr-si"><span>Deposit Received</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
+    ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong></div>` : ''}
+    ${apRecvNow > 0 ? `<div class="apr-si"><span>${apIsCash ? 'Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)
   const cancelEl = document.getElementById('apr-cancel');
