@@ -1987,10 +1987,11 @@ async function _finalizeEmailPreviewLink() {
   return url;
 }
 // "Also refund the card fee" doesn't touch the Credit field itself - it only changes how much
-// extra rides on top of whatever refund is already due (see _refundFeeShare below). Just
-// recalculates everything downstream with the new checkbox state.
+// extra rides on top of whatever refund is already due (see _refundFeeShare below). calcTotal()
+// (not just generate()) so the on-screen breakdown panel - what Jesse is actually looking at -
+// recalculates too, not just the guest-facing link's numbers.
 function _onRefundFeeToggle() {
-  generate();
+  calcTotal();
 }
 
 // The fee-protection amount to add on top of a refund that's already due, if Jesse checks "Also
