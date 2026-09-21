@@ -2919,8 +2919,9 @@ function openReservationDetail(code) {
         ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}&resend=1')">↻ Resend Confirmation</button>` : ''}
         <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
-        <button class="conf-btn" onclick="_changeReservation('${r.code}')">✏️ Change Reservation</button>
+        <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
         ${isCancelled ? `
+        <button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
         ` : ''}
@@ -3060,6 +3061,32 @@ async function _confirmCancel() {
     console.error(e);
     alert('Cancel failed - check console.');
     btn.disabled = false; btn.textContent = 'Cancel Reservation';
+  }
+}
+
+// Undoes a cancellation - puts the row back to 'confirmed' with the same dates, price, and
+// signature already on file, since none of that ever actually changed just because it got
+// canceled. The "way to change status back" Jesse asked for alongside a warning on the actions
+// that DO require a fresh signature (see _changeReservation's wasCancelled check above it).
+async function reactivateReservation(code) {
+  if (!confirm('Reactivate this reservation? It goes back to Confirmed with the same dates, price, and signature already on file - no new signature needed.')) return;
+  try {
+    const r = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'confirmed' })
+    });
+    if (r.ok) {
+      _closeReservationDetail();
+      await loadReservations();
+      openReservationDetail(code);
+    } else {
+      alert('Reactivate failed - check console.');
+      console.error(await r.text());
+    }
+  } catch(e) {
+    alert('Network error.');
+    console.error(e);
   }
 }
 
@@ -3535,7 +3562,13 @@ function sendCancellationText(code, message) {
 // Editing a confirmed reservation is now just loading it into the form by its code - saving
 // updates the SAME row in place (reservations-upsert.js), so there's never a window where two
 // rows exist for one booking. No more create-new-then-delete-old dance.
-function _changeReservation(code) {
+// wasCancelled warns before opening the form at all - editing and saving new terms on an already-
+// cancelled reservation reactivates it (status -> 'quoted') and requires a fresh guest signature,
+// which isn't obvious just from clicking an "edit" button. reservations-upsert.js still snapshots
+// prior_terms first either way, so Keep Original Terms is there as a safety net if this was a
+// mistake - but better to say so up front than rely on catching it after the fact.
+function _changeReservation(code, wasCancelled) {
+  if (wasCancelled && !confirm('This reservation is cancelled. Saving new dates or price here will reactivate it and require the guest to sign a new agreement - just editing the note or resending the link is fine and won\'t reactivate anything. Continue to the edit form?')) return;
   _closeReservationDetail();
   _openInQuotesForm(code);
 }

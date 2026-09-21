@@ -26,6 +26,13 @@ exports.handler = async function(event) {
     patch.status = 'cancelled';
     patch.cancelled_at = new Date().toISOString();
   }
+  // Reactivating a cancelled reservation - admin-only (same as everything else here), so no
+  // guest-facing capability token can ever reach this. Puts it back exactly as it was (the terms
+  // and signature already on the row never changed just because it got cancelled).
+  if (body.status === 'confirmed') {
+    patch.status = 'confirmed';
+    patch.cancelled_at = null;
+  }
   if (!Object.keys(patch).length) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Nothing to update' }) };
   }

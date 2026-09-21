@@ -65,16 +65,21 @@ exports.handler = async function(event) {
         && Math.abs((parseFloat(c.rate) || 0) - (row.rate || 0)) < 0.01
         && Math.abs((parseFloat(c.tax_occ) || 0) - (row.tax_occ || 0)) < 0.01
         && Math.abs((parseFloat(c.tax_sales) || 0) - (row.tax_sales || 0)) < 0.01;
-      if ((c.status === 'confirmed' || c.status === 'signed') && sameTerms) {
+      // `cancelled` matters here too, same reasoning as confirmed/signed - a private-note tweak
+      // or a Copy Link on an already-cancelled reservation used to silently reactivate it (status
+      // unconditionally reset to 'quoted') just from editing something that has nothing to do with
+      // dates or price. Only a real term change should ever reactivate a cancelled row.
+      if ((c.status === 'confirmed' || c.status === 'signed' || c.status === 'cancelled') && sameTerms) {
         delete row.status;
         delete row.cancelled_at;
-      } else if ((c.status === 'confirmed' || c.status === 'signed') && !c.prior_terms) {
-        // Terms are genuinely changing on a reservation that was already confirmed/signed - stash
-        // everything needed to put it back exactly as it was if Jesse decides not to go through
-        // with the change after all (admin's "Keep Original Terms" button, reservations-revert.js).
-        // Skipped if a snapshot is already sitting there unresolved - that first snapshot is the
-        // true prior state; a second edit before the first is resolved must not overwrite it with
-        // an already-changed intermediate state.
+      } else if ((c.status === 'confirmed' || c.status === 'signed' || c.status === 'cancelled') && !c.prior_terms) {
+        // Terms are genuinely changing on a reservation that was already confirmed/signed/cancelled
+        // - stash everything needed to put it back exactly as it was if Jesse decides not to go
+        // through with the change after all (admin's "Keep Original Terms" button,
+        // reservations-revert.js restores whatever status this snapshot carries, cancelled
+        // included). Skipped if a snapshot is already sitting there unresolved - that first
+        // snapshot is the true prior state; a second edit before the first is resolved must not
+        // overwrite it with an already-changed intermediate state.
         const { prior_terms, ...snapshot } = c;
         row.prior_terms = snapshot;
       }
