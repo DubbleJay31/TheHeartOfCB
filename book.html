@@ -1068,7 +1068,7 @@ if (taxOcc)   addRow('Room Occupancy Tax (6%)', fmt(taxOcc));
 if (taxSales) addRow('Sales Tax (7%)',           fmt(taxSales));
 const divTr = document.createElement('tr'); divTr.className = 'pt-divider'; divTr.innerHTML = '<td colspan="2"></td>'; rows.appendChild(divTr);
 if (priorCredit > 0) {
-  if (stayCcFee > 0) addRow('Credit Card Fee (3%)', fmt(stayCcFee));
+  if (stayCcFee > 0) addRow('Credit Card Fee (3%)<br><span style="font-size:.68rem;font-weight:400;color:#9ca3af;">Non-refundable</span>', fmt(stayCcFee));
   addRow('Full Stay Total', fmt(stayFullTotal + stayCcFee));
   addRow('<span style="color:#166534;">Previous Payment Credit</span>', `<span style="color:#166534;">&minus;${fmt(priorCredit)}</span>`);
 }
@@ -1732,7 +1732,7 @@ async function _sendAgreementCopy(sigData) {
     ${ROW('Room Fare (' + sigData.nights + ' night' + (sigData.nights !== 1 ? 's' : '') + ')', fmt2(rate), '#f9f6f0')}
     ${ROW('Room Occupancy Tax', fmt2(taxOcc), '#f2ede3')}
     ${ROW('Sales Tax', fmt2(taxSales), '#f9f6f0')}
-    ${stayCcFee > 0 ? ROW('Credit Card Fee (3%)', fmt2(stayCcFee), '#f9f6f0') : ''}
+    ${stayCcFee > 0 ? ROW('Credit Card Fee (3%)<br><span style="font-size:11px;font-weight:400;color:#9ca3af;">Non-refundable</span>', fmt2(stayCcFee), '#f9f6f0') : ''}
     ${ROW(priorCredit > 0 ? 'Full Stay Total' : 'Total', fmt2(priorCredit > 0 ? stayFullTotal + stayCcFee : (fullTotal || (noFee + priorCredit))), '#f2ede3')}
     ${priorCredit > 0 ? ROW('Previous Payment Credit', '&minus;' + fmt2(priorCredit), '#f9f6f0') : ''}
     ${refundDue > 0
@@ -2468,7 +2468,7 @@ async function _notifyJesse(method) {
     <div class="apr-si"><span>Room Occupancy Tax</span><strong>${fmtAmt2(taxOcc)}</strong></div>
     <div class="apr-si"><span>Sales Tax</span><strong>${fmtAmt2(taxSales)}</strong></div>
     ${priorCredit > 0 ? `
-    ${stayCcFee > 0 ? `<div class="apr-si"><span>Credit Card Fee (3%)</span><strong>${fmtAmt2(stayCcFee)}</strong></div>` : ''}
+    ${stayCcFee > 0 ? `<div class="apr-si"><span>Credit Card Fee (3%)</span><strong>${fmtAmt2(stayCcFee)}</strong><div style="font-size:.62rem;text-transform:none;letter-spacing:normal;color:var(--muted);font-weight:400;margin-top:.1rem;">Non-refundable</div></div>` : ''}
     <div class="apr-si"><span>Full Stay Total</span><strong>${fmtAmt2(refundDue > 0.005 ? stayFullTotal + stayCcFee : (fullTotal || (apTotal + priorCredit)))}</strong></div>
     <div class="apr-si"><span>Previous Payment Credit</span><strong>&minus;${fmtAmt2(priorCredit)}</strong></div>
     ${refundDue > 0.005
