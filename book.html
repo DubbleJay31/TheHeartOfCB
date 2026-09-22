@@ -982,7 +982,15 @@ const stayFullTotal = fullTotal || (rate + taxOcc + taxSales);
 // page (no payment section, fee context still shown, a reminder that signing is what actually
 // finalizes the change).
 const isZeroBalance = priorCredit > 0 && refundDue <= 0.005 && Math.max(0, stayFullTotal - priorCredit) <= 0.005;
-const stayCcFee = (refundDue > 0.005 || isZeroBalance) ? stayFullTotal * CC_FEE_RATE : 0;
+// stayFullTotal * CC_FEE_RATE was only ever a stand-in for "the fee on whatever was actually
+// originally paid" - right by coincidence when the credit happens to equal this new stay's value,
+// wrong whenever it doesn't (e.g. a big original payment credited toward a smaller new stay).
+// admin.html passes the REAL fee through as `orig_fee` (from the reservation's actual
+// last_paid_total) whenever this edit is against a reservation that really paid something -
+// falls back to the old estimate only when that's not known (e.g. a credit typed in by hand on a
+// brand-new quote, with no prior real payment to reference).
+const origFee = parseFloat(get('orig_fee')) || 0;
+const stayCcFee = (refundDue > 0.005 || isZeroBalance) ? (origFee > 0 ? origFee : stayFullTotal * CC_FEE_RATE) : 0;
 const dueRaw  = get('due')     || '';
 // Set when Jesse checks "Override - no card option" in admin.html - lets him intentionally leave
 // card payment off a specific quote (e.g. cash/Venmo-only arrangement), now that Stripe would

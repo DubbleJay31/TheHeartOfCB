@@ -2210,6 +2210,15 @@ function generate() {
     p.set('full_total', preTax.toFixed(2));
   }
   if (refundDue > 0.005) p.set('refund_due', refundDue.toFixed(2));
+  // book.html shows a "Credit Card Fee - Non-refundable" line whenever a refund is owed (or the
+  // credit lands exactly on the new total), to explain why the numbers don't add up to a clean
+  // refund - it has no way to know what was actually originally paid, only this NEW quote's own
+  // figures, so without this it estimated 3% of the new stay's value instead of the real fee on
+  // the original payment. Wrong whenever the two don't happen to match. Jesse: "credit card fee
+  // needs to be 3% of the original payment amount." Passed through only when this edit is against
+  // a reservation with a real known prior payment (_origPaidGross/_origFeeAmt, from
+  // last_paid_total via _loadIntoForm) - book.html falls back to its own estimate otherwise.
+  if (_origPaidGross > 0) p.set('orig_fee', _origFeeAmt.toFixed(2));
   if (due)  p.set('due',  due);
   if (overrideCc) p.set('no_card', '1');
   if (cash) p.set('cash', '1');
@@ -2287,7 +2296,16 @@ function sendEmail() {
   // with nothing explaining why. Also shown when the credit lands exactly on preTax (zero balance,
   // zero refund) - same "nothing collected this time" situation, same reason the fee still applies.
   const isZeroBalance = credit > 0 && refundDue <= 0.005 && creditedBase <= 0.005;
-  const stayCcFee = (refundDue > 0.005 || isZeroBalance) ? preTax * CC_FEE : 0;
+  // 3% of the NEW stay's preTax was only ever a stand-in for "the fee on whatever was originally
+  // paid" - correct by coincidence when the credit happens to equal the new stay's value, wrong
+  // whenever it doesn't. Jesse: "credit card fee needs to be 3% of the original payment amount.
+  // they actulaly paid $12 because im not refunding in this scenario." _origPaidGross/_origFeeAmt
+  // (set by _loadIntoForm from the reservation's real last_paid_total) are the actual paid amount
+  // and actual fee - use those whenever this edit is against a reservation that really paid
+  // something, same source _refundFeeShare already trusts for the "also refund the fee" math.
+  // Falls back to the old preTax-based estimate only when there's no known original payment to
+  // reference (e.g. a credit typed in by hand on a brand-new quote).
+  const stayCcFee = (refundDue > 0.005 || isZeroBalance) ? (_origPaidGross > 0 ? _origFeeAmt : preTax * CC_FEE) : 0;
 
   // If cash is an option on this quote, lead with the cash price - a guest who's expecting a
   // cash deal shouldn't see a bigger card-inclusive number first. Other payment amounts still
