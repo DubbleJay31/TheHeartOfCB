@@ -2246,7 +2246,6 @@ async function _notifyJesse(method) {
       <div style="font-size:3rem;margin-bottom:.5rem;">📬</div>
       <h2 style="font-family:Playfair Display,Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.4rem;">Send Booking Confirmation</h2>
       <p style="color:#6b7280;font-size:.88rem;margin-bottom:1.5rem;">${_esc(guest)} &nbsp;·&nbsp; ${fmtDate(ciRaw)} → ${fmtDate(coRaw)} &nbsp;·&nbsp; ${nights} night${nights!==1?'s':''}</p>
-      ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
       ${_isResend || methodName === 'Refund' || methodName === 'Even' ? '' : methodName === 'stripe' ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
         💳 Paid by <strong>credit/debit card</strong> - Stripe already verified the charge and confirmed this reservation automatically. Nothing to verify, just send the confirmation.
       </div>` : ''}
@@ -2284,6 +2283,7 @@ async function _notifyJesse(method) {
       </button>
       `}
       <div id="send-confirm-buttons" style="${_alreadyConfirmed ? '' : 'display:none;'}">
+        ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
         <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
           <strong>Email sends the full confirmation to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
           Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.<br/><br/>
