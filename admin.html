@@ -2574,8 +2574,8 @@ function _openConfirmSendModal(confirmUrl) {
   modal.style.display = 'flex';
 }
 
-// ── SEND SMS ── shared modal, reused by the quote builder, Resend (quotes list), and
-// reservation cancellation - anywhere an email option exists, this gives a text alternative.
+// ── SEND SMS ── shared modal, reused by the quote builder and reservation cancellation -
+// anywhere an email option exists, this gives a text alternative.
 function _openSmsModal(msg, phone) {
   let modal = document.getElementById('sms-modal');
   if (!modal) {
@@ -2703,68 +2703,6 @@ async function _doSaveQuote() {
     if (statusEl) statusEl.textContent = '⚠️ Save failed';
   }
   return _editingCode;
-}
-
-async function resendQuote(q, btn) {
-  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
-  if (!q.email) { alert('No email on file for this guest - opening link instead.'); if (q.url) window.open(q.url, '_blank'); return; }
-  if (!q.url) { alert('No booking link saved for this quote.'); return; }
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
-  const propName = q.prop_label || PROPS[q.prop]?.name || q.prop || 'The Heart Of CB';
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
-  const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
-<div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-  <div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
-      </td></tr></table>
-    </td></tr></table>
-    <div style="height:10px;"></div>
-    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Your Booking Link</h1>
-  </div>
-  <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
-    <p>Hi ${_esc(q.guest)},</p>
-    <p>Here's your booking link for <strong>${propName}</strong>:</p>
-    <div style="background:#f8f6f0;border-radius:8px;padding:16px;margin:16px 0;font-size:.93rem;">
-      <div style="margin-bottom:7px;"><strong>Check-in:</strong> ${fmtD(q.check_in)}</div>
-      <div><strong>Check-out:</strong> ${fmtD(q.check_out)}</div>
-    </div>
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${q.url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View &amp; Complete Your Booking</a>
-    </div>
-    <p>Questions? Reach out anytime.</p>
-    <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
-    📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
-    <p style="font-size:11px;color:#999;">📥 Don't see this? Check spam/junk just in case.</p>
-  </div>
-</div></body></html>`;
-  try {
-    const r = await fetch('/.netlify/functions/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: [q.email], subject: `Your Booking Link - The Heart Of CB`, html })
-    });
-    if (r.ok) {
-      if (btn) { btn.textContent = '✅ Sent'; }
-      setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Resend'; } }, 2500);
-    } else {
-      throw new Error(await r.text());
-    }
-  } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Resend'; }
-    alert('Send failed - check console.');
-    console.error(e);
-  }
-}
-
-// Text version of Resend - same booking link, opened as a text message instead of an email.
-function resendQuoteViaText(q) {
-  if (!q) { alert('Could not find that quote - try refreshing.'); return; }
-  if (!q.url) { alert('No booking link saved for this quote.'); return; }
-  const firstName = (q.guest || '').split(' ')[0] || 'there';
-  const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. Here's your booking link - review, sign the agreement, and pay securely all in one place:\n\n${q.url}\n\nQuestions? Just reply or call me anytime.`;
-  _openSmsModal(msg, q.phone || '');
 }
 
 // ── CLOUD SYNC (JSONBin.io) ── proxied server-side via cloud-sync.js, admin-session gated.
@@ -3057,10 +2995,13 @@ function renderConfirmedPanel() {
 
   el.innerHTML = list.map(r => {
     const dates = r.check_in ? `${fmtD(r.check_in)} → ${fmtD(r.check_out)}` : 'No dates yet';
-    // Confirmed/cancelled open the manage-it modal; anything earlier in the pipeline opens the
-    // Quotes tab with the form pre-filled - that's where you actually work on a quote.
+    // Confirmed/cancelled open the manage-it modal; anything earlier in the pipeline opens a
+    // lightweight "send the link" popup instead of the full Quote Builder tab - Jesse: "I dont
+    // want to go back to quote builder. I only want that if i say change reservation. I just want
+    // the screen to send the link to pop up." The popup's own "Change Reservation" button is the
+    // one deliberate way into the real form.
     const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
-      ? `openReservationDetail('${r.code}')` : `_openInQuotesForm('${r.code}')`;
+      ? `openReservationDetail('${r.code}')` : `_openQuoteSendModal('${r.code}')`;
     // A 'quoted'/'signed' row can mean two very different things: a brand-new lead that's never
     // been confirmed, or an ALREADY-confirmed reservation mid-edit via Change Reservation, reset
     // to 'quoted' pending the guest's re-signature for the new terms - upsert resets status but
@@ -3123,10 +3064,85 @@ function renderConfirmedPanel() {
   }).join('');
 }
 
-// Jumps to the Quotes tab (the actual generate/edit tool) with this reservation loaded.
+// Jumps to the Quote Builder tab (the actual generate/edit tool) with this reservation loaded -
+// now only reached deliberately, via this popup's own "Change Reservation" button.
 function _openInQuotesForm(code) {
   switchAdmTab('booking');
   _loadIntoForm(code);
+}
+
+// ── SEND QUOTE LINK POPUP ── the default action for tapping an inquiry/quoted/signed row.
+// _loadIntoForm(code) still runs here - it's what builds _generatedUrl and everything
+// sendEmail()/sendSMS()/copyLink()/previewLink() below actually read - but switchAdmTab() is
+// deliberately NOT called, so the Quote Builder panel stays hidden (display:none, not removed
+// from the DOM - see switchAdmTab) and Jesse never leaves the Reservations list underneath this
+// popup. "Change Reservation" is the one explicit door back into the real form.
+function _openQuoteSendModal(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  _loadIntoForm(code);
+  let modal = document.getElementById('quote-send-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'quote-send-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
+        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
+          <span style="color:#b8882a;font-weight:700;letter-spacing:.04em;">🔗 SEND QUOTE LINK</span>
+          <button onclick="document.getElementById('quote-send-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:1.2rem 1.4rem;">
+          <div id="qsm-guest" style="font-size:.95rem;font-weight:700;color:#0f1e3d;margin-bottom:.2rem;"></div>
+          <div id="qsm-detail" style="font-size:.82rem;color:#6b7280;margin-bottom:1rem;"></div>
+          <div id="qsm-pref" style="display:none;background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.5rem .8rem;margin-bottom:1rem;font-size:.82rem;color:#166534;font-weight:600;"></div>
+          <div style="display:flex;flex-direction:column;gap:.6rem;">
+            <button id="qsm-email-btn" onclick="document.getElementById('quote-send-modal').style.display='none';sendEmail();" style="padding:.85rem;background:#0f1e3d;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;">✉️ Send via Email</button>
+            <button id="qsm-sms-btn" onclick="document.getElementById('quote-send-modal').style.display='none';sendSMS();" style="padding:.85rem;background:#166534;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;">💬 Send via Text</button>
+            <div style="display:flex;gap:.6rem;">
+              <button id="qsm-copy-btn" onclick="_qsmCopyLink()" style="flex:1;padding:.7rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">📋 Copy Link</button>
+              <button id="qsm-preview-btn" onclick="previewLink()" style="flex:1;padding:.7rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">🔗 Open Live Link</button>
+            </div>
+          </div>
+        </div>
+        <div style="padding:.9rem 1.4rem;border-top:1px solid #eee;background:#fafafa;">
+          <button onclick="_qsmChangeReservation()" style="width:100%;background:none;border:1.5px solid #b8882a;color:#b8882a;border-radius:8px;padding:.6rem;font-weight:700;font-size:.82rem;cursor:pointer;">✏️ Change Reservation</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.dataset.code = code;
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
+  modal.querySelector('#qsm-guest').textContent = r.guest || 'Guest';
+  modal.querySelector('#qsm-detail').textContent = `${r.prop_label || PROPS[r.prop]?.name || r.prop || '-'} · ${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'} · ${_STATUS_LABEL[r.status] || r.status}`;
+  const prefEl = modal.querySelector('#qsm-pref');
+  if (r.contact_pref) {
+    prefEl.style.display = '';
+    prefEl.textContent = r.contact_pref === 'text' ? '💬 Guest prefers Text' : r.contact_pref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please';
+  } else {
+    prefEl.style.display = 'none';
+  }
+  modal.style.display = 'flex';
+}
+
+// Own copy-feedback state (separate from the Quote Builder form's own hidden #copy-btn) so the
+// button Jesse actually clicked, in this popup, is the one that shows "Copied!".
+async function _qsmCopyLink() {
+  const btn = document.getElementById('qsm-copy-btn');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Preparing…';
+  const url = await _getShareableUrl();
+  if (!url) { btn.textContent = orig; return; }
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  });
+}
+
+function _qsmChangeReservation() {
+  const code = document.getElementById('quote-send-modal').dataset.code;
+  document.getElementById('quote-send-modal').style.display = 'none';
+  _openInQuotesForm(code);
 }
 
 function _closeReservationDetail() {
