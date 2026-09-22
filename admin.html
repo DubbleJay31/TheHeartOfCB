@@ -1025,6 +1025,23 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
+      <!-- ID VERIFICATION - required for every guest by default (Stripe Identity, run after
+           signing, before payment). This checkbox is the one override, and it's Jesse's alone -
+           there's no guest-facing choice anywhere in this flow. -->
+      <div class="adm-card">
+        <div class="adm-card-header"><h3>🪪 Identity Verification</h3></div>
+        <div class="adm-card-body">
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:600;color:#b45309;">
+              <input type="checkbox" id="f-id-verify-skip" style="width:16px;height:16px;cursor:pointer;" />
+              ⚠️ Skip ID Verification
+            </label>
+            <span class="field-hint" style="color:#92400e;">Required for every guest by default (Stripe Identity - document + selfie, run after signing, before payment). Check this only if you're personally waiving it for this reservation - the guest is never given the choice.</span>
+          </div>
+          <div id="id-verify-status" style="display:none;margin-top:.6rem;font-size:.82rem;font-weight:700;"></div>
+        </div>
+      </div>
+
       <!-- NOTE -->
       <div class="adm-card">
         <div class="adm-card-header"><h3>📝 Personal Note (optional)</h3></div>
@@ -1595,6 +1612,15 @@ function _loadIntoForm(code) {
   document.getElementById('f-phone').value = r.phone || '';
   _contactPref = r.contact_pref || '';
   _updateContactPrefUI();
+  const idVerifySkipEl = document.getElementById('f-id-verify-skip');
+  if (idVerifySkipEl) idVerifySkipEl.checked = !!r.id_verify_skip;
+  const idVerifyStatusEl = document.getElementById('id-verify-status');
+  if (idVerifyStatusEl) {
+    const lbl = _idVerifyLabel(r);
+    idVerifyStatusEl.style.display = '';
+    idVerifyStatusEl.style.color = lbl.color;
+    idVerifyStatusEl.textContent = lbl.text;
+  }
   // ci/co/rate below used to only overwrite `if (truthy)` - the same "field only reconstructed
   // when the new row happens to have one" shape as the already-fixed link-wipe bug. A reservation
   // with no dates/rate yet (e.g. a manually-started draft) left the PREVIOUS reservation's dates
@@ -2111,13 +2137,15 @@ function _clearEditing() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['f-cash','f-override-cc','f-refund-fee'].forEach(id => {
+  ['f-cash','f-override-cc','f-refund-fee','f-id-verify-skip'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
   _origPaidGross = 0; _origFeeAmt = 0;
   const refundFeeRow = document.getElementById('refund-fee-row');
   if (refundFeeRow) refundFeeRow.style.display = 'none';
+  const idVerifyStatusEl = document.getElementById('id-verify-status');
+  if (idVerifyStatusEl) idVerifyStatusEl.style.display = 'none';
   // These default to something useful for a fresh quote rather than blank - see
   // _defaultExpDate()/_DEFAULT_GUEST_NOTE.
   document.getElementById('f-exp').value = _defaultExpDate();
@@ -2697,6 +2725,7 @@ async function _doSaveQuote() {
   const exp   = document.getElementById('f-exp')?.value || '';
   const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
+  const idVerifySkip = document.getElementById('f-id-verify-skip')?.checked || false;
   if (statusEl) statusEl.textContent = '⏳ Saving…';
   try {
     const r = await fetch('/.netlify/functions/reservations-upsert', {
@@ -2706,7 +2735,7 @@ async function _doSaveQuote() {
         code: _editingCode || undefined,
         guest, email, phone, prop: _prop, ci, co, nights: _nights || 0,
         total: _total, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales,
-        url: _generatedUrl, exp, privateNote, credit, contactPref: _contactPref || ''
+        url: _generatedUrl, exp, privateNote, credit, contactPref: _contactPref || '', idVerifySkip
       })
     });
     const j = await r.json().catch(() => ({}));
@@ -2952,6 +2981,20 @@ function _setConfFilter(filter) {
   renderConfirmedPanel();
 }
 
+// Single source of truth for how a reservation's ID-verification state reads - shared by the
+// Quote Builder card, the Send Quote Link popup, and anywhere else it needs to show, so all three
+// can't drift into describing the same status differently.
+function _idVerifyLabel(r) {
+  if (r.id_verify_skip) return { text: '⚠️ ID verification waived by you', color: '#92400e' };
+  if (r.id_verification_status === 'verified') {
+    const d = r.id_verified_at ? ' · ' + new Date(r.id_verified_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+    return { text: `✅ ID Verified${d}`, color: '#166534' };
+  }
+  if (r.id_verification_status === 'failed') return { text: '⚠️ ID verification failed - guest is stuck until retry or Skip', color: '#7a1f1f' };
+  if (r.id_verification_status === 'pending') return { text: '⏳ ID verification pending', color: '#92400e' };
+  return { text: '🪪 ID verification required, not started yet', color: '#6b7280' };
+}
+
 // Single source of truth for "does this row need Jesse to do something" - shared by the list's
 // Action Needed filter and the gold-border/sub-status rendering below, so the two can't drift
 // apart from computing the same three conditions two different ways.
@@ -3133,7 +3176,8 @@ function _openQuoteSendModal(code) {
         </div>
         <div style="padding:1.2rem 1.4rem;">
           <div id="qsm-guest" style="font-size:.95rem;font-weight:700;color:#0f1e3d;margin-bottom:.2rem;"></div>
-          <div id="qsm-detail" style="font-size:.82rem;color:#6b7280;margin-bottom:1rem;"></div>
+          <div id="qsm-detail" style="font-size:.82rem;color:#6b7280;margin-bottom:.4rem;"></div>
+          <div id="qsm-idverify" style="display:none;font-size:.78rem;font-weight:700;margin-bottom:.6rem;"></div>
           <div id="qsm-pref" style="display:none;background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.5rem .8rem;margin-bottom:1rem;font-size:.82rem;color:#166534;font-weight:600;"></div>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
             <button id="qsm-email-btn" onclick="document.getElementById('quote-send-modal').style.display='none';sendEmail();" style="padding:.85rem;background:#0f1e3d;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;">✉️ Send via Email</button>
@@ -3154,6 +3198,11 @@ function _openQuoteSendModal(code) {
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
   modal.querySelector('#qsm-guest').textContent = r.guest || 'Guest';
   modal.querySelector('#qsm-detail').textContent = `${r.prop_label || PROPS[r.prop]?.name || r.prop || '-'} · ${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'} · ${_STATUS_LABEL[r.status] || r.status}`;
+  const idVerifyEl = modal.querySelector('#qsm-idverify');
+  const idLbl = _idVerifyLabel(r);
+  idVerifyEl.style.display = '';
+  idVerifyEl.style.color = idLbl.color;
+  idVerifyEl.textContent = idLbl.text;
   const prefEl = modal.querySelector('#qsm-pref');
   if (r.contact_pref) {
     prefEl.style.display = '';
@@ -3262,6 +3311,7 @@ function openReservationDetail(code) {
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
+        <div style="color:${_idVerifyLabel(r).color};font-weight:700;font-size:.85em;">${_idVerifyLabel(r).text}</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
         ${_refundOwed > 0 ? `

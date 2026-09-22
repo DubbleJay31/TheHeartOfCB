@@ -45,7 +45,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out,rate,tax_occ,tax_sales,total,credit,confirmation_sent_at`);
+    const existingResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,check_in,check_out,rate,tax_occ,tax_sales,total,credit,confirmation_sent_at,id_verify_skip,id_verification_status`);
     const existing = existingResp.ok ? await existingResp.json() : [];
 
     // Already confirmed, and the caller already knows this exact reservation's guest/dates (not
@@ -63,7 +63,8 @@ exports.handler = async function(event) {
     // Two valid ways in for an actual write: a logged-in admin session (the manual "Confirm"
     // button on a quote), or a per-booking capability token minted by sign-link.js at signing
     // time (the one-click confirm link in the "Payment Sent" email, which isn't an admin session).
-    if (!requireAdmin(event) && !validCapabilityToken(body)) {
+    const isAdminCall = requireAdmin(event);
+    if (!isAdminCall && !validCapabilityToken(body)) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
     }
 
@@ -82,6 +83,14 @@ exports.handler = async function(event) {
     // payment pending, nothing else legitimately confirms this."
     if (existing[0].status !== 'signed') {
       return { statusCode: 409, body: JSON.stringify({ ok: false, message: 'This reservation is not awaiting confirmation.' }) };
+    }
+    // Same ID-verification requirement create-stripe-checkout.js enforces, applied here too since
+    // this is also how a guest self-confirms after a manual payment method (Venmo/CashApp/etc's
+    // "I've sent payment" click). Only gates the GUEST path (the capability token) - Jesse's own
+    // admin session can always confirm regardless, same "override is mine alone" design as the
+    // Quote Builder checkbox itself.
+    if (!isAdminCall && !existing[0].id_verify_skip && existing[0].id_verification_status !== 'verified') {
+      return { statusCode: 409, body: JSON.stringify({ ok: false, message: 'Identity verification must be completed before this reservation can be confirmed.' }) };
     }
 
     // The capability token (`tok`) only proves identity/dates match, never money - a guest who

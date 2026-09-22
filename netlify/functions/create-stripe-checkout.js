@@ -34,6 +34,13 @@ exports.handler = async function(event) {
     if (r.status !== 'signed') {
       return { statusCode: 409, body: JSON.stringify({ message: 'This reservation must be signed before payment can be collected.' }) };
     }
+    // ID verification (Jesse's default policy - see create-identity-session.js) is required
+    // before payment unless he's explicitly waived it for this reservation. Checked server-side,
+    // not just hidden client-side in book.html, since this is the endpoint that actually starts
+    // moving money.
+    if (!r.id_verify_skip && r.id_verification_status !== 'verified') {
+      return { statusCode: 409, body: JSON.stringify({ message: 'Identity verification must be completed before payment.' }) };
+    }
     if (r.guest !== guest || r.email !== email || r.check_in !== check_in || r.check_out !== check_out) {
       return { statusCode: 409, body: JSON.stringify({ message: 'This link no longer matches the current reservation - ask Jesse for a fresh link.' }) };
     }

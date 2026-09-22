@@ -770,6 +770,18 @@ a { color: inherit; text-decoration: none; }
         ✅ Agreement captured - now complete your payment below to lock in your dates.
       </div>
 
+      <!-- ID verification gate - shown in place of pay-methods/pay-refund-card whenever a
+           reservation requires it (the default for every guest) and it hasn't happened yet.
+           Populated/toggled by _revealPaymentSection(). -->
+      <div id="pay-idverify-card" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;padding:1.5rem;text-align:center;">
+        <div style="font-size:1.15rem;font-weight:700;color:#92400e;margin-bottom:.4rem;">🪪 Quick Identity Check</div>
+        <p id="pay-idverify-text" style="color:#92400e;font-size:.92rem;margin:0 0 1.1rem;line-height:1.6;">Before payment, we need to verify your identity - a quick photo ID + selfie check through Stripe (takes about a minute). This protects both of us and only needs to happen once.</p>
+        <button id="idverify-btn" onclick="startIdentityVerification()" style="width:100%;padding:1rem;background:#92400e;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">
+          🪪 Verify My Identity
+        </button>
+        <div id="idverify-status" style="margin-top:.8rem;font-size:.85rem;color:#92400e;min-height:1.2rem;"></div>
+      </div>
+
       <div id="pay-refund-card" style="display:none;background:#f0fdf4;border:1.5px solid #16a34a;border-radius:10px;padding:1.5rem;text-align:center;">
         <div style="font-size:1.15rem;font-weight:700;color:#166534;margin-bottom:.4rem;">✅ No payment needed</div>
         <p id="pay-refund-text" style="color:#166534;font-size:.92rem;margin:0 0 1.1rem;">Your updated dates come out to less than what you already paid - you're getting <strong id="pay-refund-amount"></strong> back. Jesse will send that separately once this is confirmed.</p>
@@ -1487,10 +1499,43 @@ async function submitAgreement() {
 }
 
 // ── CLOSE OVERLAY → UNLOCK PAYMENTS ──
-function unlockAndPay() {
+async function unlockAndPay() {
   document.getElementById('success-overlay').classList.remove('show');
   document.getElementById('pay-lock-banner').style.display = 'none';
   _activatePayLinks();
+  await _revealPaymentSection();
+  setTimeout(() => document.querySelector('.pay-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+// True once ID verification is either done or waived - fails CLOSED (returns false) on a network
+// error, since letting a guest through to payment on a broken status check is the wrong direction
+// to fail in. Jesse's default policy is "required for every guest" (see admin.html's Quote Builder
+// checkbox, the one override, his alone) - this is that policy's enforcement point on the guest
+// side. It's not the only enforcement point though - create-stripe-checkout.js and
+// reservations-confirm.js both check the same thing server-side, since a client-side-only gate
+// here could just be skipped in devtools.
+async function _idVerifyGateClear() {
+  try {
+    const r = await fetch(`/.netlify/functions/reservation-verify-status?code=${encodeURIComponent(code)}`);
+    const j = await r.json().catch(() => ({}));
+    return !!j.id_verify_skip || j.id_verification_status === 'verified';
+  } catch { return false; }
+}
+
+// Shows whichever of the ID-verify gate / refund card / payment methods actually applies right
+// now - shared by unlockAndPay() (right after a fresh signature) and the idverify_return handler
+// below (a guest landing back here after Stripe's hosted identity check), so both end up in the
+// same correct state instead of two separately-maintained copies of this branching.
+async function _revealPaymentSection() {
+  const idCard = document.getElementById('pay-idverify-card');
+  const clear = await _idVerifyGateClear();
+  if (!clear) {
+    if (idCard) idCard.style.display = '';
+    document.getElementById('pay-methods').style.display = 'none';
+    document.getElementById('pay-refund-card').style.display = 'none';
+    return;
+  }
+  if (idCard) idCard.style.display = 'none';
   if (refundDue > 0 || isZeroBalance) {
     // Nothing to pay - the refund card was already showing (locked/greyed) before signing; unlock
     // it now instead of the normal payment methods, which stay hidden throughout.
@@ -1501,11 +1546,70 @@ function unlockAndPay() {
     if (refundBtn) refundBtn.disabled = false;
     document.getElementById('pay-methods').style.display = 'none';
   } else {
+    // Explicit '' (not just removing .locked) - a prior call into this same function, on a guest
+    // returning from the ID-verify gate above, may have already set this to 'none' to hide it
+    // while the gate was up. Without resetting it here too, that inline display:none would keep
+    // overriding the CSS class even after the gate clears.
+    document.getElementById('pay-methods').style.display = '';
+    document.getElementById('pay-refund-card').style.display = 'none';
     document.getElementById('pay-methods').classList.remove('locked');
     document.getElementById('pay-unlock-banner').classList.add('show');
   }
-  setTimeout(() => document.querySelector('.pay-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 }
+
+// ── START ID VERIFICATION ── creates a Stripe Identity session and sends the guest to Stripe's
+// own hosted document+selfie flow (no Stripe.js/npm dependency here, same hosted-redirect pattern
+// create-stripe-checkout.js already uses for card payment). idverify_return=1 on the return URL is
+// how the guest coming back gets recognized below, without needing signed=1/tok (which would
+// route them into the read-only Agreement Print View instead of back into live payment).
+async function startIdentityVerification() {
+  const btn = document.getElementById('idverify-btn');
+  const statusEl = document.getElementById('idverify-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Preparing…'; }
+  if (statusEl) statusEl.textContent = '';
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.delete('idverify_return');
+    u.searchParams.set('idverify_return', '1');
+    const r = await fetch('/.netlify/functions/create-identity-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, return_url: u.toString() })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (j.already_verified) { await _revealPaymentSection(); return; }
+    if (!r.ok || !j.url) throw new Error(j.message || 'Could not start verification');
+    window.location.href = j.url;
+  } catch (e) {
+    console.error('Identity verification failed to start:', e);
+    if (statusEl) statusEl.textContent = '⚠️ Could not start verification - please try again, or text Jesse if it keeps failing.';
+    if (btn) { btn.disabled = false; btn.textContent = '🪪 Verify My Identity'; }
+  }
+}
+
+// ── RETURN FROM STRIPE'S HOSTED IDENTITY CHECK ── verification is processed asynchronously by
+// Stripe after the redirect back here, so this can't just trust the URL - it re-fetches the real
+// signed state from the server (reservation-signing-info.js, the same endpoint the admin
+// action=confirm page backfills from) and recreates the "just signed" UI without making the guest
+// redo the agreement form, then polls briefly since the result usually lands within a few seconds.
+(async function() {
+  if (get('idverify_return') !== '1' || !code) return;
+  try {
+    const infoR = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
+    const info = infoR.ok ? await infoR.json() : {};
+    if (info.status !== 'signed') return; // not actually signed server-side - leave the normal page showing
+    _agreementSent = true;
+    const lockBanner = document.getElementById('pay-lock-banner');
+    if (lockBanner) lockBanner.style.display = 'none';
+    _activatePayLinks();
+    for (let i = 0; i < 6; i++) {
+      if (await _idVerifyGateClear()) break;
+      await new Promise(res => setTimeout(res, 2000));
+    }
+    await _revealPaymentSection();
+    setTimeout(() => document.querySelector('.pay-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  } catch (e) { console.error('idverify_return handling failed:', e); }
+})();
 
 // ── CHOOSE CASH → reveal deposit/no-deposit flow ──
 function chooseCash() {

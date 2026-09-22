@@ -101,6 +101,54 @@ async function _notifyGuestReservation(row) {
   } catch (e) { console.error('Guest notification failed:', e); }
 }
 
+// Identity verification results - 'verified' just quietly unlocks payment for the guest (no need
+// to alert Jesse every time someone successfully proves who they are), but 'requires_input' (a
+// rejected/abandoned attempt - blurry document, mismatched selfie, guest gave up) needs his eyes,
+// since the guest is now stuck until he either has them retry or checks the "skip" override
+// himself. Idempotent either way - Stripe can redeliver, and this just overwrites the same status.
+async function _handleIdentityEvent(stripeEvent) {
+  const session = stripeEvent.data?.object || {};
+  const code = session.metadata?.code;
+  if (!code) {
+    console.error('Identity webhook event with no code in metadata:', session.id);
+    return { statusCode: 200, body: 'ok' };
+  }
+  const verified = stripeEvent.type === 'identity.verification_session.verified';
+  try {
+    const patch = { id_verification_status: verified ? 'verified' : 'failed', updated_at: new Date().toISOString() };
+    if (verified) patch.id_verified_at = new Date().toISOString();
+    const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify(patch)
+    });
+    if (!r.ok) {
+      console.error('Identity webhook: failed to update reservation', code, await r.text());
+      return { statusCode: 500, body: 'DB write failed' };
+    }
+    if (!verified) {
+      const adminUrl = 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code);
+      await fetch('https://theheartofcb.com/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: 'https://theheartofcb.com' },
+        body: JSON.stringify({
+          to: ['jessejonesrealestate@gmail.com'],
+          subject: `ID verification needs attention - ${code}`,
+          html: `<div style="font-family:Georgia,serif;padding:20px;">
+            <p style="font-size:16px;"><strong>🪪 ID verification didn't go through - ${escapeHtml(code)}</strong></p>
+            <p>The guest's document or selfie didn't pass Stripe's check (blurry photo, mismatch, or they abandoned it). They can't pay until this is resolved - either have them retry, or check "Skip ID verification" on this reservation in Quote Builder if you're satisfied another way.</p>
+            <p><a href="${adminUrl}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:7px;font-weight:700;">Open in Admin</a></p>
+          </div>`
+        })
+      }).catch(e => console.error('Identity-failed notification email failed:', e));
+    }
+    return { statusCode: 200, body: 'ok' };
+  } catch (e) {
+    console.error('Identity webhook handler error:', e);
+    return { statusCode: 500, body: String(e) };
+  }
+}
+
 // A physical order needs Jesse to actually see it to ship it - there's no admin dashboard for
 // merch the way there is for reservations, so this notification email IS the fulfillment queue.
 async function _notifyJesseMerchOrder(session) {
@@ -146,6 +194,14 @@ exports.handler = async function(event) {
 
   let stripeEvent;
   try { stripeEvent = JSON.parse(rawBody); } catch { return { statusCode: 400, body: 'Invalid JSON' }; }
+
+  // Identity verification results share this one webhook endpoint/secret with checkout payments -
+  // same reasoning as merch orders sharing it with reservation payments below (one Stripe account,
+  // one endpoint, branch on event type). Configuring a second endpoint just for Identity would mean
+  // a second STRIPE_IDENTITY_WEBHOOK_SECRET to manage for no real benefit.
+  if (stripeEvent.type === 'identity.verification_session.verified' || stripeEvent.type === 'identity.verification_session.requires_input') {
+    return await _handleIdentityEvent(stripeEvent);
+  }
 
   if (stripeEvent.type !== 'checkout.session.completed') {
     // Not an event this function cares about - acknowledge so Stripe doesn't retry it forever.

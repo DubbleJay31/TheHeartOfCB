@@ -15,7 +15,7 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { code, guest, email, phone, prop, ci, co, nights, total, rate, taxOcc, taxSales, url, exp, privateNote, credit, contactPref } = body;
+  const { code, guest, email, phone, prop, ci, co, nights, total, rate, taxOcc, taxSales, url, exp, privateNote, credit, contactPref, idVerifySkip } = body;
   if (!guest || !ci || !co) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, ci, or co' }) };
   }
@@ -33,6 +33,10 @@ exports.handler = async function(event) {
     host_notes: privateNote || null,
     credit: credit != null ? parseFloat(credit) || 0 : 0,
     contact_pref: contactPref || null,
+    // Jesse's own per-reservation override, waiving the otherwise-mandatory ID verification step -
+    // always sent explicitly by Quote Builder's checkbox, defaults false (required) like every
+    // guest not otherwise waived.
+    id_verify_skip: !!idVerifySkip,
     status: 'quoted',
     // Clears any stale cancelled_at when this is a reinstate (editing a cancelled reservation
     // back to active) - harmless no-op otherwise, since it's already null on everything else.
