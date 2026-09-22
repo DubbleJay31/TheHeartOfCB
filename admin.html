@@ -2996,13 +2996,18 @@ function renderConfirmedPanel() {
 
   el.innerHTML = list.map(r => {
     const dates = r.check_in ? `${fmtD(r.check_in)} → ${fmtD(r.check_out)}` : 'No dates yet';
-    // Confirmed/cancelled open the manage-it modal; anything earlier in the pipeline opens a
-    // lightweight "send the link" popup instead of the full Quote Builder tab - Jesse: "I dont
-    // want to go back to quote builder. I only want that if i say change reservation. I just want
-    // the screen to send the link to pop up." The popup's own "Change Reservation" button is the
-    // one deliberate way into the real form.
+    // Confirmed/cancelled open the manage-it modal; quoted/signed open a lightweight "send the
+    // link" popup instead of the full Quote Builder tab - Jesse: "I dont want to go back to quote
+    // builder. I only want that if i say change reservation. I just want the screen to send the
+    // link to pop up." An 'inquiry' has no saved link yet (nothing's been quoted) - the popup's
+    // Send/Copy/Open buttons would have nothing to act on, so it goes straight to Quote Builder to
+    // actually build the first quote instead. Jesse: "when status is inquiry, it needs to bring me
+    // to quote builder. the email did, but from admin didnt."
     const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
-      ? `openReservationDetail('${r.code}')` : `_openQuoteSendModal('${r.code}')`;
+      ? `openReservationDetail('${r.code}')`
+      : (r.status === 'inquiry')
+        ? `_openInQuotesForm('${r.code}')`
+        : `_openQuoteSendModal('${r.code}')`;
     // A 'quoted'/'signed' row can mean two very different things: a brand-new lead that's never
     // been confirmed, or an ALREADY-confirmed reservation mid-edit via Change Reservation, reset
     // to 'quoted' pending the guest's re-signature for the new terms - upsert resets status but
