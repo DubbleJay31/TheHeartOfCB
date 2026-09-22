@@ -1758,6 +1758,7 @@ let _taxSales = 0;
 let TAX_OCC   = 0.06; // Room Occupancy Tax
 let TAX_SALES = 0.07; // Sales Tax
 let CC_FEE    = 0.03;
+const PAYPAL_FEE = 0.035; // not in host-config.json - matches book.html's own PAYPAL_FEE_RATE
 fetch('host-config.json').then(r => r.json()).then(cfg => {
   if (cfg?.tax?.occupancyPct != null) TAX_OCC = cfg.tax.occupancyPct / 100;
   if (cfg?.tax?.salesPct != null) TAX_SALES = cfg.tax.salesPct / 100;
@@ -3372,37 +3373,48 @@ function _openCancelModal(code) {
     : `🚫 Same day or past check-in - no refund per policy (still editable if you're making an exception)`;
   modal.querySelector('#cancel-refund-tier-note').textContent = tierText;
   modal.querySelector('#cancel-refund-amt').value = _sugg.amount > 0.005 ? _sugg.amount.toFixed(2) : '';
-  // Same "proportional share, not the full fee" idea as Change Reservation's "Also refund the
-  // card fee" checkbox (_refundFeeShare) - unchecked by default every time this modal opens, since
-  // Stripe/PayPal never give the fee back to Jesse and covering it himself is an active choice,
-  // not the default. Scaled by the same tier pct as the refund itself: a full-refund cancellation
-  // (5+ days out) adds the whole fee back if checked; a half-refund one only adds half of it.
-  const feeShare = Math.round(_sugg.feeAmt * _sugg.pct * 100) / 100;
+  // Percentage of whatever's actually in the Refund Amount field, not a fixed dollar figure tied
+  // to the originally-suggested tier - Jesse: "id like the credit card fee to be proportional to
+  // the refund, so just 3% not the whole credit card fee." He may hand-edit the amount down (or
+  // up) from the suggestion first, and checking this should add the rate on top of THAT number.
+  // Unchecked by default every time this modal opens - Stripe/PayPal never give the fee back to
+  // Jesse, so covering it himself is an active choice, not the default.
+  const hasFee = r.payment_method === 'stripe' || r.payment_method === 'paypal';
+  const feeRate = r.payment_method === 'paypal' ? PAYPAL_FEE : CC_FEE;
   const feeRow = modal.querySelector('#cancel-refund-fee-row');
   const feeToggle = modal.querySelector('#cancel-refund-fee-toggle');
   feeToggle.checked = false;
-  feeToggle.dataset.feeShare = feeShare;
-  if (_sugg.feeAmt > 0.005) {
+  feeToggle.dataset.feeRate = feeRate;
+  feeToggle.dataset.appliedFee = '0';
+  if (hasFee) {
     feeRow.style.display = 'flex';
-    modal.querySelector('#cancel-refund-fee-label').textContent = feeShare > 0.005
-      ? `Also refund the $${feeShare.toFixed(2)} card processing fee (Stripe/PayPal never give this back to you - only check this if you want to cover it yourself)`
-      : `The $${_sugg.feeAmt.toFixed(2)} card processing fee already paid is excluded - that's never refunded.`;
-    feeToggle.style.display = feeShare > 0.005 ? '' : 'none';
+    const pctLabel = parseFloat((feeRate * 100).toFixed(2));
+    modal.querySelector('#cancel-refund-fee-label').textContent =
+      `Also add ${pctLabel}% to cover the card processing fee on this refund (Stripe/PayPal never give this back to you - only check this if you want to cover it yourself)`;
   } else {
     feeRow.style.display = 'none';
   }
   modal.style.display = 'flex';
 }
 
-// Adds/removes the proportional card-fee share from whatever's currently in the Refund Amount
-// field, rather than resetting it to a fresh suggested+fee total - Jesse may have already
-// hand-edited the amount, and toggling the fee shouldn't stomp that.
+// Adds/removes a percentage of whatever's currently in the Refund Amount field, computed fresh
+// at the moment of checking (not a value snapshotted when the modal opened) - so it tracks any
+// hand-edit Jesse made to the refund amount first. The exact dollar amount actually added is
+// stashed in dataset.appliedFee so unchecking removes precisely that, instead of recomputing the
+// percentage against the new (fee-inclusive) total and drifting.
 function _onCancelRefundFeeToggle() {
   const toggle = document.getElementById('cancel-refund-fee-toggle');
-  const feeShare = parseFloat(toggle.dataset.feeShare) || 0;
   const amtEl = document.getElementById('cancel-refund-amt');
   const current = parseFloat(amtEl.value) || 0;
-  amtEl.value = Math.max(0, toggle.checked ? current + feeShare : current - feeShare).toFixed(2);
+  if (toggle.checked) {
+    const feeRate = parseFloat(toggle.dataset.feeRate) || 0;
+    const feeShare = Math.round(current * feeRate * 100) / 100;
+    toggle.dataset.appliedFee = feeShare;
+    amtEl.value = (current + feeShare).toFixed(2);
+  } else {
+    const feeShare = parseFloat(toggle.dataset.appliedFee) || 0;
+    amtEl.value = Math.max(0, current - feeShare).toFixed(2);
+  }
 }
 
 async function _confirmCancel() {
