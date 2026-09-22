@@ -2887,6 +2887,30 @@ function _noFeeTotal(r) {
   return (parseFloat(r.rate) || 0) + (parseFloat(r.tax_occ) || 0) + (parseFloat(r.tax_sales) || 0);
 }
 
+// Starting-point refund for a cancellation, per the site's own cancellation policy (5+ days out:
+// full refund, 1-4 days: 50%, same day: none) - editable afterward, never final on its own. Jesse
+// explicitly wants final say (e.g. rebooking-based generosity is his call, not a formula's), so
+// this is a suggestion pre-filled into an editable field, not an auto-applied amount.
+// Same net-of-card-fee pattern _loadIntoForm() already uses for "already paid" (last_paid_total,
+// gross minus the reconstructed fee) - the fee itself is never refunded regardless of tier, same
+// rule the cancellation-policy text already states everywhere else on the site.
+function _suggestedCancelRefund(r) {
+  const lastPaid = parseFloat(r.last_paid_total) || 0;
+  const hasFee = lastPaid > 0 && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
+  const paidGross = (lastPaid > 0 && r.payment_method && r.payment_method !== 'Cash') ? lastPaid : 0;
+  const feeAmt = hasFee ? Math.max(0, paidGross - _noFeeTotal(r)) : 0;
+  const netPaid = paidGross > 0 ? Math.max(0, paidGross - feeAmt) : _noFeeTotal(r);
+  let tier = 'none', pct = 0, daysOut = null;
+  if (r.check_in) {
+    const ci = new Date(r.check_in + 'T12:00:00');
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    daysOut = Math.floor((ci - today) / 86400000);
+    if (daysOut >= 5) { tier = 'full'; pct = 1; }
+    else if (daysOut >= 1) { tier = 'half'; pct = 0.5; }
+  }
+  return { amount: Math.round(netPaid * pct * 100) / 100, tier, daysOut, netPaid, feeAmt };
+}
+
 // A raw inquiry's `rate` is the average NIGHTLY rate the guest saw before submitting (see
 // app.js's submitBooking, `rate: window._lastAvgNightly`), not a per-stay figure - unlike every
 // later status, where `rate` is already the full-stay room fare a real quote was built from.
@@ -2950,9 +2974,13 @@ function _rowActionState(r) {
   const isChangePendingSigned = isChangePending && r.status === 'signed';
   const needsSend = r.status === 'confirmed' && !r.confirmation_sent_at;
   const needsFirstConfirm = r.status === 'signed' && !isChangePending;
+  // Cancelling records a refund figure up front (see _suggestedCancelRefund), but Jesse still has
+  // to actually send that money himself, outside this system - this is his own attestation that he
+  // did, same trust-the-click pattern as confirmation_sent_at.
+  const needsRefundSent = r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005 && !r.cancel_refund_sent_at;
   return {
-    isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm,
-    isActionNeeded: isChangePendingSigned || needsSend || needsFirstConfirm
+    isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent,
+    isActionNeeded: isChangePendingSigned || needsSend || needsFirstConfirm || needsRefundSent
   };
 }
 
@@ -3021,7 +3049,7 @@ function renderConfirmedPanel() {
     // way to revert just the pending change back to the prior terms) - so this routes to the same
     // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
-    const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, isActionNeeded } = _rowActionState(r);
+    const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent, isActionNeeded } = _rowActionState(r);
     // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
     // sending a refund, or just confirming a wash - three different next steps that all collapsed
     // into one vague label. Sub-status derived from the same payment_method Change Reservation
@@ -3035,8 +3063,10 @@ function renderConfirmedPanel() {
       : isChangePendingSigned ? changePendingLabel
       : needsSend ? '✅ Confirmed - Send Confirmation'
       : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
+      : needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}`
+      : (r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005) ? '🚫 Cancelled - Refund Sent'
       : (_STATUS_LABEL[r.status] || r.status);
-    const statusColor = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
+    const statusColor = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm || needsRefundSent) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
     return `
     <div class="conf-row${isActionNeeded ? ' action-needed' : ''}" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
@@ -3092,6 +3122,7 @@ function openReservationDetail(code) {
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
   const isCancelled = r.status === 'cancelled';
+  const { needsRefundSent } = _rowActionState(r);
   // Cash-with-deposit never gets its own DB column for the deposit amount - the only record of
   // it is inside the saved quote link's own query string (cdep), same place _loadIntoForm()
   // already recovers cdsc/cdep from when reopening a reservation for editing. Without this,
@@ -3141,7 +3172,7 @@ function openReservationDetail(code) {
   backdrop.innerHTML = `
     <div class="conf-modal">
       <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
-      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${r.status === 'confirmed' && !r.confirmation_sent_at ? '#b45309' : _STATUS_COLOR[r.status]};">${r.status === 'confirmed' && !r.confirmation_sent_at ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status)}</span></h3>
+      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${needsRefundSent ? '#b45309' : r.status === 'confirmed' && !r.confirmation_sent_at ? '#b45309' : _STATUS_COLOR[r.status]};">${needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}` : r.status === 'confirmed' && !r.confirmation_sent_at ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status)}</span></h3>
       <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)} · Code ${_esc(r.code)}</div>
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
@@ -3170,6 +3201,7 @@ function openReservationDetail(code) {
         ${r.signed_name ? `<div><b>Signed:</b> ${_esc(r.signed_name)}${r.signed_at ? ' · ' + fmtBooked(r.signed_at) : ''}</div>` : ''}
         ${r.signed_ip ? `<div><b>Signed from IP:</b> ${_esc(r.signed_ip)}</div>` : ''}
         ${r.cancelled_at ? `<div><b>Cancelled:</b> ${fmtBooked(r.cancelled_at)}</div>` : ''}
+        ${isCancelled && (parseFloat(r.cancel_refund_amount) || 0) > 0.005 ? `<div style="color:${r.cancel_refund_sent_at ? '#166534' : '#7c1d1d'};font-weight:700;"><b>Cancellation Refund:</b> ${fmt$(r.cancel_refund_amount)} ${r.cancel_refund_sent_at ? `- sent ${fmtBooked(r.cancel_refund_sent_at)}` : '- not yet sent'}</div>` : ''}
       </div>
       <label>Private Note - only visible to you</label>
       <textarea class="conf-notes-box" id="conf-notes-${r.code}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
@@ -3194,6 +3226,7 @@ function openReservationDetail(code) {
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
         ` : ''}
+        ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
         ${!isCancelled
           ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>`
           : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
@@ -3269,7 +3302,16 @@ function _openCancelModal(code) {
         <div style="padding:1.2rem 1.4rem;">
           <div id="cancel-to" style="font-size:.85rem;color:#374151;margin-bottom:.7rem;font-weight:600;"></div>
           <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Why are you canceling? Saved as an internal note, and goes in the email/text if you choose to send one afterward - leave blank to skip both.</label>
-          <textarea id="cancel-reason" rows="4" placeholder="e.g. Guest requested it, or: sorry for the inconvenience - I'll follow up about your refund by end of day..." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.75rem;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+          <textarea id="cancel-reason" rows="4" placeholder="e.g. Guest requested it, or: sorry for the inconvenience - I'll follow up about your refund by end of day..." style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:.75rem;font-size:.9rem;line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;margin-bottom:1rem;"></textarea>
+          <div id="cancel-refund-box" style="background:#f9f6f0;border:1px solid #e5ddd0;border-radius:8px;padding:.85rem 1rem;">
+            <div id="cancel-refund-tier-note" style="font-size:.78rem;color:#6b7280;margin-bottom:.5rem;"></div>
+            <label style="font-size:.8rem;color:#6b7280;font-weight:600;display:block;margin-bottom:.3rem;">Refund Amount <span style="font-weight:400;">- suggested from the cancellation policy, edit as needed</span></label>
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <span style="font-size:.95rem;color:var(--muted);">$</span>
+              <input type="number" id="cancel-refund-amt" min="0" step="0.01" style="width:120px;padding:.5rem .6rem;border:1px solid #ddd;border-radius:6px;font-size:.95rem;" />
+            </div>
+            <div id="cancel-refund-fee-note" style="font-size:.75rem;color:#92400e;margin-top:.4rem;"></div>
+          </div>
         </div>
         <div style="padding:.9rem 1.4rem;display:flex;gap:.7rem;border-top:1px solid #eee;background:#fafafa;">
           <button id="cancel-send-btn" onclick="_confirmCancel()" style="flex:1;background:#7a1f1f;color:#fff;border:none;border-radius:8px;padding:.7rem;font-weight:700;cursor:pointer;">Cancel Reservation</button>
@@ -3281,6 +3323,16 @@ function _openCancelModal(code) {
   modal.dataset.code = code;
   modal.querySelector('#cancel-to').textContent = `Canceling: ${r.guest}${r.email ? ' (' + r.email + ')' : ' - no email on file'}`;
   modal.querySelector('#cancel-reason').value = '';
+  const _sugg = _suggestedCancelRefund(r);
+  const tierText = _sugg.tier === 'full' ? `✅ 5+ days out (${_sugg.daysOut}) - full refund per policy`
+    : _sugg.tier === 'half' ? `⚠️ ${_sugg.daysOut} day${_sugg.daysOut !== 1 ? 's' : ''} out - 50% refund per policy`
+    : _sugg.daysOut === null ? 'No check-in date on file - enter an amount manually.'
+    : `🚫 Same day or past check-in - no refund per policy (still editable if you're making an exception)`;
+  modal.querySelector('#cancel-refund-tier-note').textContent = tierText;
+  modal.querySelector('#cancel-refund-amt').value = _sugg.amount > 0.005 ? _sugg.amount.toFixed(2) : '';
+  modal.querySelector('#cancel-refund-fee-note').textContent = _sugg.feeAmt > 0.005
+    ? `Excludes the $${_sugg.feeAmt.toFixed(2)} card processing fee already paid - that's never refunded.`
+    : '';
   modal.style.display = 'flex';
 }
 
@@ -3290,6 +3342,7 @@ async function _confirmCancel() {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
   const reason = document.getElementById('cancel-reason').value.trim();
+  const refundAmt = Math.max(0, parseFloat(document.getElementById('cancel-refund-amt')?.value) || 0);
   const btn = document.getElementById('cancel-send-btn');
   btn.disabled = true; btn.textContent = '⏳ Canceling…';
   try {
@@ -3298,7 +3351,9 @@ async function _confirmCancel() {
       headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         status: 'cancelled',
+        cancel_refund_amount: refundAmt,
         host_notes: (r.host_notes ? r.host_notes + '\n\n' : '') + 'Canceled' + (reason ? ': ' + reason : ' (no reason given)')
+          + (refundAmt > 0.005 ? ` · $${refundAmt.toFixed(2)} refund owed` : '')
       })
     });
     if (!updateResp.ok) throw new Error(await updateResp.text());
@@ -3332,6 +3387,34 @@ async function reactivateReservation(code) {
     } else {
       alert('Reactivate failed - check console.');
       console.error(await r.text());
+    }
+  } catch(e) {
+    alert('Network error.');
+    console.error(e);
+  }
+}
+
+// Jesse sends the actual refund money himself, outside this system (Venmo, a Stripe refund, etc) -
+// this just records that he says he did, same trust-the-click pattern as Resend Confirmation's
+// confirmation_sent_at. Clears the row's action-needed state (gold border, list sub-status) since
+// there's nothing left for him to do on it.
+async function markRefundSent(code) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  if (!confirm(`Mark the $${parseFloat(r.cancel_refund_amount).toFixed(2)} cancellation refund for ${r.guest} as sent? This just records that you sent it yourself - it doesn't move any money.`)) return;
+  try {
+    const resp = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mark_refund_sent: true })
+    });
+    if (resp.ok) {
+      _closeReservationDetail();
+      await loadReservations();
+      openReservationDetail(code);
+    } else {
+      alert('Mark as sent failed - check console.');
+      console.error(await resp.text());
     }
   } catch(e) {
     alert('Network error.');
@@ -3776,7 +3859,9 @@ async function sendCancellationEmail(code, btn, skipConfirm, message) {
       <div><strong>Check-out:</strong> ${fmtD(r.check_out)}</div>
     </div>
     ${message ? `<div style="background:#f8f6f0;border-left:3px solid #b8882a;border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:.93rem;font-style:italic;">${_esc(message)}</div>` : ''}
-    <p>If a refund is due, it will be issued per the cancellation policy in your signed rental agreement, using whatever terms were agreed upon at booking.</p>
+    ${(parseFloat(r.cancel_refund_amount) || 0) > 0.005
+      ? `<div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:.95rem;color:#166534;"><strong>💰 Refund: $${parseFloat(r.cancel_refund_amount).toFixed(2)}</strong><br/><span style="font-size:.88rem;">Per the cancellation policy in your signed rental agreement. Jesse will send this separately.</span></div>`
+      : `<p>No refund applies to this cancellation per the cancellation policy in your signed rental agreement.</p>`}
     <p>Questions? Reach out anytime.</p>
     <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
@@ -3803,7 +3888,11 @@ function sendCancellationText(code, message) {
   const { phone } = _reservationLinks(r);
   const firstName = (r.guest || '').split(' ')[0] || r.guest;
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
-  const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Your reservation (${fmtD(r.check_in)} - ${fmtD(r.check_out)}) has been canceled.${message ? ` ${message}` : ''} If a refund is due, it'll be issued per the cancellation policy in your signed agreement. Questions? Just reply or call me anytime.`;
+  const refundAmt = parseFloat(r.cancel_refund_amount) || 0;
+  const refundNote = refundAmt > 0.005
+    ? `You have a $${refundAmt.toFixed(2)} refund coming per the cancellation policy - I'll send that separately.`
+    : `No refund applies per the cancellation policy in your signed agreement.`;
+  const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Your reservation (${fmtD(r.check_in)} - ${fmtD(r.check_out)}) has been canceled.${message ? ` ${message}` : ''} ${refundNote} Questions? Just reply or call me anytime.`;
   _openSmsModal(msg, phone || '');
 }
 
