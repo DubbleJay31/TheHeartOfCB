@@ -2880,7 +2880,22 @@ function _suggestedCancelRefund(r) {
 // just one night's rate, so this keeps the list row honest about which figure it's showing.
 function _rowPriceLabel(r, fmt$) {
   if (r.status === 'inquiry') {
-    return parseFloat(r.rate) > 0 ? ` · ~${fmt$(r.rate)}/night` : '';
+    // An inquiry's `rate` is the average NIGHTLY rate the guest saw (see _loadIntoForm's own
+    // comment on this) - not a total yet, since nothing's actually been quoted/reviewed. Jesse
+    // wants the same "what actually lands in my bank" figure shown everywhere else (_noFeeTotal,
+    // below) here too, not a nightly rate: "I dont want to see nightly rate here. I want to see
+    // the total exclusive of cc fee because that will be the deposit to my bank account amount."
+    // Estimated the same way _loadIntoForm turns this rate into a real Room Fare - multiplied by
+    // nights, then the same occupancy/sales tax rates applied - since there's no saved tax_occ/
+    // tax_sales yet to read (those only exist once quoted). Still an estimate at this stage, so
+    // keeps the "~".
+    const avgRate = parseFloat(r.rate) || 0;
+    if (!avgRate) return '';
+    const nights = r.nights || _sbNights(r.check_in, r.check_out);
+    if (!nights) return ` · ~${fmt$(avgRate)}/night`;
+    const roomFare = avgRate * nights;
+    const total = roomFare + roomFare * TAX_OCC + roomFare * TAX_SALES;
+    return ` · ~${fmt$(total)}`;
   }
   return _noFeeTotal(r) ? ` · ${fmt$(_noFeeTotal(r))}` : '';
 }
