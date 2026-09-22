@@ -1482,8 +1482,9 @@ async function tryLogin() {
 }
 
 // ── LOAD INTO FORM ── replaces the old fillFromInquiry/_editQuote split.
-// Any reservation at inquiry/quoted/signed status opens here for editing; confirmed/cancelled
-// ones go through openReservationDetail instead (see renderReservations' click routing).
+// Populates the Quote Builder form (visible or hidden) for any reservation - called directly when
+// actually editing (Change Reservation, a bare inquiry), and in the background by
+// openGuestDashboard() for quoted/signed so its Send/Copy/Preview buttons have something to read.
 function _loadIntoForm(code) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
@@ -2271,10 +2272,16 @@ async function copyLink() {
   const orig = btn.textContent;
   btn.textContent = '⏳ Preparing…';
   const url = await _getShareableUrl();
+  // No .catch() here used to leave the button stuck on "Preparing…" forever if the browser denies
+  // clipboard write (permission blocked, page not focused, non-secure context) - found live while
+  // testing the Guest Dashboard's own copy button, same gap, fixed everywhere it appears.
   navigator.clipboard.writeText(url).then(() => {
     btn.textContent = '✅ Copied!';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2200);
+  }).catch(() => {
+    btn.textContent = '⚠️ Copy failed - try again';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
   });
 }
 
@@ -2684,10 +2691,13 @@ function sendSMS() {
 
 function copySmsText() {
   const txt = document.getElementById('sms-text').value;
+  const btn = document.getElementById('copy-sms-btn');
   navigator.clipboard.writeText(txt).then(() => {
-    const btn = document.getElementById('copy-sms-btn');
     btn.textContent = '✅ Copied!';
     btn.style.background = '#2a7a3b';
+    setTimeout(() => { btn.textContent = '📋 Copy Message'; btn.style.background = '#b8882a'; }, 2500);
+  }).catch(() => {
+    btn.textContent = '⚠️ Copy failed';
     setTimeout(() => { btn.textContent = '📋 Copy Message'; btn.style.background = '#b8882a'; }, 2500);
   });
 }
@@ -3022,6 +3032,32 @@ function _rowActionState(r) {
   };
 }
 
+// Single source of truth for the sub-status label/color a reservation shows - shared by the list
+// row and the Guest Dashboard header, so a reservation can't read one way in the list and a
+// different way once opened. Built on _rowActionState so both always agree on the underlying
+// conditions too.
+function _rowStatusLabel(r) {
+  const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent } = _rowActionState(r);
+  // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
+  // sending a refund, or just confirming a wash - three different next steps that all collapsed
+  // into one vague label. Sub-status derived from the same payment_method Change Reservation
+  // already stamps on the row - only shown once the guest has actually signed (isChangePendingSigned);
+  // at the quoted stage nothing is real yet, so it just says a change is quoted, not what it'll
+  // turn out to mean.
+  const changePendingLabel = r.payment_method === 'Refund' ? '💰 Refund Owed - Confirm'
+    : r.payment_method === 'Even' ? '✅ No Balance - Confirm'
+    : '💳 Payment Submitted - Confirm';
+  const text = isChangePendingQuoted ? '🔄 Confirmed - Change Quoted'
+    : isChangePendingSigned ? changePendingLabel
+    : needsSend ? '✅ Confirmed - Send Confirmation'
+    : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
+    : needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}`
+    : (r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005) ? '🚫 Cancelled - Refund Sent'
+    : (_STATUS_LABEL[r.status] || r.status);
+  const color = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm || needsRefundSent) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
+  return { text, color };
+}
+
 // Backs the Reservations tab - every reservation at every stage, from a brand-new inquiry
 // through confirmed (or cancelled), one browsable list. Sorted by check-in date so "what's
 // coming up" reads naturally regardless of status. Reads from the same _reservationsCache the
@@ -3072,18 +3108,13 @@ function renderConfirmedPanel() {
 
   el.innerHTML = list.map(r => {
     const dates = r.check_in ? `${fmtD(r.check_in)} → ${fmtD(r.check_out)}` : 'No dates yet';
-    // Confirmed/cancelled open the manage-it modal; quoted/signed open a lightweight "send the
-    // link" popup instead of the full Quote Builder tab - Jesse: "I dont want to go back to quote
-    // builder. I only want that if i say change reservation. I just want the screen to send the
-    // link to pop up." An 'inquiry' has no saved link yet (nothing's been quoted) - the popup's
-    // Send/Copy/Open buttons would have nothing to act on, so it goes straight to Quote Builder to
-    // actually build the first quote instead. Jesse: "when status is inquiry, it needs to bring me
-    // to quote builder. the email did, but from admin didnt."
-    const clickable = (r.status === 'confirmed' || r.status === 'cancelled')
-      ? `openReservationDetail('${r.code}')`
-      : (r.status === 'inquiry')
-        ? `_openInQuotesForm('${r.code}')`
-        : `_openQuoteSendModal('${r.code}')`;
+    // Every status but 'inquiry' now opens the same Guest Dashboard - inquiry has no saved link
+    // yet (nothing's been quoted), so there's nothing for a dashboard to show or send; it goes
+    // straight to Quote Builder to build the first quote instead. Jesse: "when status is inquiry,
+    // it needs to bring me to quote builder. the email did, but from admin didnt." Everything from
+    // 'quoted' onward - a lead awaiting Jesse, a change-pending edit, a live confirmed booking, a
+    // cancelled one - shares one consistent view now instead of three different destinations.
+    const clickable = r.status === 'inquiry' ? `_openInQuotesForm('${r.code}')` : `openGuestDashboard('${r.code}')`;
     // A 'quoted'/'signed' row can mean two very different things: a brand-new lead that's never
     // been confirmed, or an ALREADY-confirmed reservation mid-edit via Change Reservation, reset
     // to 'quoted' pending the guest's re-signature for the new terms - upsert resets status but
@@ -3093,26 +3124,10 @@ function renderConfirmedPanel() {
     // Decline flow's "sorry, I can't accommodate this request" email would be actively wrong to
     // send an existing guest), it's an existing booking that would be fully CANCELLED (there's no
     // way to revert just the pending change back to the prior terms) - so this routes to the same
-    // cancelReservation() the detail modal's own Cancel button uses, with its correct wording and
+    // cancelReservation() the dashboard's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
-    const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent, isActionNeeded } = _rowActionState(r);
-    // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
-    // sending a refund, or just confirming a wash - three different next steps that all collapsed
-    // into one vague label. Sub-status derived from the same payment_method Change Reservation
-    // already stamps on the row - only shown once the guest has actually signed (isChangePendingSigned);
-    // at the quoted stage nothing is real yet, so it just says a change is quoted, not what it'll
-    // turn out to mean.
-    const changePendingLabel = r.payment_method === 'Refund' ? '💰 Refund Owed - Confirm'
-      : r.payment_method === 'Even' ? '✅ No Balance - Confirm'
-      : '💳 Payment Submitted - Confirm';
-    const statusLabel = isChangePendingQuoted ? '🔄 Confirmed - Change Quoted'
-      : isChangePendingSigned ? changePendingLabel
-      : needsSend ? '✅ Confirmed - Send Confirmation'
-      : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
-      : needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}`
-      : (r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005) ? '🚫 Cancelled - Refund Sent'
-      : (_STATUS_LABEL[r.status] || r.status);
-    const statusColor = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm || needsRefundSent) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
+    const { isChangePending, isActionNeeded } = _rowActionState(r);
+    const { text: statusLabel, color: statusColor } = _rowStatusLabel(r);
     return `
     <div class="conf-row${isActionNeeded ? ' action-needed' : ''}" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
@@ -3153,110 +3168,44 @@ function _openInQuotesForm(code) {
   _loadIntoForm(code);
 }
 
-// ── SEND QUOTE LINK POPUP ── the default action for tapping an inquiry/quoted/signed row.
-// _loadIntoForm(code) still runs here - it's what builds _generatedUrl and everything
-// sendEmail()/sendSMS()/copyLink()/previewLink() below actually read - but switchAdmTab() is
-// deliberately NOT called, so the Quote Builder panel stays hidden (display:none, not removed
-// from the DOM - see switchAdmTab) and Jesse never leaves the Reservations list underneath this
-// popup. "Change Reservation" is the one explicit door back into the real form.
-function _openQuoteSendModal(code) {
-  const r = _reservationsCache.find(x => x.code === code);
-  if (!r) return;
-  _loadIntoForm(code);
-  let modal = document.getElementById('quote-send-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'quote-send-modal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
-        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
-          <span style="color:#b8882a;font-weight:700;letter-spacing:.04em;">🔗 SEND QUOTE LINK</span>
-          <button onclick="document.getElementById('quote-send-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
-        </div>
-        <div style="padding:1.2rem 1.4rem;">
-          <div id="qsm-guest" style="font-size:.95rem;font-weight:700;color:#0f1e3d;margin-bottom:.2rem;"></div>
-          <div id="qsm-detail" style="font-size:.82rem;color:#6b7280;margin-bottom:.4rem;"></div>
-          <div id="qsm-idverify" style="display:none;font-size:.78rem;font-weight:700;margin-bottom:.6rem;"></div>
-          <div id="qsm-pref" style="display:none;background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.5rem .8rem;margin-bottom:1rem;font-size:.82rem;color:#166534;font-weight:600;"></div>
-          <div style="display:flex;flex-direction:column;gap:.6rem;">
-            <button id="qsm-email-btn" onclick="document.getElementById('quote-send-modal').style.display='none';sendEmail();" style="padding:.85rem;background:#0f1e3d;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;">✉️ Send via Email</button>
-            <button id="qsm-sms-btn" onclick="document.getElementById('quote-send-modal').style.display='none';sendSMS();" style="padding:.85rem;background:#166534;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;">💬 Send via Text</button>
-            <div style="display:flex;gap:.6rem;">
-              <button id="qsm-copy-btn" onclick="_qsmCopyLink()" style="flex:1;padding:.7rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">📋 Copy Link</button>
-              <button id="qsm-preview-btn" onclick="previewLink()" style="flex:1;padding:.7rem;background:#f2ede3;color:#0f1e3d;border:1.5px solid #e8e3d8;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">🔗 Open Live Link</button>
-            </div>
-          </div>
-        </div>
-        <div style="padding:.9rem 1.4rem;border-top:1px solid #eee;background:#fafafa;">
-          <button onclick="_qsmChangeReservation()" style="width:100%;background:none;border:1.5px solid #b8882a;color:#b8882a;border-radius:8px;padding:.6rem;font-weight:700;font-size:.82rem;cursor:pointer;">✏️ Change Reservation</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  modal.dataset.code = code;
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
-  modal.querySelector('#qsm-guest').textContent = r.guest || 'Guest';
-  modal.querySelector('#qsm-detail').textContent = `${r.prop_label || PROPS[r.prop]?.name || r.prop || '-'} · ${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'} · ${_STATUS_LABEL[r.status] || r.status}`;
-  const idVerifyEl = modal.querySelector('#qsm-idverify');
-  const idLbl = _idVerifyLabel(r);
-  idVerifyEl.style.display = '';
-  idVerifyEl.style.color = idLbl.color;
-  idVerifyEl.textContent = idLbl.text;
-  const prefEl = modal.querySelector('#qsm-pref');
-  if (r.contact_pref) {
-    prefEl.style.display = '';
-    prefEl.textContent = r.contact_pref === 'text' ? '💬 Guest prefers Text' : r.contact_pref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please';
-  } else {
-    prefEl.style.display = 'none';
-  }
-  // Same ★-on-the-preferred-button pattern used everywhere else this choice shows up (the
-  // confirm-page send buttons in book.html, the cancellation-notify buttons above) - Jesse:
-  // "can you please consistantly put the star or whatever you have been doing on the preferred
-  // contact method?" 'either' (guest said "both please") stars both buttons.
-  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
-  modal.querySelector('#qsm-email-btn').textContent = `✉️ Send via Email${star('email')}`;
-  modal.querySelector('#qsm-sms-btn').textContent = `💬 Send via Text${star('text')}`;
-  modal.style.display = 'flex';
-}
-
-// Own copy-feedback state (separate from the Quote Builder form's own hidden #copy-btn) so the
-// button Jesse actually clicked, in this popup, is the one that shows "Copied!".
-async function _qsmCopyLink() {
-  const btn = document.getElementById('qsm-copy-btn');
-  const orig = btn.textContent;
-  btn.textContent = '⏳ Preparing…';
-  const url = await _getShareableUrl();
-  if (!url) { btn.textContent = orig; return; }
-  navigator.clipboard.writeText(url).then(() => {
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => { btn.textContent = orig; }, 2200);
-  });
-}
-
-function _qsmChangeReservation() {
-  const code = document.getElementById('quote-send-modal').dataset.code;
-  document.getElementById('quote-send-modal').style.display = 'none';
-  _openInQuotesForm(code);
-}
-
 function _closeReservationDetail() {
   const el = document.getElementById('conf-modal-backdrop');
   if (el) el.remove();
 }
 
-// Detail/manage modal - only for confirmed and cancelled reservations. Earlier lifecycle
-// stages (inquiry/quoted/signed) go through _loadIntoForm instead, since the thing to do with
-// them is edit-and-resend, not view-and-manage.
-function openReservationDetail(code) {
+// ══════════════════════════════════════════
+// GUEST DASHBOARD - the one place any quoted/signed/confirmed/cancelled reservation opens, on a
+// row click or from a notification email's deep link. 'inquiry' still goes straight to Quote
+// Builder (_openInQuotesForm) - there's no saved link or real terms yet for a dashboard to show.
+// Replaces the old three-way split (a lightweight Send Quote Link popup for quoted/signed, a
+// separate detail modal for confirmed/cancelled) with one consistent view: guest info, pricing,
+// ID verification, private note, and whichever actions actually apply to THIS reservation's
+// current stage - not one fixed button set for every status. "Change Reservation" stays the one
+// deliberate door into full Quote Builder editing, same as before.
+// ══════════════════════════════════════════
+function openGuestDashboard(code) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
+  const isCancelled = r.status === 'cancelled';
+  const isConfirmed = r.status === 'confirmed';
+  // Everything before confirmation - a fresh lead awaiting Jesse, or a Change Reservation edit
+  // reset to 'quoted'/'signed' pending re-signature. Needs the send/copy/preview actions the old
+  // Send Quote Link popup offered; confirmed/cancelled don't (their link is already finalized).
+  const isPreConfirm = r.status === 'quoted' || r.status === 'signed';
+  const { isChangePending, needsRefundSent } = _rowActionState(r);
+
+  // _loadIntoForm(code) is what builds _generatedUrl and everything sendEmail()/sendSMS()/
+  // previewLink() below actually read - but switchAdmTab() is deliberately NOT called, so the
+  // Quote Builder panel stays hidden (display:none, not removed from the DOM - see switchAdmTab)
+  // and Jesse never leaves the Reservations list underneath this modal. Confirmed/cancelled never
+  // needed this - their Copy Link/Send Confirmation use the reservation's already-finalized saved
+  // link directly via _reservationLinks() below, nothing left to (re)generate.
+  if (isPreConfirm) _loadIntoForm(code);
+
   const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '-';
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
-  const isCancelled = r.status === 'cancelled';
-  const { needsRefundSent } = _rowActionState(r);
   // Cash-with-deposit never gets its own DB column for the deposit amount - the only record of
   // it is inside the saved quote link's own query string (cdep), same place _loadIntoForm()
   // already recovers cdsc/cdep from when reopening a reservation for editing. Without this,
@@ -3289,14 +3238,12 @@ function openReservationDetail(code) {
   const _hasFee = !r.credit && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
   const _feeAmt = _hasFee ? Math.max(0, (parseFloat(r.total) || 0) - _noFeeTotal(r)) : 0;
   const _feeLabel = r.payment_method === 'paypal' ? 'PayPal fee' : 'card fee';
-  // 'Refund'/'Even' mark a confirm that collected no NEW payment (a Change Reservation whose
-  // credit already covered the updated stay) - the generic "Amount Paid: $0.00 (via Refund)" line
-  // further below reads like the guest paid zero dollars using a payment method literally called
-  // "Refund," which is exactly backwards: they're not out anything new, they already paid enough
-  // before this edit. The ORIGINAL payment method isn't tracked separately once this column gets
-  // overwritten by the confirm - if Jesse logged it in his own private note (as he does for Stripe
-  // sessions), that's the only place it survives, so this just avoids asserting a false "$0.00
-  // payment" instead of trying to reconstruct it.
+  // Same ★-on-the-preferred-button pattern used everywhere else this choice shows up (book.html's
+  // confirm-page buttons, the cancellation-notify buttons) - 'either' (guest said "both please")
+  // stars both.
+  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
+  const statusLbl = _rowStatusLabel(r);
+  const idLbl = _idVerifyLabel(r);
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -3304,14 +3251,14 @@ function openReservationDetail(code) {
   backdrop.className = 'conf-modal-backdrop';
   backdrop.onclick = (e) => { if (e.target === backdrop) _closeReservationDetail(); };
   backdrop.innerHTML = `
-    <div class="conf-modal">
+    <div class="conf-modal" style="max-width:560px;">
       <button class="conf-modal-close" onclick="_closeReservationDetail()">✕</button>
-      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${needsRefundSent ? '#b45309' : r.status === 'confirmed' && !r.confirmation_sent_at ? '#b45309' : _STATUS_COLOR[r.status]};">${needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}` : r.status === 'confirmed' && !r.confirmation_sent_at ? '✅ Confirmed - Send Confirmation' : (_STATUS_LABEL[r.status] || r.status)}</span></h3>
+      <h3>${_esc(r.guest)} <span style="font-size:.65em;font-weight:700;color:${statusLbl.color};">${statusLbl.text}</span></h3>
       <div class="conf-modal-sub">Booked ${fmtBooked(r.created_at)} · Code ${_esc(r.code)}</div>
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
-        <div style="color:${_idVerifyLabel(r).color};font-weight:700;font-size:.85em;">${_idVerifyLabel(r).text}</div>
+        <div style="color:${idLbl.color};font-weight:700;font-size:.85em;">${idLbl.text}</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
         ${_refundOwed > 0 ? `
@@ -3342,29 +3289,39 @@ function openReservationDetail(code) {
       <textarea class="conf-notes-box" id="conf-notes-${r.code}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions">
-        ${confirmUrl ? `
-        <!-- This modal only ever opens for a confirmed/cancelled reservation, but "confirmed" and
-             "someone actually got the confirmation" aren't the same thing - a reservation confirmed
-             via the list's quick button (or automatically, by Stripe) has status='confirmed' with
-             nobody notified yet. The label has to track that distinction too, not just the click
-             handler: a reservation that's already confirmed but never sent should say "Send
-             Confirmation," not "Confirm Reservation" (which reads as if the reservation itself
-             still needs confirming). r.confirmation_sent_at (set only once the full Email/Text
-             confirmation actually goes out) is what tells a genuine resend apart from a first send
-             that just hasn't happened yet. -->
+        <!-- 'signed' only, not 'quoted' too - reservations-confirm.js hard-requires status
+             'signed' (a guest actually has to have signed before Jesse can confirm on their
+             behalf), so offering this on a still-quoted row always 409'd. Opens the same Send
+             Booking Confirmation popup the email link uses, rather than confirming immediately on
+             click - Jesse explicitly clicks Confirm Reservation inside that popup, nothing
+             auto-confirms just from opening this dashboard. -->
+        ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
+        ${isPreConfirm ? (r.url ? `
+        <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Send via Email${star('email')}</button>
+        <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Send via Text${star('text')}</button>
+        <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
+        <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
+        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation to build one.</span>`) : ''}
+        ${(isConfirmed || isCancelled) ? (confirmUrl ? `
+        <!-- "confirmed" and "someone actually got the confirmation" aren't the same thing - a
+             reservation confirmed via the list's quick button (or automatically, by Stripe) has
+             status='confirmed' with nobody notified yet. r.confirmation_sent_at (set only once
+             the full Email/Text confirmation actually goes out) is what tells a genuine resend
+             apart from a first send that just hasn't happened yet. -->
         ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
-        <button class="conf-btn" onclick="navigator.clipboard.writeText('${viewUrl}');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='🔗 Copy Link',1800)">🔗 Copy Link</button>
-        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
+        <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">🔗 Copy Link</button>
+        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`) : ''}
         <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
+        ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
+        ${isPreConfirm ? `<button class="conf-btn del" onclick="${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
         ${isCancelled ? `
         <button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>
         <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
         <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
         ` : ''}
         ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
-        ${!isCancelled
-          ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>`
-          : `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>`}
+        ${isConfirmed ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>` : ''}
+        ${isCancelled ? `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>` : ''}
       </div>
     </div>`;
   document.body.appendChild(backdrop);
@@ -3386,6 +3343,36 @@ function openReservationDetail(code) {
         if (resp.ok) setTimeout(() => { if (status.textContent === 'Saved') status.textContent = ''; }, 1800);
       } catch { status.textContent = 'Save failed'; }
     }, 500);
+  });
+}
+
+// Own copy-feedback state so the button Jesse actually clicked shows "Copied!" - separate from
+// the Quote Builder form's own hidden #copy-btn, which this dashboard never shows.
+async function _gdCopyLink(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Preparing…';
+  const url = await _getShareableUrl();
+  if (!url) { btn.textContent = orig; return; }
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  }).catch(() => {
+    btn.textContent = '⚠️ Copy failed - try again';
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  });
+}
+
+// Plain already-finalized link (confirmed/cancelled - nothing left to mint), same real
+// success/failure feedback as _gdCopyLink above instead of assuming the clipboard write always
+// succeeds.
+function _gdCopyPlainLink(btn, url) {
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }).catch(() => {
+    btn.textContent = '⚠️ Copy failed - try again';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
   });
 }
 
@@ -3564,7 +3551,7 @@ async function reactivateReservation(code) {
     if (r.ok) {
       _closeReservationDetail();
       await loadReservations();
-      openReservationDetail(code);
+      openGuestDashboard(code);
     } else {
       alert('Reactivate failed - check console.');
       console.error(await r.text());
@@ -3592,7 +3579,7 @@ async function markRefundSent(code) {
     if (resp.ok) {
       _closeReservationDetail();
       await loadReservations();
-      openReservationDetail(code);
+      openGuestDashboard(code);
     } else {
       alert('Mark as sent failed - check console.');
       console.error(await resp.text());
@@ -3635,7 +3622,7 @@ function _openCancelNotifyModal(code, reason) {
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
   // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
   const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#cancel-notify-email-btn');
   const textBtn = modal.querySelector('#cancel-notify-text-btn');
@@ -3736,7 +3723,7 @@ function _openUndoNotifyModal(code) {
   }
   modal.dataset.code = code;
   // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
   const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#undo-notify-email-btn');
   const textBtn = modal.querySelector('#undo-notify-text-btn');
@@ -3956,7 +3943,7 @@ function _openDeclineNotifyModal(code, reason) {
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
   // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
   const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#decline-notify-email-btn');
   const textBtn = modal.querySelector('#decline-notify-text-btn');
@@ -4113,16 +4100,17 @@ function _checkSyncHash() {
   history.replaceState(null, '', window.location.pathname);
   // The reservations list may not have loaded yet (this runs right after login) - wait for it.
   // Same routing every other entry point into a reservation already uses (renderConfirmedPanel's
-  // row click, _detectReservationConflicts, etc.): confirmed/cancelled open the manage-it detail
-  // modal, everything earlier opens the quote-builder form. A notification email link (Stripe
-  // payment received, new inquiry, etc.) landing here used to always go to the quote-builder
-  // form, even for an already-confirmed reservation - useful for editing a quote, not for what
-  // you actually want after a payment just landed (see and send its confirmation).
+  // row click, _detectReservationConflicts, etc.): only a bare 'inquiry' (no saved link yet) goes
+  // to the quote-builder form - everything from 'quoted' onward opens the Guest Dashboard. A
+  // notification email link (Stripe payment received, new inquiry, etc.) landing here used to
+  // always go to the quote-builder form, even for an already-confirmed reservation - useful for
+  // editing a quote, not for what you actually want after a payment just landed (see and send its
+  // confirmation).
   loadReservations().then(() => {
     const r = _reservationsCache.find(x => x.code === code);
-    if (r && (r.status === 'confirmed' || r.status === 'cancelled')) {
+    if (r && r.status !== 'inquiry') {
       switchAdmTab('confirmed');
-      openReservationDetail(code);
+      openGuestDashboard(code);
     } else {
       _openInQuotesForm(code);
     }
