@@ -3389,8 +3389,13 @@ function _openCancelModal(code) {
   if (hasFee) {
     feeRow.style.display = 'flex';
     const pctLabel = parseFloat((feeRate * 100).toFixed(2));
+    // Names the ACTUAL method this reservation used, not a generic "Stripe/PayPal" - saying both
+    // right next to a single percentage read as if that rate applied to either one. Jesse: "i
+    // guess the verbiage just confused my, in mentioned paypal and said 3%."
+    const methodName = r.payment_method === 'paypal' ? 'PayPal' : 'credit card';
+    const methodSubject = r.payment_method === 'paypal' ? 'PayPal' : 'the card processor';
     modal.querySelector('#cancel-refund-fee-label').textContent =
-      `Also add ${pctLabel}% to cover the card processing fee on this refund (Stripe/PayPal never give this back to you - only check this if you want to cover it yourself)`;
+      `Also add ${pctLabel}% to cover the ${methodName} processing fee on this refund (${methodSubject} never gives this back to you - only check this if you want to cover it yourself)`;
   } else {
     feeRow.style.display = 'none';
   }
