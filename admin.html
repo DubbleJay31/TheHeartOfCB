@@ -3143,6 +3143,13 @@ function _openQuoteSendModal(code) {
   } else {
     prefEl.style.display = 'none';
   }
+  // Same ★-on-the-preferred-button pattern used everywhere else this choice shows up (the
+  // confirm-page send buttons in book.html, the cancellation-notify buttons above) - Jesse:
+  // "can you please consistantly put the star or whatever you have been doing on the preferred
+  // contact method?" 'either' (guest said "both please") stars both buttons.
+  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
+  modal.querySelector('#qsm-email-btn').textContent = `✉️ Send via Email${star('email')}`;
+  modal.querySelector('#qsm-sms-btn').textContent = `💬 Send via Text${star('text')}`;
   modal.style.display = 'flex';
 }
 
@@ -3559,7 +3566,9 @@ function _openCancelNotifyModal(code, reason) {
   }
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
-  const star = m => r.contact_pref === m ? ' ★' : '';
+  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
+  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#cancel-notify-email-btn');
   const textBtn = modal.querySelector('#cancel-notify-text-btn');
   emailBtn.textContent = `📧 Send Cancellation Email${star('email')}`;
@@ -3658,7 +3667,9 @@ function _openUndoNotifyModal(code) {
     document.body.appendChild(modal);
   }
   modal.dataset.code = code;
-  const star = m => r.contact_pref === m ? ' ★' : '';
+  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
+  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#undo-notify-email-btn');
   const textBtn = modal.querySelector('#undo-notify-text-btn');
   emailBtn.textContent = `📧 Send Email${star('email')}`;
@@ -3876,7 +3887,9 @@ function _openDeclineNotifyModal(code, reason) {
   }
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
-  const star = m => r.contact_pref === m ? ' ★' : '';
+  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
+  // and book.html's own confirm-page buttons, see _openQuoteSendModal's comment on this.
+  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#decline-notify-email-btn');
   const textBtn = modal.querySelector('#decline-notify-text-btn');
   emailBtn.textContent = `📧 Send Decline Email${star('email')}`;
