@@ -3304,9 +3304,15 @@ function openGuestDashboard(code) {
              real signed_name/tok from reservation-signing-info.js (never trust stale values off
              this cached row) and build the same signed, tok-verified URL fresh. -->
         ${r.signed_name ? `<button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View Signed Agreement</button>` : ''}
+        <!-- sendEmail()/sendSMS() build fresh from whatever's currently loaded into the (hidden)
+             Quote Builder form - for isChangePending that's the NEW pending terms, never the
+             original signed agreement (that's what View Signed Agreement above is for). "Send via
+             Email" read as ambiguous sitting right next to that button - Jesse: "send what via
+             email? original agreement or change quoted?" - so the label now says what's actually
+             being sent, not just which channel. -->
         ${isPreConfirm ? (r.url ? `
-        <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Send via Email${star('email')}</button>
-        <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Send via Text${star('text')}</button>
+        <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email ${isChangePending ? 'Updated Quote' : 'Quote'}${star('email')}</button>
+        <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text ${isChangePending ? 'Updated Quote' : 'Quote'}${star('text')}</button>
         <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
         <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation to build one.</span>`) : ''}
