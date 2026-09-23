@@ -3369,28 +3369,47 @@ function openGuestDashboard(code) {
           </div>
         </div>` : ''}
 
-        ${(isConfirmed || isCancelled) ? `
+        <!-- CONFIRMED: Booking and Signed Agreement used to be two separate sections showing five
+             buttons that mostly pointed at the same underlying page - Jesse: "this is all
+             redundant... Is it the same things booking and signeagreement at this point?" They
+             are, once confirmed - View/Copy Link/Resend Confirmation all resolve to the same
+             guest-facing content (Resend Confirmation's own page already includes the signed
+             agreement link inline), so this is one merged section now, not two. View + Copy Link
+             both use the same re-verified _gdSignedAgreementUrl() as before (see
+             _gdCopySignedAgreementLink's comment) instead of two different link-building paths
+             that happened to usually agree. -->
+        ${isConfirmed ? `
         <div>
           <label>Booking</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-            ${confirmUrl ? `
-            ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
-            <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">📋 Copy Link</button>
-            ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
-            ${isCancelled ? `
-            <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
-            <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
+            ${confirmUrl ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
+            ${r.signed_name ? `
+            <span style="display:inline-flex;gap:.5rem;">
+              <button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View</button>
+              <button class="conf-btn" onclick="_gdCopySignedAgreementLink('${r.code}', this)">📋 Copy Link</button>
+            </span>
             ` : ''}
+            ${!confirmUrl && !r.signed_name ? `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>` : ''}
             ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
           </div>
         </div>` : ''}
 
-        <!-- The guest's own confirmation email has a "View & Print Your Signed Agreement" link,
-             but that only ever goes to the GUEST (send-email's "to" is always sigData.email) -
-             Jesse had no way to pull up, or resend, a signed contract himself. All three re-fetch
-             the real signed_name/tok fresh from reservation-signing-info.js (never trust stale
-             values off this cached row) via the shared _gdSignedAgreementUrl(). -->
-        ${r.signed_name ? `
+        <!-- CANCELLED: no equivalent merged single page exists here (there's no "resend
+             confirmation" for a cancelled reservation), so Booking (the cancellation notice) and
+             Signed Agreement (the original signed document, still useful for records) stay
+             separate sections, unchanged. -->
+        ${isCancelled ? `
+        <div>
+          <label>Booking</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            ${confirmUrl ? `<button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">📋 Copy Link</button>` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`}
+            <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
+            <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
+            ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
+          </div>
+        </div>` : ''}
+
+        ${(isCancelled && r.signed_name) ? `
         <div>
           <label>Signed Agreement</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
@@ -3501,6 +3520,27 @@ async function _gdViewSignedAgreement(code, el) {
     alert('Could not load the signed agreement - check console.');
   } finally {
     el.textContent = orig;
+  }
+}
+
+// Copy-link twin of _gdViewSignedAgreement above - same re-verified URL (never the row's possibly-
+// stale cached one), just copied instead of opened. Single source of truth for "what link does
+// this confirmed/cancelled guest get" - View and Copy Link used to point at two different link-
+// building paths (this one, and a separate plain r.url-based viewUrl) that happened to usually
+// land on the same page; now they provably always do.
+async function _gdCopySignedAgreementLink(code, el) {
+  const orig = el.textContent;
+  el.textContent = '…';
+  try {
+    const url = await _gdSignedAgreementUrl(code);
+    if (!url) { alert('Could not verify a signature on file for this reservation - try refreshing the list.'); el.textContent = orig; return; }
+    await navigator.clipboard.writeText(url);
+    el.textContent = '✅ Copied!';
+    setTimeout(() => { el.textContent = orig; }, 2200);
+  } catch (e) {
+    console.error('Copy Signed Agreement link failed:', e);
+    el.textContent = '⚠️ Copy failed - try again';
+    setTimeout(() => { el.textContent = orig; }, 2200);
   }
 }
 
