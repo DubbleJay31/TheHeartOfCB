@@ -37,6 +37,9 @@ exports.handler = async function(event) {
   // Fire-and-forget from the caller's perspective - a slow/failed push should never hold up or
   // break the guest's own page (submitting an inquiry, finishing a signature). Not awaited by the
   // guest; this function itself still awaits it so Netlify doesn't tear the process down mid-send.
-  await sendPushToAllSubscribers({ title, body: notifBody, url: '/admin.html' });
-  return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+  const result = await sendPushToAllSubscribers({ title, body: notifBody, url: '/admin.html' });
+  // Diagnostic detail included in the response - {ok:true} alone was indistinguishable between
+  // "delivered" and "silently found zero subscriptions" or "push service rejected it," which made
+  // debugging a "did it actually arrive?" report impossible from the response alone.
+  return { statusCode: 200, body: JSON.stringify({ ok: true, ...result }) };
 };

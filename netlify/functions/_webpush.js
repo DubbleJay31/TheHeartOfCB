@@ -97,21 +97,31 @@ async function sendWebPush(subscription, payload) {
 
 // Sends to every stored subscription (Jesse may have more than one device), pruning any the push
 // service reports as gone. Never throws - a broken push send should never block or fail the email
-// notification it rides alongside.
+// notification it rides alongside. Returns a per-subscription result summary (subCount, results[])
+// so callers that DO want to know what happened (debugging a "did it actually arrive?" report) can
+// see it, without forcing every caller to handle failures itself.
 async function sendPushToAllSubscribers(payload) {
   try {
     const listResp = await fetch(`${SB_URL}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth`, { headers: sbHeaders() });
-    if (!listResp.ok) return;
+    if (!listResp.ok) return { subCount: 0, listError: `list fetch failed: ${listResp.status}` };
     const subs = await listResp.json();
-    await Promise.all(subs.map(async (s) => {
+    const results = await Promise.all(subs.map(async (s) => {
       try {
-        const { gone } = await sendWebPush(s, payload);
+        const { ok, status, gone } = await sendWebPush(s, payload);
         if (gone) {
           await fetch(`${SB_URL}/rest/v1/push_subscriptions?id=eq.${s.id}`, { method: 'DELETE', headers: sbHeaders() }).catch(() => {});
         }
-      } catch (e) { console.error('Push send failed for subscription', s.id, e); }
+        return { id: s.id, endpoint: s.endpoint.slice(0, 60), ok, status, gone };
+      } catch (e) {
+        console.error('Push send failed for subscription', s.id, e);
+        return { id: s.id, endpoint: s.endpoint.slice(0, 60), error: String(e) };
+      }
     }));
-  } catch (e) { console.error('sendPushToAllSubscribers failed:', e); }
+    return { subCount: subs.length, results };
+  } catch (e) {
+    console.error('sendPushToAllSubscribers failed:', e);
+    return { subCount: 0, error: String(e) };
+  }
 }
 
 module.exports = { sendWebPush, sendPushToAllSubscribers };
