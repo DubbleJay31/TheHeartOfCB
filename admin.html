@@ -3523,14 +3523,22 @@ async function _gdSendSignedAgreement(code, method, el) {
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
   </div>
 </div></div>`;
-    const resp = await fetch('/.netlify/functions/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: [r.email], subject: 'Your Signed Agreement - The Heart Of CB', html })
+    el.textContent = orig;
+    _openEmailPreviewModal({
+      to: r.email,
+      subject: 'Your Signed Agreement - The Heart Of CB',
+      html,
+      onSend: async () => {
+        const resp = await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: [r.email], subject: 'Your Signed Agreement - The Heart Of CB', html })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        el.textContent = '✅ Sent!';
+        setTimeout(() => { el.textContent = orig; }, 2200);
+      }
     });
-    if (!resp.ok) throw new Error(await resp.text());
-    el.textContent = '✅ Sent!';
-    setTimeout(() => { el.textContent = orig; }, 2200);
     return;
   } catch (e) {
     console.error('Send Signed Agreement failed:', e);

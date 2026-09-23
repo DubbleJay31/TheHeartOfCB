@@ -1771,9 +1771,56 @@ function showBookingComplete() {
   document.getElementById('bco-overlay').classList.add('show');
 }
 
-// ── BOOKING CONFIRMATION EMAIL ──
-async function _sendAgreementCopy(sigData) {
-  try {
+// ── EMAIL PREVIEW ── same pattern as admin.html's _openEmailPreviewModal (srcdoc iframe, Send
+// button only fires the fetch from inside this modal) - Jesse: "if i click email i want to see
+// the screen they will see before i send it... send pops up preview with send options at top and
+// a close button like in past screens ive seen." A separate implementation, not a shared file,
+// since book.html and admin.html are independent pages with no shared script include.
+function _openEmailPreviewModal({ to, subject, html, onSend }) {
+  let modal = document.getElementById('email-preview-generic-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'email-preview-generic-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.82);z-index:9003;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;height:88vh;box-shadow:0 24px 80px rgba(0,0,0,.4);overflow:hidden;display:flex;flex-direction:column;">
+        <div style="background:#0a1f3a;padding:.85rem 1.2rem;flex-shrink:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:#b8882a;font-weight:700;letter-spacing:.04em;font-size:.85rem;">EMAIL PREVIEW</span>
+            <button onclick="document.getElementById('email-preview-generic-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+          </div>
+          <div id="epg-meta" style="color:#c9d2e0;font-size:.78rem;margin-top:.3rem;"></div>
+        </div>
+        <iframe id="epg-frame" style="flex:1;border:none;width:100%;"></iframe>
+        <div style="padding:.9rem 1.2rem;display:flex;gap:.7rem;border-top:1px solid #eee;background:#fafafa;flex-shrink:0;">
+          <button id="epg-send-btn" style="flex:1;background:#2a7a3b;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">✉️ Send</button>
+          <button onclick="document.getElementById('email-preview-generic-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.75rem 1rem;cursor:pointer;">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.querySelector('#epg-meta').textContent = `To: ${to || '(no email on file)'} · Subject: ${subject}`;
+  modal.querySelector('#epg-frame').srcdoc = html;
+  const sendBtn = modal.querySelector('#epg-send-btn');
+  sendBtn.disabled = !to;
+  sendBtn.style.opacity = to ? '1' : '.5';
+  sendBtn.textContent = '✉️ Send';
+  sendBtn.onclick = async () => {
+    sendBtn.disabled = true; sendBtn.textContent = '⏳ Sending…';
+    try {
+      await onSend();
+      sendBtn.textContent = '✅ Sent!';
+    } catch (e) {
+      console.error(e);
+      sendBtn.disabled = false; sendBtn.textContent = '⚠️ Failed - try again';
+    }
+  };
+  modal.style.display = 'flex';
+}
+
+// ── BOOKING CONFIRMATION EMAIL ── builds the HTML only; sendGuestConfirmation() previews it in
+// _openEmailPreviewModal before the fetch ever fires.
+function _buildConfirmationEmailHtml(sigData) {
     const fmt2 = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const signedAt = new Date(sigData.signedAt).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
     const noFee = sigData.noFeeTotal || sigData.total;
@@ -2012,17 +2059,7 @@ async function _sendAgreementCopy(sigData) {
 </table></td></tr></table>
 </body></html>`;
 
-    const _emailResp = await fetch('/.netlify/functions/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: [sigData.email],
-        subject: `🎉 You're Confirmed! - 213 Harper Avenue | ${fmtDate(sigData.ci)} – ${fmtDate(sigData.co)}`,
-        html
-      })
-    });
-    if (!_emailResp.ok) throw new Error(await _emailResp.text());
-  } catch(err) { console.error('Booking confirmation email failed:', err); }
+  return { html, subject: `🎉 You're Confirmed! - 213 Harper Avenue | ${fmtDate(sigData.ci)} – ${fmtDate(sigData.co)}` };
 }
 
 // ── HANDLE PAYMENT METHOD CLICK ──
@@ -2395,12 +2432,12 @@ async function _notifyJesse(method) {
       </button>
       `}
       <div id="send-confirm-buttons" style="${_alreadyConfirmed ? '' : 'display:none;'}">
-        ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
         <div style="background:#f0fdf4;border:1.5px solid #16a34a;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;text-align:left;font-size:.85rem;color:#166534;line-height:1.6;">
           <strong>Email sends the full confirmation to:</strong><br/>${_esc(email) || '(no email on file)'}<br/><br/>
           Includes: check-in details, door code instructions, house rules, cancellation policy, checkout checklist, and the signed agreement on file.<br/><br/>
           <strong>Text sends a shorter note</strong>${phone ? ` to ${_esc(phone)}` : ' (no phone on file)'} with a link to the full details online.
         </div>
+        ${contactPref ? `<div style="background:#ecfdf5;border:1.5px solid #16a34a;border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;text-align:left;font-size:.85rem;color:#166534;font-weight:600;">${contactPref === 'text' ? '💬 Guest prefers Text' : contactPref === 'email' ? '📧 Guest prefers Email' : '📧💬 Guest said: Both please'}</div>` : ''}
         <button id="send-confirm-btn" onclick="sendGuestConfirmation()"
           style="width:100%;padding:1rem;background:#0f1e3d;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.01em;margin-bottom:.6rem;">
           ✅ Email Confirmation to ${_esc(guest.split(' ')[0])}${contactPref === 'email' || contactPref === 'either' ? ' ★' : ''}
@@ -2472,38 +2509,43 @@ async function _notifyJesse(method) {
     }
   };
 
-  window.sendGuestConfirmation = async function() {
+  window.sendGuestConfirmation = function() {
     const btn = document.getElementById('send-confirm-btn');
     const status = document.getElementById('confirm-status');
     if (!btn || btn.disabled) return;
-    btn.textContent = 'Sending…'; btn.disabled = true; btn.style.opacity = '.7';
-    try {
-      const bookUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
-      await _sendAgreementCopy({
-        guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
-        noFeeTotal, taxOcc, taxSales, ccFee,
-        cashMode, cashTotal, cashDep, cashDisc,
-        signedName: sigName,
-        signedAt: sigTs,
-        bookUrl,
-        paymentMethod: methodName,
-      });
-      btn.textContent = '✅ Confirmation Sent!';
-      btn.style.background = '#16a34a'; btn.style.opacity = '';
+    const bookUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
+    const { html, subject } = _buildConfirmationEmailHtml({
+      guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
+      noFeeTotal, taxOcc, taxSales, ccFee,
+      cashMode, cashTotal, cashDep, cashDisc,
+      signedName: sigName,
+      signedAt: sigTs,
+      bookUrl,
+      paymentMethod: methodName,
+    });
+    _openEmailPreviewModal({
+      to: email,
+      subject,
+      html,
+      onSend: async () => {
+        const _emailResp = await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: [email], subject, html })
+        });
+        if (!_emailResp.ok) throw new Error(await _emailResp.text());
+        btn.textContent = '✅ Confirmation Sent!';
+        btn.style.background = '#16a34a'; btn.style.opacity = '';
 
-      const resv = await _confirmReservation(true);
-      if (resv.ok) {
-        const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
-        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}${note}</span>`;
-      } else {
-        if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
+        const resv = await _confirmReservation(true);
+        if (resv.ok) {
+          const note = resv.skipped ? ' · Reservation already on file' : ' · Reservation saved';
+          if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}${note}</span>`;
+        } else {
+          if (status) status.innerHTML = `<span style="color:#16a34a;">Sent to ${_esc(email) || 'guest'}</span><br/><span style="color:#dc2626;">⚠️ Reservation save failed - confirm manually in Admin</span>`;
+        }
       }
-    } catch(err) {
-      btn.textContent = '✅ Email Confirmation to ' + guest.split(' ')[0];
-      btn.disabled = false; btn.style.opacity = '';
-      if (status) status.innerHTML = `<span style="color:#dc2626;">Send failed - check console</span>`;
-      console.error('Confirmation send failed:', err);
-    }
+    });
   };
 
   // Text alternative - same reservation-confirm step, shorter message with a link instead of
