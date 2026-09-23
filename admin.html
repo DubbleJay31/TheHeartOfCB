@@ -2663,6 +2663,56 @@ function _openSmsModal(msg, phone) {
   return modal;
 }
 
+// ── EMAIL PREVIEW ── shared modal for any host-initiated email that doesn't already go through
+// the Quote Builder's own preview (#email-modal, see sendEmail()'s "Always show preview modal").
+// undo-notify, decline-notify, and cancellation email all used to fire straight to send-email on
+// click - undo/decline with no confirmation at all, cancellation with only a bare window.confirm()
+// naming the recipient, never the actual content. Jesse: "i always wnat to see a preview of the
+// thing being sent." One generic modal (srcdoc iframe, same technique _openConfirmSendModal uses
+// for a live URL - here it's a one-off generated HTML string instead) - the fetch only fires from
+// the Send button inside THIS modal, never from the button that opened it.
+function _openEmailPreviewModal({ to, subject, html, onSend }) {
+  let modal = document.getElementById('email-preview-generic-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'email-preview-generic-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.82);z-index:9003;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;height:88vh;box-shadow:0 24px 80px rgba(0,0,0,.4);overflow:hidden;display:flex;flex-direction:column;">
+        <div style="background:#0a1f3a;padding:.85rem 1.2rem;flex-shrink:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:#b8882a;font-weight:700;letter-spacing:.04em;font-size:.85rem;">EMAIL PREVIEW</span>
+            <button onclick="document.getElementById('email-preview-generic-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">✕</button>
+          </div>
+          <div id="epg-meta" style="color:#c9d2e0;font-size:.78rem;margin-top:.3rem;"></div>
+        </div>
+        <iframe id="epg-frame" style="flex:1;border:none;width:100%;"></iframe>
+        <div style="padding:.9rem 1.2rem;display:flex;gap:.7rem;border-top:1px solid #eee;background:#fafafa;flex-shrink:0;">
+          <button id="epg-send-btn" style="flex:1;background:#2a7a3b;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">✉️ Send</button>
+          <button onclick="document.getElementById('email-preview-generic-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.75rem 1rem;cursor:pointer;">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.querySelector('#epg-meta').textContent = `To: ${to || '(no email on file)'} · Subject: ${subject}`;
+  modal.querySelector('#epg-frame').srcdoc = html;
+  const sendBtn = modal.querySelector('#epg-send-btn');
+  sendBtn.disabled = !to;
+  sendBtn.style.opacity = to ? '1' : '.5';
+  sendBtn.textContent = '✉️ Send';
+  sendBtn.onclick = async () => {
+    sendBtn.disabled = true; sendBtn.textContent = '⏳ Sending…';
+    try {
+      await onSend();
+      sendBtn.textContent = '✅ Sent!';
+    } catch (e) {
+      console.error(e);
+      sendBtn.disabled = false; sendBtn.textContent = '⚠️ Failed - try again';
+    }
+  };
+  modal.style.display = 'flex';
+}
+
 function sendSMS() {
   if (!_generatedUrl) return false;
   const guest     = getGuestName();
@@ -3756,27 +3806,26 @@ function _openCancelNotifyModal(code, reason) {
   modal.style.display = 'flex';
 }
 
-async function _sendCancelNotification(method) {
+function _sendCancelNotification(method) {
   const modal = document.getElementById('cancel-notify-modal');
   const code = modal.dataset.code;
   const message = modal.dataset.reason || '';
   const status = document.getElementById('cancel-notify-status');
   const btn = document.getElementById(method === 'email' ? 'cancel-notify-email-btn' : 'cancel-notify-text-btn');
+  const closeBtn = document.getElementById('cancel-notify-close-btn');
   if (method === 'email') {
-    await sendCancellationEmail(code, btn, true, message);
-    if (btn.textContent.indexOf('✅') === -1) return; // sendCancellationEmail already reported failure on the button
-    status.style.color = '#166534';
-    status.textContent = '✅ Email sent';
+    sendCancellationEmail(code, btn, message, () => {
+      status.style.color = '#166534';
+      status.textContent = '✅ Email sent';
+      if (closeBtn) closeBtn.textContent = 'Close';
+    });
   } else {
     sendCancellationText(code, message);
     btn.textContent = '✅ Text App Opened';
     status.style.color = '#166534';
     status.textContent = '✅ Text composer opened';
+    if (closeBtn) closeBtn.textContent = 'Close';
   }
-  // "Don't Send Anything" only makes sense before anything's been sent - once something has,
-  // relabel it to what it actually now does, so it's not confusingly the only way out.
-  const closeBtn = document.getElementById('cancel-notify-close-btn');
-  if (closeBtn) closeBtn.textContent = 'Close';
 }
 
 // Reverts a change-pending reservation (see renderConfirmedPanel's isChangePending) back to the
@@ -3854,20 +3903,18 @@ function _openUndoNotifyModal(code) {
   modal.style.display = 'flex';
 }
 
-async function _sendUndoNotification(method) {
+function _sendUndoNotification(method) {
   const modal = document.getElementById('undo-notify-modal');
   const code = modal.dataset.code;
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
   const status = document.getElementById('undo-notify-status');
   const btn = document.getElementById(method === 'email' ? 'undo-notify-email-btn' : 'undo-notify-text-btn');
-  const origText = btn.textContent;
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
   const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
-  btn.disabled = true; btn.textContent = '⏳ Sending…';
-  try {
-    if (method === 'email') {
-      const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+  const closeBtn = document.getElementById('undo-notify-close-btn');
+  if (method === 'email') {
+    const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
   <div style="background:#0a1f3a;padding:24px;text-align:center;">
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Your Reservation Stands As Booked</h1>
@@ -3884,32 +3931,32 @@ async function _sendUndoNotification(method) {
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
   </div>
 </div></body></html>`;
-      const resp = await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: [r.email], subject: `Your Reservation Stands As Booked - The Heart Of CB`, html })
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      status.style.color = '#166534';
-      status.textContent = `✅ Email sent to ${r.email}`;
-      btn.textContent = '✅ Sent!';
-    } else {
-      const firstName = (r.guest || '').split(' ')[0];
-      const msg = `Hi ${firstName}, it's Jesse - quick update: we're keeping your reservation at The Heart Of CB exactly as originally booked (${fmtD(r.check_in)} - ${fmtD(r.check_out)}), no changes needed. Let me know if you have any questions!`;
-      window.open(`sms:${(r.phone||'').replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
-      status.style.color = '#166534';
-      status.textContent = '✅ Text app opened';
-      btn.textContent = '✅ Opened!';
-    }
-  } catch(e) {
-    console.error(e);
-    status.style.color = '#b91c1c';
-    status.textContent = '⚠️ Send failed - check console';
-    btn.disabled = false; btn.textContent = origText;
-    return;
+    _openEmailPreviewModal({
+      to: r.email,
+      subject: 'Your Reservation Stands As Booked - The Heart Of CB',
+      html,
+      onSend: async () => {
+        const resp = await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: [r.email], subject: 'Your Reservation Stands As Booked - The Heart Of CB', html })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        status.style.color = '#166534';
+        status.textContent = `✅ Email sent to ${r.email}`;
+        btn.textContent = '✅ Sent!';
+        if (closeBtn) closeBtn.textContent = 'Close';
+      }
+    });
+  } else {
+    const firstName = (r.guest || '').split(' ')[0];
+    const msg = `Hi ${firstName}, it's Jesse - quick update: we're keeping your reservation at The Heart Of CB exactly as originally booked (${fmtD(r.check_in)} - ${fmtD(r.check_out)}), no changes needed. Let me know if you have any questions!`;
+    window.open(`sms:${(r.phone||'').replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
+    status.style.color = '#166534';
+    status.textContent = '✅ Text app opened';
+    btn.textContent = '✅ Opened!';
+    if (closeBtn) closeBtn.textContent = 'Close';
   }
-  const closeBtn = document.getElementById('undo-notify-close-btn');
-  if (closeBtn) closeBtn.textContent = 'Close';
 }
 
 async function permanentlyDeleteReservation(code) {
@@ -4076,7 +4123,7 @@ function _openDeclineNotifyModal(code, reason) {
   modal.style.display = 'flex';
 }
 
-async function _sendDeclineNotification(method) {
+function _sendDeclineNotification(method) {
   const modal = document.getElementById('decline-notify-modal');
   const code = modal.dataset.code;
   const reason = modal.dataset.reason;
@@ -4084,47 +4131,43 @@ async function _sendDeclineNotification(method) {
   if (!r) return;
   const status = document.getElementById('decline-notify-status');
   const btn = document.getElementById(method === 'email' ? 'decline-notify-email-btn' : 'decline-notify-text-btn');
-  const origText = btn.textContent;
-  btn.disabled = true; btn.textContent = '⏳ Sending…';
-  try {
-    if (method === 'email') {
-      const resp = await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: [r.email], subject: `About your request - The Heart Of CB`, html: _declineEmailHtml(r, reason) })
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      status.style.color = '#166534';
-      status.textContent = `✅ Email sent to ${r.email}`;
-      btn.textContent = '✅ Sent!';
-    } else {
-      const firstName = (r.guest || '').split(' ')[0];
-      const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Unfortunately I'm not able to accommodate your request${r.check_in ? ` for ${r.check_in}` : ''}.${reason ? ` ${reason}` : ''} Sorry for the inconvenience - hope to host you another time!`;
-      window.open(`sms:${(r.phone||'').replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
-      status.style.color = '#166534';
-      status.textContent = '✅ Text app opened';
-      btn.textContent = '✅ Opened!';
-    }
-  } catch(e) {
-    console.error(e);
-    status.style.color = '#b91c1c';
-    status.textContent = '⚠️ Send failed - check console';
-    btn.disabled = false; btn.textContent = origText;
-    return;
-  }
-  // "Don't Send Anything" only makes sense before anything's been sent - once something has,
-  // relabel it to what it actually now does, so it's not confusingly the only way out.
   const closeBtn = document.getElementById('decline-notify-close-btn');
-  if (closeBtn) closeBtn.textContent = 'Close';
+  if (method === 'email') {
+    const html = _declineEmailHtml(r, reason);
+    _openEmailPreviewModal({
+      to: r.email,
+      subject: 'About your request - The Heart Of CB',
+      html,
+      onSend: async () => {
+        const resp = await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: [r.email], subject: 'About your request - The Heart Of CB', html })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        status.style.color = '#166534';
+        status.textContent = `✅ Email sent to ${r.email}`;
+        btn.textContent = '✅ Sent!';
+        if (closeBtn) closeBtn.textContent = 'Close';
+      }
+    });
+  } else {
+    const firstName = (r.guest || '').split(' ')[0];
+    const msg = `Hi ${firstName}, this is Jesse from The Heart Of CB. Unfortunately I'm not able to accommodate your request${r.check_in ? ` for ${r.check_in}` : ''}.${reason ? ` ${reason}` : ''} Sorry for the inconvenience - hope to host you another time!`;
+    window.open(`sms:${(r.phone||'').replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`, '_blank');
+    status.style.color = '#166534';
+    status.textContent = '✅ Text app opened';
+    btn.textContent = '✅ Opened!';
+    if (closeBtn) closeBtn.textContent = 'Close';
+  }
 }
 
-// ── CANCELLATION EMAIL ──
-async function sendCancellationEmail(code, btn, skipConfirm, message) {
+// ── CANCELLATION EMAIL ── the window.confirm() this used to gate on named the recipient but never
+// the actual content - replaced with the same always-preview-first pattern as undo/decline below.
+async function sendCancellationEmail(code, btn, message, onSent) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
-  if (!skipConfirm && !confirm(`Send a cancellation email to ${r.guest} (${r.email})?`)) return;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
   const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
   const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
   const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
@@ -4154,18 +4197,21 @@ async function sendCancellationEmail(code, btn, skipConfirm, message) {
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
   </div>
 </div></body></html>`;
-  try {
-    const resp = await fetch('/.netlify/functions/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: [r.email], subject: `Your Reservation Has Been Canceled - The Heart Of CB`, html })
-    });
-    if (!resp.ok) throw new Error(await resp.text());
-    if (btn) { btn.textContent = '✅ Sent'; }
-  } catch(e) {
-    console.error(e);
-    if (btn) { btn.disabled = false; btn.textContent = '⚠️ Failed - try again'; }
-  }
+  _openEmailPreviewModal({
+    to: r.email,
+    subject: 'Your Reservation Has Been Canceled - The Heart Of CB',
+    html,
+    onSend: async () => {
+      const resp = await fetch('/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: [r.email], subject: 'Your Reservation Has Been Canceled - The Heart Of CB', html })
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      if (btn) { btn.textContent = '✅ Sent'; }
+      if (onSent) onSent();
+    }
+  });
 }
 
 // Text version of the cancellation notice - same info, opened as a text message.
