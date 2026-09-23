@@ -412,7 +412,15 @@ main { padding-top: 150px; }
 .booking-layout { display: grid; grid-template-columns: 1.55fr 1fr; gap: 4rem; align-items: start; }
 .booking-form-wrap { background: var(--white); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
 .booking-form-wrap h2 { margin-bottom: .3rem; }
-.form-sub { font-size: .9rem; color: var(--muted); margin-bottom: 1.8rem; }
+.form-sub { font-size: .9rem; color: var(--muted); margin-bottom: .9rem; }
+/* Sets expectations up front instead of guests hitting the ID-verify gate as a surprise once
+   they're already mid-quote - Jesse: "let them know that once they see the quote they will have
+   to do the id check. no surprises." */
+.form-idverify-note {
+  display: flex; align-items: flex-start; gap: .5rem; font-size: .85rem; line-height: 1.5;
+  color: var(--navy); background: rgba(184,136,42,.08); border: 1.5px solid rgba(184,136,42,.3);
+  border-radius: 10px; padding: .75rem .9rem; margin-bottom: 1.4rem;
+}
 .booking-form, .contact-form { display: flex; flex-direction: column; gap: 1.1rem; }
 .form-group { display: flex; flex-direction: column; gap: .35rem; }
 .form-group label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text); }
@@ -421,6 +429,14 @@ main { padding-top: 150px; }
   font-size: .92rem; font-family: inherit; color: var(--text); background: var(--sand);
   transition: border-color var(--transition), background var(--transition);
   -webkit-appearance: none;
+}
+/* Still-empty required fields get a visible highlight instead of blending in with everything
+   else - Jesse: "the unfilled spaces need to be more highlighted for the guest." :invalid covers
+   input/select/textarea uniformly (all are `required`, so empty == invalid) without needing a
+   separate :placeholder-shown rule just for text inputs. Warm gold, not red/error styling - this
+   is "still needs filling," not "you did something wrong." */
+.form-group input:invalid, .form-group select:invalid, .form-group textarea:invalid {
+  border-color: rgba(184,136,42,.55); background: rgba(184,136,42,.06);
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   outline: none; border-color: var(--gold); background: var(--white);
