@@ -1291,13 +1291,13 @@ if (expRaw && get('action') !== 'confirm') {
     // payment coming from them at all) and was leaving guests unsure whether they still needed to
     // do anything.
     inner.className = 'expiry-banner warn';
-    inner.innerHTML = `💰 You have a ${fmt(refundDue)} refund coming your way - but it only goes out once you sign the updated agreement below. Your dates are <strong>not blocked</strong> until then.`;
+    inner.innerHTML = `💰 You have a ${fmt(refundDue)} refund coming your way - but it only goes out once you verify your identity and sign the updated agreement below. Your dates are <strong>not blocked</strong> until then.`;
   } else if (isZeroBalance) {
     // Credit lands exactly on the new total - same "nothing to pay" situation as the refund case
     // above, just with no money moving either direction. Same reasoning: the payment warning is
     // wrong here, and what's actually still needed is the signature, not a check for payment.
     inner.className = 'expiry-banner warn';
-    inner.innerHTML = `✅ Your prior credit covers this updated stay in full - nothing more to pay. Sign the updated agreement below for the change to take effect.`;
+    inner.innerHTML = `✅ Your prior credit covers this updated stay in full - nothing more to pay. Verify your identity and sign the updated agreement below for the change to take effect.`;
   } else {
     inner.className = 'expiry-banner warn';
     inner.innerHTML = `⚠️ Your booking is not complete until payment is received. Your dates are <strong>not blocked</strong> - anyone can book them until you pay.`;
