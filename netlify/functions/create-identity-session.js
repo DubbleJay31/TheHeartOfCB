@@ -1,13 +1,13 @@
 const { sbReservations } = require('./_reservations');
 const { stripeFetch } = require('./_stripe');
 
-// Public, guest-facing - called from book.html once a guest has signed, before they're allowed
-// to pay. Mirrors create-stripe-checkout.js's shape (session created on demand, amount/eligibility
-// always read from the reservation's own current row, never trusted from the request body) but
-// for a Stripe Identity VerificationSession instead of a Checkout Session. Uses Stripe's hosted
-// redirect flow (the `url` on the created session), not the embedded/client-secret flow - this
-// repo has no Stripe.js loaded anywhere and no npm dependencies (see _stripe.js), and the hosted
-// redirect needs neither.
+// Public, guest-facing - called from book.html BEFORE a guest signs (Jesse: "i want identity
+// check first before signing"). Mirrors create-stripe-checkout.js's shape (session created on
+// demand, eligibility always read from the reservation's own current row, never trusted from the
+// request body) but for a Stripe Identity VerificationSession instead of a Checkout Session. Uses
+// Stripe's hosted redirect flow (the `url` on the created session), not the embedded/client-secret
+// flow - this repo has no Stripe.js loaded anywhere and no npm dependencies (see _stripe.js), and
+// the hosted redirect needs neither.
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -34,10 +34,11 @@ exports.handler = async function(event) {
     if (r.id_verification_status === 'verified') {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ already_verified: true }) };
     }
-    // Must be signed - verification happens after signing, before payment, same "sign before you
-    // can act" rule create-stripe-checkout.js already enforces for the payment step itself.
-    if (r.status !== 'signed') {
-      return { statusCode: 409, body: JSON.stringify({ message: 'This reservation must be signed before identity verification can start.' }) };
+    // Verification now runs BEFORE signing, so this only needs to reject a reservation that's
+    // already fully done (confirmed) or dead (cancelled) - inquiry/quoted/signed are all fair
+    // game, since a guest can reach this from the very first time they open their quote link.
+    if (r.status === 'confirmed' || r.status === 'cancelled') {
+      return { statusCode: 409, body: JSON.stringify({ message: 'This reservation is no longer open for identity verification.' }) };
     }
 
     // A guest re-loading the page mid-flow (or retrying after an abandoned attempt) shouldn't

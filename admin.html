@@ -1025,9 +1025,10 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         </div>
       </div>
 
-      <!-- ID VERIFICATION - required for every guest by default (Stripe Identity, run after
-           signing, before payment). This checkbox is the one override, and it's Jesse's alone -
-           there's no guest-facing choice anywhere in this flow. -->
+      <!-- ID VERIFICATION - required for every guest by default (Stripe Identity, run BEFORE
+           signing - Jesse: "i want identity check first before signing. I dont want to hide it,"
+           see [[project_identity_before_signing_2026_09_23]]). This checkbox is the one override,
+           and it's Jesse's alone - there's no guest-facing choice anywhere in this flow. -->
       <div class="adm-card">
         <div class="adm-card-header"><h3>🪪 Identity Verification</h3></div>
         <div class="adm-card-body">
@@ -1036,7 +1037,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
               <input type="checkbox" id="f-id-verify-skip" style="width:16px;height:16px;cursor:pointer;" />
               ⚠️ Skip ID Verification
             </label>
-            <span class="field-hint" style="color:#92400e;">Required for every guest by default (Stripe Identity - document + selfie, run after signing, before payment). Check this only if you're personally waiving it for this reservation - the guest is never given the choice.</span>
+            <span class="field-hint" style="color:#92400e;">Required for every guest by default (Stripe Identity, run before the guest can sign). Check this only if you're personally waiving it for this reservation - the guest is never given the choice.</span>
           </div>
           <div id="id-verify-status" style="display:none;margin-top:.6rem;font-size:.82rem;font-weight:700;"></div>
         </div>
