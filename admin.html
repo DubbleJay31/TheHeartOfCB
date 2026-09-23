@@ -1563,7 +1563,17 @@ function _loadIntoForm(code) {
   const _lastPaid = parseFloat(r.last_paid_total) || 0;
   const _hasOrigFee = r.status === 'confirmed' && _lastPaid > 0 && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
   _origPaidGross = (r.status === 'confirmed' && _lastPaid > 0 && r.payment_method && r.payment_method !== 'Cash') ? _lastPaid : 0;
-  _origFeeAmt = _hasOrigFee ? Math.max(0, _origPaidGross - _noFeeTotal(r)) : 0;
+  // Was Math.max(0, _origPaidGross - _noFeeTotal(r)) - subtracting r.rate/tax_occ/tax_sales, which
+  // have the EXACT drift problem last_paid_total was specifically chosen to avoid (see comment
+  // above): they get overwritten by the next Change Reservation edit, so on a reservation edited
+  // more than once this "fee" was really (real fee + however much the rate changed since), wildly
+  // wrong. Jesse: paid $412 total (a real $12 fee on $400), reservation later edited to a $300
+  // rate, and this showed "$112 card fee" - "this seems wrong...card fee is not $112." Reverse-
+  // engineers the fee straight from the trusted gross paid + the known fixed rate instead (same
+  // total/(1+rate) math book.html's own ccFee already uses), never touching the row's editable
+  // rate/tax fields at all.
+  const _origFeeRate = r.payment_method === 'paypal' ? PAYPAL_FEE : CC_FEE;
+  _origFeeAmt = _hasOrigFee ? Math.max(0, _origPaidGross - _origPaidGross / (1 + _origFeeRate)) : 0;
   const creditEl = document.getElementById('f-credit');
   const refundFeeEl = document.getElementById('f-refund-fee');
   const refundFeeRow = document.getElementById('refund-fee-row');
