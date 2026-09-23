@@ -3126,8 +3126,13 @@ function renderConfirmedPanel() {
     // way to revert just the pending change back to the prior terms) - so this routes to the same
     // cancelReservation() the dashboard's own Cancel button uses, with its correct wording and
     // cancellation-notify flow, instead of the decline pipeline.
-    const { isChangePending, isActionNeeded } = _rowActionState(r);
+    const { isActionNeeded } = _rowActionState(r);
     const { text: statusLabel, color: statusColor } = _rowStatusLabel(r);
+    // Info only, no inline actions - Jesse: "i dont want any actgion buttons here. just info. You
+    // must click into the reservation to make actions." Confirm/Keep Original Terms/Cancel-or-
+    // Decline used to live here as quick-action buttons (with event.stopPropagation() so they
+    // didn't also trigger the row's own click-to-open); all three are still available, just one
+    // click further in, inside the Guest Dashboard's own action rows.
     return `
     <div class="conf-row${isActionNeeded ? ' action-needed' : ''}" onclick="${clickable}">
       <div class="conf-row-icon">${PROPS[r.prop]?.icon || '🏠'}</div>
@@ -3135,27 +3140,8 @@ function renderConfirmedPanel() {
         <div class="conf-row-guest">${_esc(r.guest)} <span style="font-size:.72em;font-weight:700;color:${statusColor};">${statusLabel}</span></div>
         <div class="conf-row-detail">${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')} · ${dates}${_esc(_rowPriceLabel(r, fmt$))} · <span style="color:var(--muted2);">${_esc(r.code)}</span></div>
       </div>
-      <div class="conf-row-actions" style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
+      <div class="conf-row-actions">
         <div class="conf-row-booked">${r.created_at ? `Booked ${fmtBooked(r.created_at)}` : ''}</div>
-        <div style="display:flex;gap:.3rem;flex-wrap:wrap;justify-content:flex-end;">
-          <!-- 'signed' only, not 'quoted' too - reservations-confirm.js hard-requires status
-               'signed' (a guest actually has to have signed before Jesse can confirm on their
-               behalf), so offering this on a still-quoted row - guest hasn't signed anything yet -
-               always 409'd, surfacing as a confusing "Save failed - check console" with no real
-               explanation. Hiding it here is the correct fix, not just the working one: Jesse
-               confirming a reservation nobody's actually agreed to would be wrong even if the
-               server allowed it.
-               Opens the same Send Booking Confirmation popup the email link and the detail modal's
-               button both use, rather than confirming immediately on click - clicking this used to
-               PATCH status straight to 'confirmed' before Jesse ever saw the popup, so the popup
-               then opened already-confirmed and skipped straight to the send buttons. That meant
-               this entry point and the email's "Open Admin to Send Confirmation" link led to two
-               different experiences for the exact same reservation - one let Jesse review and
-               explicitly click Confirm Reservation inside the popup, the other didn't. -->
-          ${r.status === 'signed' ? `<button class="bi-btn confirm-res" style="font-size:.7rem;padding:.25rem .6rem;" onclick="event.stopPropagation();_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
-          ${isChangePending && r.prior_terms ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="event.stopPropagation();undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
-          ${(r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed') ? `<button class="bi-btn" style="font-size:.7rem;padding:.25rem .6rem;background:none;border:1.5px solid #7a1f1f;color:#7a1f1f;" onclick="event.stopPropagation();${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
-        </div>
       </div>
     </div>`;
   }).join('');
@@ -3288,56 +3274,65 @@ function openGuestDashboard(code) {
       <label>Private Note - only visible to you</label>
       <textarea class="conf-notes-box" id="conf-notes-${r.code}" placeholder="Internal notes about this guest or booking…">${_esc(r.host_notes) || ''}</textarea>
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
-      <div class="conf-modal-actions">
-        <!-- 'signed' only, not 'quoted' too - reservations-confirm.js hard-requires status
-             'signed' (a guest actually has to have signed before Jesse can confirm on their
-             behalf), so offering this on a still-quoted row always 409'd. Opens the same Send
-             Booking Confirmation popup the email link uses, rather than confirming immediately on
-             click - Jesse explicitly clicks Confirm Reservation inside that popup, nothing
-             auto-confirms just from opening this dashboard. -->
-        ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
-        <!-- The guest's own confirmation email has a "View & Print Your Signed Agreement" link,
-             but that only ever goes to the GUEST (send-email's "to" is always sigData.email) -
-             Jesse never gets a copy, so there was no way for him to pull up a signed contract
-             himself. Reuses the exact server-verified mechanism book.html's own
-             _showAlreadyConfirmedPage already does for a guest reopening their link: re-fetch the
-             real signed_name/tok from reservation-signing-info.js (never trust stale values off
-             this cached row) and build the same signed, tok-verified URL fresh. -->
-        ${r.signed_name ? `<button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View Signed Agreement</button>` : ''}
-        <!-- sendEmail()/sendSMS()/_gdCopyLink()/previewLink() all build from whatever's currently
-             loaded into the (hidden) Quote Builder form - for isChangePending that's the NEW
-             pending terms, never the original signed agreement (that's what View Signed Agreement
-             above is for). Every one of these four labels used to just say the mechanism (Send via
-             Email, Copy Link, Open Live Link) with no hint at the content - Jesse asked the same
-             "what does this actually send/open" question twice in a row (once about Send via
-             Email, then again about Copy Link/Open Live Link right after), so all four now name
-             what they act on, not just how. -->
-        ${isPreConfirm ? (r.url ? `
-        <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email ${isChangePending ? 'Updated Quote' : 'Quote'}${star('email')}</button>
-        <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text ${isChangePending ? 'Updated Quote' : 'Quote'}${star('text')}</button>
-        <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy ${isChangePending ? 'Updated Quote' : 'Quote'} Link</button>
-        <button class="conf-btn" onclick="previewLink()">🔗 Open ${isChangePending ? 'Updated Quote' : 'Quote'}</button>
-        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation to build one.</span>`) : ''}
+      <div class="conf-modal-actions" style="display:flex;flex-direction:column;gap:.9rem;margin-top:1.1rem;">
+
+        <!-- DOCUMENT LINE - small text links, not buttons. The guest's own confirmation email has
+             a "View & Print Your Signed Agreement" link, but that only ever goes to the GUEST
+             (send-email's "to" is always sigData.email) - Jesse had no way to pull up, or resend,
+             a signed contract himself. All three re-fetch the real signed_name/tok fresh from
+             reservation-signing-info.js (never trust stale values off this cached row) via the
+             shared _gdSignedAgreementUrl(), same server-verified URL book.html's own
+             _showAlreadyConfirmedPage builds for a guest reopening their link. -->
+        ${r.signed_name ? `
+        <div style="font-size:.82rem;color:var(--muted);">
+          📄 Signed Agreement —
+          <a href="#" onclick="event.preventDefault();_gdViewSignedAgreement('${r.code}', this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">View</a> ·
+          <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','email',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Email</a> ·
+          <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','text',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Text</a>
+        </div>` : ''}
+
+        <!-- PRIMARY - the one or two things actually worth doing next, full-size buttons.
+             sendEmail()/sendSMS() build from whatever's currently loaded into the (hidden) Quote
+             Builder form - for isChangePending that's the NEW pending terms, never the original
+             signed agreement (that's the document line above). 'signed' only for Confirm
+             Reservation, not 'quoted' too - reservations-confirm.js hard-requires status 'signed'
+             (a guest actually has to have signed before Jesse can confirm on their behalf), so
+             offering this on a still-quoted row always 409'd. -->
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;flex:1;min-width:170px;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
+          ${isPreConfirm && r.url ? `
+          <button class="conf-btn" style="flex:1;min-width:150px;" onclick="_closeReservationDetail();sendEmail();">✉️ Email ${isChangePending ? 'Updated Quote' : 'Quote'}${star('email')}</button>
+          <button class="conf-btn" style="flex:1;min-width:150px;" onclick="_closeReservationDetail();sendSMS();">💬 Text ${isChangePending ? 'Updated Quote' : 'Quote'}${star('text')}</button>
+          ` : ''}
+          ${!isCancelled && (isConfirmed) && confirmUrl ? `<button class="conf-btn" style="flex:1;min-width:170px;" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
+          ${isCancelled ? `
+          <button class="conf-btn" style="flex:1;min-width:150px;" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
+          <button class="conf-btn" style="flex:1;min-width:150px;" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
+          ` : ''}
+          ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;flex:1;min-width:170px;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
+        </div>
+
+        <!-- UTILITY - link/copy, small text links, not buttons. Low-stakes, not a decision. -->
+        ${isPreConfirm && r.url ? `
+        <div style="font-size:.8rem;">
+          <a href="#" id="gd-copy-btn" onclick="event.preventDefault();_gdCopyLink(this)" style="color:#0f1e3d;font-weight:600;text-decoration:none;">📋 Copy ${isChangePending ? 'Updated Quote' : 'Quote'} Link</a>
+          &nbsp;·&nbsp;
+          <a href="#" onclick="event.preventDefault();previewLink()" style="color:#0f1e3d;font-weight:600;text-decoration:none;">🔗 Open ${isChangePending ? 'Updated Quote' : 'Quote'}</a>
+        </div>` : isPreConfirm ? `<div style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation below to build one.</div>` : ''}
         ${(isConfirmed || isCancelled) ? (confirmUrl ? `
-        <!-- "confirmed" and "someone actually got the confirmation" aren't the same thing - a
-             reservation confirmed via the list's quick button (or automatically, by Stripe) has
-             status='confirmed' with nobody notified yet. r.confirmation_sent_at (set only once
-             the full Email/Text confirmation actually goes out) is what tells a genuine resend
-             apart from a first send that just hasn't happened yet. -->
-        ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
-        <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">🔗 Copy Booking Link</button>
-        ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`) : ''}
-        <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
-        ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
-        ${isPreConfirm ? `<button class="conf-btn del" onclick="${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
-        ${isCancelled ? `
-        <button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>
-        <button class="conf-btn" onclick="sendCancellationEmail('${r.code}', this)">✉️ Send Cancellation Email</button>
-        <button class="conf-btn" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
-        ` : ''}
-        ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
-        ${isConfirmed ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>` : ''}
-        ${isCancelled ? `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>` : ''}
+        <div style="font-size:.8rem;">
+          <a href="#" onclick="event.preventDefault();_gdCopyPlainLink(this, '${viewUrl}')" style="color:#0f1e3d;font-weight:600;text-decoration:none;">📋 Copy Booking Link</a>
+        </div>` : `<div style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</div>`) : ''}
+
+        <!-- MANAGE - structural/destructive, visually separated from communication above. -->
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-top:.8rem;border-top:1px solid #eee;">
+          <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
+          ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
+          ${isPreConfirm ? `<button class="conf-btn del" onclick="${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
+          ${isCancelled ? `<button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>` : ''}
+          ${isConfirmed ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>` : ''}
+          ${isCancelled ? `<button class="conf-btn del" onclick="permanentlyDeleteReservation('${r.code}')">🗑 Delete Permanently</button>` : ''}
+        </div>
       </div>
     </div>`;
   document.body.appendChild(backdrop);
@@ -3392,38 +3387,95 @@ function _gdCopyPlainLink(btn, url) {
   });
 }
 
-// Pulls the real signed_name/tok fresh from the server (reservation-signing-info.js) rather than
-// trusting r.signed_name off the cached row - the row's own presence check just decides whether to
-// show the button at all; the actual link has to carry a tok that verify-signed.js will accept, and
-// that's minted server-side, not something this page can fabricate. Builds the same signed, server-
-// verified URL book.html's own _showAlreadyConfirmedPage constructs for a guest reopening their
-// link - opens the read-only Agreement Print View, never the live sign-and-pay form.
-async function _gdViewSignedAgreement(code, btn) {
+// Shared by View/Email/Text Signed Agreement below. Pulls the real signed_name/tok fresh from the
+// server (reservation-signing-info.js) rather than trusting r.signed_name off the cached row - the
+// row's own presence check just decides whether to show the document line at all; the actual link
+// has to carry a tok that verify-signed.js will accept, and that's minted server-side, not
+// something this page can fabricate. Builds the same signed, server-verified URL book.html's own
+// _showAlreadyConfirmedPage constructs for a guest reopening their link - opens the read-only
+// Agreement Print View, never the live sign-and-pay form. Returns null (caller shows the "couldn't
+// verify" message) rather than throwing, since a missing signature here isn't really an error case -
+// it's just not signed (yet, or ever).
+async function _gdSignedAgreementUrl(code) {
   const r = _reservationsCache.find(x => x.code === code);
-  if (!r || !r.url) { alert('No saved link on this reservation.'); return; }
-  const orig = btn.textContent;
-  btn.textContent = '⏳ Loading…'; btn.disabled = true;
+  if (!r || !r.url) return null;
+  const resp = await fetch(`/.netlify/functions/reservation-signing-info?code=${encodeURIComponent(code)}`);
+  const info = resp.ok ? await resp.json() : {};
+  if (!info.signed_name || !info.tok) return null;
+  const u = new URL(r.url);
+  ['signed', 'signame', 'ts', 'tok', 'sip', 'method', 'action'].forEach(k => u.searchParams.delete(k));
+  u.searchParams.set('signed', '1');
+  u.searchParams.set('signame', info.signed_name);
+  if (info.signed_at) u.searchParams.set('ts', info.signed_at);
+  u.searchParams.set('tok', info.tok);
+  if (info.payment_method) u.searchParams.set('method', info.payment_method);
+  return u.toString();
+}
+
+async function _gdViewSignedAgreement(code, el) {
+  const orig = el.textContent;
+  el.textContent = '…';
   try {
-    const resp = await fetch(`/.netlify/functions/reservation-signing-info?code=${encodeURIComponent(code)}`);
-    const info = resp.ok ? await resp.json() : {};
-    if (!info.signed_name || !info.tok) {
-      alert('Could not verify a signature on file for this reservation - try refreshing the list.');
-      return;
-    }
-    const u = new URL(r.url);
-    ['signed', 'signame', 'ts', 'tok', 'sip', 'method', 'action'].forEach(k => u.searchParams.delete(k));
-    u.searchParams.set('signed', '1');
-    u.searchParams.set('signame', info.signed_name);
-    if (info.signed_at) u.searchParams.set('ts', info.signed_at);
-    u.searchParams.set('tok', info.tok);
-    if (info.payment_method) u.searchParams.set('method', info.payment_method);
-    window.open(u.toString(), '_blank');
+    const url = await _gdSignedAgreementUrl(code);
+    if (!url) { alert('Could not verify a signature on file for this reservation - try refreshing the list.'); return; }
+    window.open(url, '_blank');
   } catch (e) {
     console.error('View Signed Agreement failed:', e);
     alert('Could not load the signed agreement - check console.');
   } finally {
-    btn.textContent = orig; btn.disabled = false;
+    el.textContent = orig;
   }
+}
+
+// The guest's own confirmation email is the only place a "View & Print Your Signed Agreement"
+// link has ever existed - it only ever goes to the guest, so Jesse had no way to get them a fresh
+// copy if they'd lost the original (a common ask - "can you resend my agreement?"). Text reuses
+// the same _openSmsModal() every other text-send in this app already goes through; email is a
+// small dedicated send (not the big branded quote preview - this is just a document handoff).
+async function _gdSendSignedAgreement(code, method, el) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r) return;
+  const orig = el.textContent;
+  el.textContent = '…';
+  try {
+    const url = await _gdSignedAgreementUrl(code);
+    if (!url) { alert('Could not verify a signature on file for this reservation - try refreshing the list.'); return; }
+    const firstName = (r.guest || 'there').split(' ')[0];
+    if (method === 'text') {
+      const msg = `Hi ${firstName}! It's Jesse from The Heart Of CB. Here's a copy of your signed rental agreement:\n\n${url}\n\nQuestions? Just reply or call me anytime.`;
+      _openSmsModal(msg, r.phone || '');
+      return;
+    }
+    const html = `<div style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+  <div style="background:#0a1f3a;padding:24px;text-align:center;">
+    <h1 style="color:#c9a84c;font-size:1.1rem;margin:0;font-family:Georgia,serif;">Your Signed Agreement</h1>
+  </div>
+  <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
+    <p>Hi ${_esc(firstName)},</p>
+    <p>Here's a copy of your signed rental agreement for your records:</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${url}" style="display:inline-block;background:#b8882a;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 28px;border-radius:7px;">View &amp; Print Agreement</a>
+    </div>
+    <p>Questions? Reach out anytime.</p>
+    <p>📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;">(910) 599-8118</a><br>
+    📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
+  </div>
+</div></div>`;
+    const resp = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: [r.email], subject: 'Your Signed Agreement - The Heart Of CB', html })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    el.textContent = '✅ Sent!';
+    setTimeout(() => { el.textContent = orig; }, 2200);
+    return;
+  } catch (e) {
+    console.error('Send Signed Agreement failed:', e);
+    alert('Could not send the signed agreement - check console.');
+  }
+  el.textContent = orig;
 }
 
 // List's quick "Confirm Reservation" button (status='signed', not yet confirmed at all) - opens
