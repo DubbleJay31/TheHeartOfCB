@@ -3296,6 +3296,14 @@ function openGuestDashboard(code) {
              click - Jesse explicitly clicks Confirm Reservation inside that popup, nothing
              auto-confirms just from opening this dashboard. -->
         ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
+        <!-- The guest's own confirmation email has a "View & Print Your Signed Agreement" link,
+             but that only ever goes to the GUEST (send-email's "to" is always sigData.email) -
+             Jesse never gets a copy, so there was no way for him to pull up a signed contract
+             himself. Reuses the exact server-verified mechanism book.html's own
+             _showAlreadyConfirmedPage already does for a guest reopening their link: re-fetch the
+             real signed_name/tok from reservation-signing-info.js (never trust stale values off
+             this cached row) and build the same signed, tok-verified URL fresh. -->
+        ${r.signed_name ? `<button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View Signed Agreement</button>` : ''}
         ${isPreConfirm ? (r.url ? `
         <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Send via Email${star('email')}</button>
         <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Send via Text${star('text')}</button>
@@ -3374,6 +3382,40 @@ function _gdCopyPlainLink(btn, url) {
     btn.textContent = '⚠️ Copy failed - try again';
     setTimeout(() => { btn.textContent = orig; }, 1800);
   });
+}
+
+// Pulls the real signed_name/tok fresh from the server (reservation-signing-info.js) rather than
+// trusting r.signed_name off the cached row - the row's own presence check just decides whether to
+// show the button at all; the actual link has to carry a tok that verify-signed.js will accept, and
+// that's minted server-side, not something this page can fabricate. Builds the same signed, server-
+// verified URL book.html's own _showAlreadyConfirmedPage constructs for a guest reopening their
+// link - opens the read-only Agreement Print View, never the live sign-and-pay form.
+async function _gdViewSignedAgreement(code, btn) {
+  const r = _reservationsCache.find(x => x.code === code);
+  if (!r || !r.url) { alert('No saved link on this reservation.'); return; }
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Loading…'; btn.disabled = true;
+  try {
+    const resp = await fetch(`/.netlify/functions/reservation-signing-info?code=${encodeURIComponent(code)}`);
+    const info = resp.ok ? await resp.json() : {};
+    if (!info.signed_name || !info.tok) {
+      alert('Could not verify a signature on file for this reservation - try refreshing the list.');
+      return;
+    }
+    const u = new URL(r.url);
+    ['signed', 'signame', 'ts', 'tok', 'sip', 'method', 'action'].forEach(k => u.searchParams.delete(k));
+    u.searchParams.set('signed', '1');
+    u.searchParams.set('signame', info.signed_name);
+    if (info.signed_at) u.searchParams.set('ts', info.signed_at);
+    u.searchParams.set('tok', info.tok);
+    if (info.payment_method) u.searchParams.set('method', info.payment_method);
+    window.open(u.toString(), '_blank');
+  } catch (e) {
+    console.error('View Signed Agreement failed:', e);
+    alert('Could not load the signed agreement - check console.');
+  } finally {
+    btn.textContent = orig; btn.disabled = false;
+  }
 }
 
 // List's quick "Confirm Reservation" button (status='signed', not yet confirmed at all) - opens
