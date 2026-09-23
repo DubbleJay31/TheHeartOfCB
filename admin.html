@@ -3304,17 +3304,19 @@ function openGuestDashboard(code) {
              real signed_name/tok from reservation-signing-info.js (never trust stale values off
              this cached row) and build the same signed, tok-verified URL fresh. -->
         ${r.signed_name ? `<button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View Signed Agreement</button>` : ''}
-        <!-- sendEmail()/sendSMS() build fresh from whatever's currently loaded into the (hidden)
-             Quote Builder form - for isChangePending that's the NEW pending terms, never the
-             original signed agreement (that's what View Signed Agreement above is for). "Send via
-             Email" read as ambiguous sitting right next to that button - Jesse: "send what via
-             email? original agreement or change quoted?" - so the label now says what's actually
-             being sent, not just which channel. -->
+        <!-- sendEmail()/sendSMS()/_gdCopyLink()/previewLink() all build from whatever's currently
+             loaded into the (hidden) Quote Builder form - for isChangePending that's the NEW
+             pending terms, never the original signed agreement (that's what View Signed Agreement
+             above is for). Every one of these four labels used to just say the mechanism (Send via
+             Email, Copy Link, Open Live Link) with no hint at the content - Jesse asked the same
+             "what does this actually send/open" question twice in a row (once about Send via
+             Email, then again about Copy Link/Open Live Link right after), so all four now name
+             what they act on, not just how. -->
         ${isPreConfirm ? (r.url ? `
         <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email ${isChangePending ? 'Updated Quote' : 'Quote'}${star('email')}</button>
         <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text ${isChangePending ? 'Updated Quote' : 'Quote'}${star('text')}</button>
-        <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
-        <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
+        <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy ${isChangePending ? 'Updated Quote' : 'Quote'} Link</button>
+        <button class="conf-btn" onclick="previewLink()">🔗 Open ${isChangePending ? 'Updated Quote' : 'Quote'}</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation to build one.</span>`) : ''}
         ${(isConfirmed || isCancelled) ? (confirmUrl ? `
         <!-- "confirmed" and "someone actually got the confirmation" aren't the same thing - a
@@ -3323,7 +3325,7 @@ function openGuestDashboard(code) {
              the full Email/Text confirmation actually goes out) is what tells a genuine resend
              apart from a first send that just hasn't happened yet. -->
         ${!isCancelled ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
-        <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">🔗 Copy Link</button>
+        <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">🔗 Copy Booking Link</button>
         ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>`) : ''}
         <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
         ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:none;border:1.5px solid #7c3aed;color:#7c3aed;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
