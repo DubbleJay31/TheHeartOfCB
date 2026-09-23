@@ -3276,43 +3276,14 @@ function openGuestDashboard(code) {
       <div class="conf-notes-status" id="conf-notes-status-${r.code}"></div>
       <div class="conf-modal-actions" style="display:flex;flex-direction:column;gap:.7rem;margin-top:1.1rem;">
 
-        <!-- LINKS - both small text lines, tightly stacked as one lightweight info block instead
-             of two separate sections. Signed Agreement: the guest's own confirmation email has a
-             "View & Print Your Signed Agreement" link, but that only ever goes to the GUEST
-             (send-email's "to" is always sigData.email) - Jesse had no way to pull up, or resend,
-             a signed contract himself. All three re-fetch the real signed_name/tok fresh from
-             reservation-signing-info.js (never trust stale values off this cached row) via the
-             shared _gdSignedAgreementUrl(), same server-verified URL book.html's own
-             _showAlreadyConfirmedPage builds for a guest reopening their link. Quote link below it:
-             low-stakes, never needed the same visual weight as an actual decision. -->
-        <div style="display:flex;flex-direction:column;gap:.3rem;">
-          ${r.signed_name ? `
-          <div style="font-size:.8rem;color:var(--muted);">
-            📄 Signed Agreement —
-            <a href="#" onclick="event.preventDefault();_gdViewSignedAgreement('${r.code}', this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">View</a> ·
-            <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','email',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Email</a> ·
-            <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','text',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Text</a>
-          </div>` : ''}
-          ${isPreConfirm ? (r.url ? `
-          <div style="font-size:.8rem;color:var(--muted);">
-            ${isChangePending ? 'Updated Quote' : 'Quote'} —
-            <a href="#" id="gd-copy-btn" onclick="event.preventDefault();_gdCopyLink(this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Copy Link</a> ·
-            <a href="#" onclick="event.preventDefault();previewLink()" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Open</a>
-          </div>` : `<div style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation below to build one.</div>`) : ''}
-          ${(isConfirmed || isCancelled) ? (confirmUrl ? `
-          <div style="font-size:.8rem;color:var(--muted);">
-            Booking —
-            <a href="#" onclick="event.preventDefault();_gdCopyPlainLink(this, '${viewUrl}')" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Copy Link</a>
-          </div>` : `<div style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</div>`) : ''}
-        </div>
-
-        <!-- PRIMARY - the one or two things actually worth doing next, full-size buttons.
-             sendEmail()/sendSMS() build from whatever's currently loaded into the (hidden) Quote
-             Builder form - for isChangePending that's the NEW pending terms, never the original
-             signed agreement (that's the link line above). 'signed' only for Confirm Reservation,
-             not 'quoted' too - reservations-confirm.js hard-requires status 'signed' (a guest
-             actually has to have signed before Jesse can confirm on their behalf), so offering
-             this on a still-quoted row always 409'd. -->
+        <!-- PRIMARY - the one or two things actually worth doing next, full-size buttons, now the
+             first thing seen (Jesse: order this before the link lines below). sendEmail()/
+             sendSMS() build from whatever's currently loaded into the (hidden) Quote Builder form -
+             for isChangePending that's the NEW pending terms, never the original signed agreement
+             (that's the Signed Agreement link line further down). 'signed' only for Confirm
+             Reservation, not 'quoted' too - reservations-confirm.js hard-requires status 'signed'
+             (a guest actually has to have signed before Jesse can confirm on their behalf), so
+             offering this on a still-quoted row always 409'd. -->
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
           ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;flex:1;min-width:170px;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
           ${isPreConfirm && r.url ? `
@@ -3325,6 +3296,37 @@ function openGuestDashboard(code) {
           <button class="conf-btn" style="flex:1;min-width:150px;" onclick="sendCancellationText('${r.code}')">💬 Send Cancellation Text</button>
           ` : ''}
           ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;flex:1;min-width:170px;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
+        </div>
+
+        <!-- LINKS - both small text lines, tightly stacked as one lightweight info block instead
+             of two separate sections. Quote link first (whatever's actually pending right now),
+             Signed Agreement second (the older, less-frequently-needed reference) - Jesse: "Have
+             email updated quote line first, updated quote links second line, singed agreement
+             3rd." Signed Agreement: the guest's own confirmation email has a "View & Print Your
+             Signed Agreement" link, but that only ever goes to the GUEST (send-email's "to" is
+             always sigData.email) - Jesse had no way to pull up, or resend, a signed contract
+             himself. All three re-fetch the real signed_name/tok fresh from
+             reservation-signing-info.js (never trust stale values off this cached row) via the
+             shared _gdSignedAgreementUrl(). -->
+        <div style="display:flex;flex-direction:column;gap:.3rem;">
+          ${isPreConfirm ? (r.url ? `
+          <div style="font-size:.8rem;color:var(--muted);">
+            ${isChangePending ? 'Updated Quote' : 'Quote'} —
+            <a href="#" id="gd-copy-btn" onclick="event.preventDefault();_gdCopyLink(this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Copy Link</a> ·
+            <a href="#" onclick="event.preventDefault();previewLink()" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Open Live Link</a>
+          </div>` : `<div style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation below to build one.</div>`) : ''}
+          ${(isConfirmed || isCancelled) ? (confirmUrl ? `
+          <div style="font-size:.8rem;color:var(--muted);">
+            Booking —
+            <a href="#" onclick="event.preventDefault();_gdCopyPlainLink(this, '${viewUrl}')" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Copy Link</a>
+          </div>` : `<div style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</div>`) : ''}
+          ${r.signed_name ? `
+          <div style="font-size:.8rem;color:var(--muted);">
+            📄 Signed Agreement —
+            <a href="#" onclick="event.preventDefault();_gdViewSignedAgreement('${r.code}', this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">View</a> ·
+            <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','email',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Email</a> ·
+            <a href="#" onclick="event.preventDefault();_gdSendSignedAgreement('${r.code}','text',this)" style="color:#0f1e3d;font-weight:700;text-decoration:none;">Text</a>
+          </div>` : ''}
         </div>
 
         <!-- MANAGE - structural/destructive, visually separated from communication above. Neutral
