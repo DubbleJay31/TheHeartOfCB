@@ -818,7 +818,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 
       <!-- EDITING BADGE (shown when the form is loaded from an existing reservation, not a blank new one) -->
       <div id="editing-badge" style="display:none;margin-bottom:1rem;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:.7rem .9rem;font-size:.82rem;color:#92400e;font-weight:600;">
-        <div class="editing-badge-row" style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;">
+        <div class="editing-badge-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:.6rem;">
           <span id="editing-badge-text">✏️ Editing an existing reservation.</span>
           <button type="button" onclick="_clearEditing()" style="background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:.2rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer;flex-shrink:0;">✕ New Instead</button>
         </div>
@@ -1579,13 +1579,31 @@ function _loadIntoForm(code) {
   if (badge) {
     badge.style.display = 'flex';
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
-    document.getElementById('editing-badge-text').textContent =
-      `✏️ Editing ${r.guest}'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'}) - saving updates this same reservation.`
-      + (_origPaidGross > 0
-          ? (_origFeeAmt > 0
-              ? ` Already-paid $${_origPaidGross.toFixed(2)} (of that, $${_origFeeAmt.toFixed(2)} was the card fee - not refundable, so $${(_origPaidGross - _origFeeAmt).toFixed(2)} is auto-credited below) - clear it if that's not right, or check "Also refund the card fee" to add a proportional share back to any refund.`
-              : ` Already-paid $${_origPaidGross.toFixed(2)} auto-credited below - clear it if that's not right.`)
-          : '');
+    // Used to be one unbroken run-on sentence cramming the reservation summary AND the whole
+    // paid/fee/credit breakdown together - Jesse: "whew thats a lot to read lol. can we clean it
+    // up maybe more itemized or bulleted?" Header line stays a sentence (it's short); the
+    // paid/fee/credit numbers - the part that was actually dense - are now a real bulleted list.
+    // Switched from .textContent to .innerHTML to allow that markup, so r.guest (guest-typed text)
+    // needs explicit escaping here now, same as everywhere else user input flows into innerHTML.
+    let paidHtml = '';
+    if (_origPaidGross > 0) {
+      paidHtml = _origFeeAmt > 0 ? `
+        <ul style="margin:.45rem 0 0;padding-left:1.15rem;line-height:1.55;">
+          <li>Already paid: <strong>$${_origPaidGross.toFixed(2)}</strong></li>
+          <li>Card fee (not refundable): $${_origFeeAmt.toFixed(2)}</li>
+          <li>Auto-credited below: <strong>$${(_origPaidGross - _origFeeAmt).toFixed(2)}</strong></li>
+        </ul>
+        <div style="margin-top:.35rem;font-weight:400;font-size:.78rem;">Clear the credit if that's not right, or check "Also refund the card fee" to add a proportional share back to any refund.</div>`
+        : `
+        <ul style="margin:.45rem 0 0;padding-left:1.15rem;line-height:1.55;">
+          <li>Already paid, auto-credited below: <strong>$${_origPaidGross.toFixed(2)}</strong></li>
+        </ul>
+        <div style="margin-top:.35rem;font-weight:400;font-size:.78rem;">Clear it if that's not right.</div>`;
+    }
+    document.getElementById('editing-badge-text').innerHTML =
+      `<div>✏️ Editing <strong>${_esc(r.guest)}</strong>'s ${_STATUS_LABEL[r.status] || r.status} reservation (${r.check_in ? fmtD(r.check_in) : '?'} → ${r.check_out ? fmtD(r.check_out) : '?'})</div>`
+      + `<div style="font-weight:400;font-size:.78rem;margin-top:.15rem;">Saving updates this same reservation.</div>`
+      + paidHtml;
   }
 
   const inqBox = document.getElementById('inquiry-details-box');
