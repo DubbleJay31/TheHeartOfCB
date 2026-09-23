@@ -23,7 +23,12 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    // Android's status-bar badge ignores color entirely and derives its own shape from the alpha
+    // channel - pointing it at the full-color icon (opaque, no transparency) produced a plain
+    // white square. badge-monochrome.png is a dedicated white-silhouette-on-transparent cutout of
+    // just the pin, built for exactly this. `icon` above still shows full color in the expanded
+    // notification tray - only the tiny status-bar badge needs the monochrome version.
+    badge: '/badge-monochrome.png',
     data: { url: data.url || '/admin.html' }
   };
   event.waitUntil(self.registration.showNotification(title, options));
