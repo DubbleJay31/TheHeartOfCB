@@ -3370,28 +3370,40 @@ function openGuestDashboard(code) {
         </div>` : ''}
 
         <!-- CONFIRMED: Booking and Signed Agreement used to be two separate sections showing five
-             buttons that mostly pointed at the same underlying page - Jesse: "this is all
-             redundant... Is it the same things booking and signeagreement at this point?" They
-             are, once confirmed - View/Copy Link/Resend Confirmation all resolve to the same
-             guest-facing content (Resend Confirmation's own page already includes the signed
-             agreement link inline), so this is one merged section now, not two. View + Copy Link
-             both use the same re-verified _gdSignedAgreementUrl() as before (see
-             _gdCopySignedAgreementLink's comment) instead of two different link-building paths
-             that happened to usually agree. -->
+             buttons pointing at overlapping pages - Jesse: "this is all redundant... Is it the
+             same things booking and signeagreement at this point?" Merged into one section, but
+             View/Copy Link now point at the plain r.url (whole confirmation - check-in, door
+             code, rules, cancellation policy, with the contract linked from inside it, same
+             content "Resend Confirmation" emails, see book.html's _showAlreadyConfirmedPage) -
+             NOT the bare contract-only page they pointed at on the first merge attempt. Jesse
+             caught that immediately: "all booking buttons should go to booking confirmatino view
+             took me to contract only... always get whole confirmation which includes contract
+             link." He also still wanted a fast path to JUST the document though ("i still want a
+             way to see and send contract only") - kept as its own small row in this same section
+             rather than a whole separate top-level one, using the same _gdViewSignedAgreement/
+             _gdSendSignedAgreement this dashboard already had. -->
         ${isConfirmed ? `
         <div>
           <label>Booking</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             ${confirmUrl ? `<button class="conf-btn" onclick="_openConfirmSendModal('${confirmUrl}${r.confirmation_sent_at ? '&resend=1' : ''}')">${r.confirmation_sent_at ? '↻ Resend Confirmation' : '✉️ Send Confirmation'}</button>` : ''}
-            ${r.signed_name ? `
+            ${viewUrl ? `
             <span style="display:inline-flex;gap:.5rem;">
-              <button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View</button>
-              <button class="conf-btn" onclick="_gdCopySignedAgreementLink('${r.code}', this)">📋 Copy Link</button>
+              <button class="conf-btn" onclick="window.open('${viewUrl}', '_blank')">📄 View</button>
+              <button class="conf-btn" onclick="_gdCopyPlainLink(this, '${viewUrl}')">📋 Copy Link</button>
             </span>
             ` : ''}
-            ${!confirmUrl && !r.signed_name ? `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>` : ''}
+            ${!confirmUrl && !viewUrl ? `<span style="font-size:.78rem;color:var(--muted);">No saved link on this reservation.</span>` : ''}
             ${needsRefundSent ? `<button class="conf-btn" style="background:#166534;color:#fff;border-color:#166534;" onclick="markRefundSent('${r.code}')">✅ Mark Refund as Sent</button>` : ''}
           </div>
+          ${r.signed_name ? `
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:.7rem 0 .35rem;">Contract Only</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="conf-btn" onclick="_gdViewSignedAgreement('${r.code}', this)">📄 View</button>
+            <button class="conf-btn" onclick="_gdSendSignedAgreement('${r.code}','email',this)">✉️ Email</button>
+            <button class="conf-btn" onclick="_gdSendSignedAgreement('${r.code}','text',this)">💬 Text</button>
+          </div>
+          ` : ''}
         </div>` : ''}
 
         <!-- CANCELLED: no equivalent merged single page exists here (there's no "resend
@@ -3520,27 +3532,6 @@ async function _gdViewSignedAgreement(code, el) {
     alert('Could not load the signed agreement - check console.');
   } finally {
     el.textContent = orig;
-  }
-}
-
-// Copy-link twin of _gdViewSignedAgreement above - same re-verified URL (never the row's possibly-
-// stale cached one), just copied instead of opened. Single source of truth for "what link does
-// this confirmed/cancelled guest get" - View and Copy Link used to point at two different link-
-// building paths (this one, and a separate plain r.url-based viewUrl) that happened to usually
-// land on the same page; now they provably always do.
-async function _gdCopySignedAgreementLink(code, el) {
-  const orig = el.textContent;
-  el.textContent = '…';
-  try {
-    const url = await _gdSignedAgreementUrl(code);
-    if (!url) { alert('Could not verify a signature on file for this reservation - try refreshing the list.'); el.textContent = orig; return; }
-    await navigator.clipboard.writeText(url);
-    el.textContent = '✅ Copied!';
-    setTimeout(() => { el.textContent = orig; }, 2200);
-  } catch (e) {
-    console.error('Copy Signed Agreement link failed:', e);
-    el.textContent = '⚠️ Copy failed - try again';
-    setTimeout(() => { el.textContent = orig; }, 2200);
   }
 }
 

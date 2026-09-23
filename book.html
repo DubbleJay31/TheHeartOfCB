@@ -1181,6 +1181,14 @@ document.getElementById('sig-date').value = new Date().toLocaleDateString('en-US
 // confirmed shouldn't land back on the full sign-and-pay form - reuses reservation-signing-info.js
 // (already built for admin's action=confirm screen) to remint the same tok and link straight to
 // their actual signed receipt, instead of a dead end or a confusing "sign again" page.
+// Shows the FULL confirmation (check-in details, door code, house rules, cancellation policy,
+// payment breakdown, with the signed agreement linked from inside it) as a live page, not just a
+// terse "you're all set" dead end pointing at the bare contract. Jesse: "all booking buttons
+// should go to booking confirmatino view took me to contract only... always get whole
+// confirmation which includes contract link." Reuses _buildConfirmationEmailHtml() - the exact
+// same content "Resend Confirmation" emails - so there's one source of truth for what "the
+// confirmation" is, whether it lands in an inbox or gets reopened as a page. admin.html's Booking
+// section View/Copy Link both point at the plain r.url that lands here.
 async function _showAlreadyConfirmedPage() {
   ['bk-hero', 'bk-main'].forEach(id => {
     const el = document.getElementById(id) || document.querySelector('.' + id);
@@ -1189,6 +1197,7 @@ async function _showAlreadyConfirmedPage() {
   const expiryBanner = document.getElementById('expiry-banner');
   if (expiryBanner) expiryBanner.style.display = 'none';
   let receiptUrl = '';
+  let signedName = '', signedAt = '', paymentMethod = '';
   try {
     const r = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
     if (r.ok) {
@@ -1200,16 +1209,38 @@ async function _showAlreadyConfirmedPage() {
           + '&tok=' + encodeURIComponent(info.tok)
           + (info.payment_method ? '&method=' + encodeURIComponent(info.payment_method) : '');
       }
+      signedName = info.signed_name || '';
+      signedAt = info.signed_at || '';
+      paymentMethod = info.payment_method || '';
     }
   } catch (e) { console.error('Failed to build receipt link:', e); }
+
   const div = document.createElement('div');
-  div.style.cssText = 'max-width:520px;margin:3rem auto;padding:0 1.25rem;font-family:Inter,sans-serif;';
+  div.style.cssText = 'max-width:640px;margin:2rem auto;padding:0 1.25rem;font-family:Inter,sans-serif;';
+
+  if (signedName) {
+    const { html } = _buildConfirmationEmailHtml({
+      guest, email, prop, ci: ciRaw, co: coRaw, nights, total,
+      noFeeTotal, taxOcc, taxSales, ccFee,
+      cashMode, cashTotal, cashDep, cashDisc,
+      signedName, signedAt, bookUrl: receiptUrl, paymentMethod
+    });
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;height:85vh;border:1px solid #e8e3d8;border-radius:12px;';
+    div.appendChild(iframe);
+    document.body.insertBefore(div, document.querySelector('footer') || document.body.firstChild);
+    iframe.srcdoc = html;
+    return;
+  }
+
+  // No verified signature to build a full confirmation from - shouldn't normally happen (this
+  // page only shows once the server already reports the reservation confirmed), but a safe
+  // fallback rather than a blank page.
   div.innerHTML = `
     <div style="background:#fff;border:1px solid #e8e3d8;border-radius:12px;padding:2.5rem 2rem;text-align:center;">
       <div style="font-size:3rem;margin-bottom:.75rem;">🎉</div>
       <h2 style="font-family:'Playfair Display',Georgia,serif;color:#0f1e3d;font-size:1.4rem;margin-bottom:.75rem;">You're All Set!</h2>
       <p style="color:#4b5563;font-size:.95rem;line-height:1.6;margin-bottom:1.5rem;">This reservation is already signed, paid, and confirmed - there's nothing left to do here.</p>
-      ${receiptUrl ? `<a href="${receiptUrl}" style="display:inline-block;background:#0f1e3d;color:#fff;text-decoration:none;padding:.85rem 1.6rem;border-radius:10px;font-weight:700;font-size:.92rem;margin-bottom:1.5rem;">📄 View Your Signed Agreement</a><br/>` : ''}
       <p style="font-size:.88rem;color:#6b7280;line-height:1.7;">
         Questions before your stay? Reach out anytime:<br/>
         📞 Jesse: <a href="tel:9105998118" style="color:#b8882a;font-weight:600;">(910) 599-8118</a><br/>
@@ -1813,6 +1844,20 @@ function showBookingComplete() {
 // a close button like in past screens ive seen." A separate implementation, not a shared file,
 // since book.html and admin.html are independent pages with no shared script include.
 function _openEmailPreviewModal({ to, subject, html, onSend }) {
+  // This page also runs embedded in admin.html's "Notify The Guest" iframe (see
+  // _openConfirmSendModal there) - showing this modal INSIDE that already-cramped iframe nested a
+  // whole screen inside a screen. Jesse: "ouch this screen in screen is clunky. we gotta do way
+  // better." Same origin, so hand the preview off to the parent's own (much roomier, full-viewport)
+  // copy of this exact modal instead - onSend still runs HERE in the iframe, where the actual
+  // confirm-flow state/capability token live, it's only the UI that moves up a level.
+  if (window.parent && window.parent !== window) {
+    try {
+      if (typeof window.parent._openEmailPreviewModal === 'function') {
+        window.parent._openEmailPreviewModal({ to, subject, html, onSend });
+        return;
+      }
+    } catch (e) { console.error('Could not hand preview off to parent frame, showing locally instead:', e); }
+  }
   let modal = document.getElementById('email-preview-generic-modal');
   if (!modal) {
     modal = document.createElement('div');
