@@ -2361,7 +2361,13 @@ function sendEmail() {
   // the discount, mislabeled as the contract's full value) - two different numbers both claiming
   // to be "the total" is exactly the confusing math Jesse flagged. Full Stay Total/Balance Due now
   // always show the plain undiscounted figures, matching the non-cash branch below and the live
-  // booking page's own breakdown panel; the cash price is its own clearly-labeled line underneath.
+  // booking page's own breakdown panel; the cash price is its own clearly-labeled line underneath -
+  // EXCEPT when refundDue/isZeroBalance means there's nothing left to pay at all. cashPrice floors
+  // to $0 in both cases same as the real balance, so an unconditional cash line used to show "Or
+  // $0.00 if paying 100% cash" directly under a refund-owed or nothing-more-to-pay line - Jesse: "i
+  // like the visual but way wrong lol" on exactly that combination. book.html's own live pricing
+  // panel already gates this correctly (its cashMode addRow only runs in the real-balance-due
+  // branch) - this brings the email preview in line with what the guest actually sees.
   const priceBlock = cashOn ? `
         <tr>
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;">${credit > 0 ? 'Full Stay Total' : 'Total'}</td>
@@ -2372,8 +2378,9 @@ function sendEmail() {
           <td style="padding:10px 0;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">Balance Due</td>
           <td style="padding:10px 0;text-align:right;font-size:16px;font-weight:700;color:#0a1f3a;border-top:2px solid #e8e0d0;">${fmt(creditedBase)}</td>
         </tr>` : ''}
+        ${refundDue > 0.005 || isZeroBalance ? '' : `
         <tr><td colspan="2" style="padding:8px 0 2px;font-size:15px;font-weight:700;color:#166534;">💵 Or ${fmt(cashPrice)} if paying 100% cash</td></tr>
-        <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>` : `
+        <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:#999;">Paying by card, PayPal, Venmo, or Cash App costs a bit more - you'll see every option when you complete your booking.</td></tr>`}` : `
         <tr>
           <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #f0ebe0;">Room Fare (${_nights} night${_nights!==1?'s':''})</td>
           <td style="padding:8px 0;text-align:right;font-size:14px;color:#0a1f3a;border-bottom:1px solid #f0ebe0;">${fmt(subtotal)}</td>
@@ -3343,6 +3350,13 @@ function openGuestDashboard(code) {
           <label>${isChangePending ? 'Updated Quote' : 'Quote'}</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             ${r.status === 'signed' ? `<button class="conf-btn" style="background:#0f1e3d;color:#fff;border-color:#0f1e3d;" onclick="_openQuickConfirm('${r.code}')">✓ Confirm Reservation</button>` : ''}
+            <!-- Moved here from Manage, gold-filled instead of a plain neutral button - Jesse: "i
+                 want keep original terms more prominent in this situation. In the update quote
+                 section maybe." Reverting a pending change is really a decision about THIS
+                 section's content (proceed with the new quote vs. abandon it), not a structural
+                 Manage action like Change Reservation/Cancel - belongs next to Confirm
+                 Reservation as the other real option at this decision point. -->
+            ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:#b8882a;color:#fff;border-color:#b8882a;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
             ${r.url ? `
             <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email${star('email')}</button>
             <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text${star('text')}</button>
@@ -3387,7 +3401,6 @@ function openGuestDashboard(code) {
           <label>Manage</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
-            ${isChangePending && r.prior_terms ? `<button class="conf-btn" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
             ${isPreConfirm ? `<button class="conf-btn del" onclick="${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
             ${isCancelled ? `<button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>` : ''}
             ${isConfirmed ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>` : ''}
