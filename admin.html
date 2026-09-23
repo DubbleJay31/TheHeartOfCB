@@ -3360,8 +3360,10 @@ function openGuestDashboard(code) {
             ${r.url ? `
             <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email${star('email')}</button>
             <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text${star('text')}</button>
-            <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
-            <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
+            <span style="display:inline-flex;gap:.5rem;">
+              <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
+              <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
+            </span>
             ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation below to build one.</span>`}
           </div>
         </div>` : ''}
