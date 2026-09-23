@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { sbReservations, propLabel, escapeHtml } = require('./_reservations');
+const { sendPushToAllSubscribers } = require('./_webpush');
 
 // Public - this is called by Stripe's own servers, not a browser, so it can't be PIN-gated or
 // capability-token-gated like everything else. Authenticity instead comes entirely from the
@@ -60,6 +61,11 @@ async function _notifyJesseReservation(row, amount) {
       headers: { 'Content-Type': 'application/json', Origin: 'https://theheartofcb.com' },
       body: JSON.stringify({ to: ['jessejonesrealestate@gmail.com'], subject: `Stripe payment received - ${guest}`, html })
     });
+    // Push rides alongside the email, not instead of it - Jesse: "I still want the emails but i
+    // want app notifications to be my primary source of notification." Server-side already (this
+    // runs from Stripe's own webhook call, never a browser), so it calls the sender directly
+    // instead of going through the public send-push.js proxy meant for guest-browser triggers.
+    await sendPushToAllSubscribers({ title: '💳 Stripe Payment Received', body: `${guest} · $${amount.toFixed(2)} - confirmed automatically`, url: '/admin.html' });
   } catch (e) { console.error('Jesse notification failed:', e); }
 }
 

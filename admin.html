@@ -4,7 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" href="THOCB Pin Square.png" />
-<link rel="apple-touch-icon" href="THOCB Pin Square.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0f1e3d" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="THOCB Admin" />
 <title>ADMIN - The Heart Of CB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -793,7 +799,10 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
         <div class="site-sub">Booking Admin</div>
       </div>
     </div>
-    <div class="adm-badge"><span class="status-dot active"></span>Live</div>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <button id="adm-notif-btn" onclick="_toggleNotifications()" style="display:none;background:none;border:1.5px solid rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:.35rem .8rem;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;">🔔 Enable Notifications</button>
+      <div class="adm-badge"><span class="status-dot active"></span>Live</div>
+    </div>
   </header>
 
   <!-- Page tab nav -->
@@ -1455,6 +1464,7 @@ function _enterAdminApp() {
   if (!_checkSyncHash()) loadReservations();
   _cloudRead().then(_mergeCloudData);
   _initPricingSection();
+  _initNotifications();
 }
 
 async function tryLogin() {
@@ -2896,6 +2906,87 @@ async function refreshFromCloud() {
 function _adminAuthHeader() {
   const token = sessionStorage.getItem('thocb_admin_token') || '';
   return { 'Authorization': `Bearer ${token}` };
+}
+
+// ── PUSH NOTIFICATIONS ── Jesse: "I currently depend on my gmail for notificatrions. I dont like
+// that... i want app notifications to be my primary source of notification." Public key only -
+// safe to embed here, it's the whole point of VAPID that the public half can be shared freely; the
+// private half that actually signs pushes never leaves the server (see _webpush.js).
+const _VAPID_PUBLIC_KEY = 'BHRNxnrpOR2w-5_efPR5Rom1iUW1SsPWEa7lH7dU9hsdla4SOE3CrJcLlhlYdAu1vv6GxJ93FUrd94GtO-mHiOE';
+
+function _urlBase64ToUint8Array(base64url) {
+  const pad = '='.repeat((4 - (base64url.length % 4)) % 4);
+  const base64 = (base64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function _deviceLabel() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad/.test(ua)) return 'iPhone/iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'Device';
+}
+
+// Registers the service worker (needed for both installability and push) and shows the header
+// button in whatever state actually matches this browser/device right now - never assumes.
+async function _initNotifications() {
+  const btn = document.getElementById('adm-notif-btn');
+  if (!btn || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    if (Notification.permission === 'denied') return; // blocked at the browser/OS level - nothing this page can do, no point offering a button that can't work
+    const existing = await reg.pushManager.getSubscription();
+    btn.style.display = '';
+    btn.textContent = existing ? '🔔 Notifications On' : '🔔 Enable Notifications';
+    btn.dataset.subscribed = existing ? '1' : '0';
+  } catch (e) { console.error('Service worker registration failed:', e); }
+}
+
+async function _toggleNotifications() {
+  const btn = document.getElementById('adm-notif-btn');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (btn.dataset.subscribed === '1') {
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        await fetch('/.netlify/functions/save-push-subscription', {
+          method: 'DELETE',
+          headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint })
+        });
+      }
+      btn.textContent = '🔔 Enable Notifications';
+      btn.dataset.subscribed = '0';
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { btn.textContent = orig; return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+    });
+    const resp = await fetch('/.netlify/functions/save-push-subscription', {
+      method: 'POST',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub.toJSON(), deviceLabel: _deviceLabel() })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    btn.textContent = '🔔 Notifications On';
+    btn.dataset.subscribed = '1';
+  } catch (e) {
+    console.error('Toggle notifications failed:', e);
+    btn.textContent = '⚠️ Try again';
+    setTimeout(() => { btn.textContent = orig; }, 2500);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function _sbNights(ci, co) {

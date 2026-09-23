@@ -2358,6 +2358,16 @@ async function _notifyJesse(method) {
     });
     if (!r.ok) throw new Error(await r.text());
   } catch(err) { console.error('Jesse notification failed:', err); }
+  // Push rides alongside the email, not instead of it - Jesse wants app notifications as his
+  // primary channel but still wants the emails too. Own try/catch, same reasoning as above: a
+  // push failure should never surface as a problem to the guest.
+  try {
+    await fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'signed', guest, prop })
+    });
+  } catch (err) { console.error('Jesse push notification failed:', err); }
 }
 
 // ── ACTION=CONFIRM - Jesse one-click confirmation sender ──

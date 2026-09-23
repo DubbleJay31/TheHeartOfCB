@@ -125,6 +125,16 @@ async function _notifyHost(inquiry, code) {
   } catch(err) {
     console.error('Host notification email failed:', err);
   }
+  // Push rides alongside the email, not instead of it - Jesse wants app notifications as his
+  // primary channel but still wants the emails. Own try/catch so a push failure (or nobody having
+  // enabled notifications yet) never affects the email above or the guest's own submission.
+  try {
+    await fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'new_inquiry', guest: guestName, prop: propLabel })
+    });
+  } catch (err) { console.error('Host push notification failed:', err); }
 }
 
 /* ─── ICAL CONFIG ───────────────────────
