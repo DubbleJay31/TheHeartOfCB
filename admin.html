@@ -2950,13 +2950,17 @@ async function _cloudRead() {
 }
 
 async function _cloudWrite() {
-  try {
-    await fetch('/.netlify/functions/cloud-sync', {
-      method: 'PUT',
-      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pricing: { baseRates: _pricingData.baseRates, overrides: _pricingData.overrides, restrictions: _pricingData.restrictions, actuals: _pricingData.actuals } })
-    });
-  } catch(e) { console.warn('Cloud sync write failed:', e); }
+  // Used to never check the response at all - any failure (a 504 from cloud-sync.js hanging on a
+  // slow JSONBin call, a real write failure now surfaced as a 502) was silently swallowed here,
+  // so _autoSave() below always reached its "saved" state regardless of whether anything actually
+  // saved. Re-throwing on a bad response lets _autoSave()'s existing catch -> "⚠ failed" path
+  // (already correctly wired, just never reachable) actually fire when something goes wrong.
+  const r = await fetch('/.netlify/functions/cloud-sync', {
+    method: 'PUT',
+    headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pricing: { baseRates: _pricingData.baseRates, overrides: _pricingData.overrides, restrictions: _pricingData.restrictions, actuals: _pricingData.actuals } })
+  });
+  if (!r.ok) throw new Error(`Cloud sync write failed: ${r.status}`);
 }
 
 function _mergeCloudData(cloudData) {
@@ -5468,7 +5472,6 @@ const _TL_CATEGORY_LABELS = { owner: 'Owner Draw', sales_tax: 'Sales Tax Draw', 
 function _renderTrustBalance() {
   const { earned, held, drawn, shouldBe } = _trustBalances();
   const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const heldTotal = held.owner + held.sales_tax + held.rot;
 
   const cardsEl = document.getElementById('trust-balance-cards');
   if (cardsEl) {
@@ -5478,15 +5481,17 @@ function _renderTrustBalance() {
         <div class="stat-card-val">${fmt(val)}</div>
         <div class="stat-card-sub">${sub}</div>
       </div>`;
+    // Jesse: "i want the future held money broken down by owner money, sales tax, rot" - was one
+    // lump "Held for Future Stays" card; now mirrors the same 3-way split as the "available now"
+    // row above it, just for the not-yet-eligible (future check-in) bucket instead of the earned
+    // one - same _trustBalances() data, already split this way, just wasn't surfaced per-category.
     cardsEl.innerHTML =
       card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, shouldBe.owner < 0) +
       card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, shouldBe.sales_tax < 0) +
       card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, shouldBe.rot < 0) +
-      `<div class="stat-card">
-        <div class="stat-card-label">Held for Future Stays</div>
-        <div class="stat-card-val">${fmt(heldTotal)}</div>
-        <div class="stat-card-sub">Not eligible for any draw yet</div>
-      </div>`;
+      card('Owner (Future Stays)', held.owner, 'Not eligible until check-in') +
+      card('Sales Tax (Future Stays)', held.sales_tax, 'Not eligible until check-in') +
+      card('ROT (Future Stays)', held.rot, 'Not eligible until check-in');
   }
 
   const tbody = document.getElementById('tl-history-tbody');
