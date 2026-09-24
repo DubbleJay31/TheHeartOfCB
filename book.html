@@ -1587,8 +1587,9 @@ async function _idVerifyGateClear() {
   try {
     const r = await fetch(`/.netlify/functions/reservation-verify-status?code=${encodeURIComponent(code)}`);
     const j = await r.json().catch(() => ({}));
-    return !!j.id_verify_skip || j.id_verification_status === 'verified';
-  } catch { return false; }
+    const skipped = !!j.id_verify_skip;
+    return { clear: skipped || j.id_verification_status === 'verified', skipped };
+  } catch { return { clear: false, skipped: false }; }
 }
 
 // Shows/hides the refund card vs. the normal payment methods - plain post-signing branching, no
@@ -1621,7 +1622,7 @@ async function _revealAgreementSection() {
   const lockBanner = document.getElementById('agreement-lock-banner');
   const unlockBanner = document.getElementById('agreement-unlock-banner');
   const signingBody = document.getElementById('agreement-signing-body');
-  const clear = await _idVerifyGateClear();
+  const { clear, skipped } = await _idVerifyGateClear();
   if (!clear) {
     if (idCard) idCard.style.display = '';
     if (lockBanner) lockBanner.style.display = '';
@@ -1631,7 +1632,15 @@ async function _revealAgreementSection() {
   }
   if (idCard) idCard.style.display = 'none';
   if (lockBanner) lockBanner.style.display = 'none';
-  if (unlockBanner) unlockBanner.classList.add('show');
+  if (unlockBanner) {
+    // Jesse: "if i override id verification dont mention it here at all" - when he's waived the
+    // check himself, no verification actually happened, so claiming "Identity verified" would be
+    // false. Keep the same "here's your next step" highlight, just without the identity framing.
+    unlockBanner.textContent = skipped
+      ? '👉 Read and sign the rental agreement below to continue.'
+      : '✅ Identity verified - read and sign the rental agreement below to continue.';
+    unlockBanner.classList.add('show');
+  }
   if (signingBody) signingBody.classList.remove('locked');
   return true;
 }
