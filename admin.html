@@ -244,67 +244,12 @@ a { color: inherit; text-decoration: none; }
 .send-opt .so-label { font-size: .9rem; font-weight: 800; color: var(--navy); }
 .send-opt .so-sub { font-size: .74rem; color: var(--muted); }
 
-/* ── PROPERTY CARDS ── */
-.prop-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-bottom: .9rem; }
-.prop-card {
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: .75rem .6rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  background: var(--white);
-}
-.prop-card:hover { border-color: var(--gold); }
-.prop-card.selected { border-color: var(--navy); background: var(--navy); }
-.prop-card .pc-icon { font-size: 1.4rem; margin-bottom: .3rem; }
-.prop-card .pc-name { font-size: .7rem; font-weight: 700; color: var(--navy); }
-.prop-card.selected .pc-name { color: var(--gold2); }
-.prop-card .pc-cap { font-size: .62rem; color: var(--muted); margin-top: .15rem; }
-.prop-card.selected .pc-cap { color: rgba(255,255,255,.5); }
-
-/* ── RECENT BOOKINGS ── */
-.booking-item {
-  padding: .75rem 0;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: .75rem;
-}
-.booking-item:last-child { border-bottom: none; }
-.bi-prop { font-size: 1.1rem; flex-shrink: 0; }
-.bi-info { flex: 1; }
-.bi-guest { font-size: .85rem; font-weight: 700; color: var(--navy); }
-.bi-dates { font-size: .75rem; color: var(--muted); }
-.bi-actions { display: flex; gap: .4rem; }
-.bi-btn {
-  font-size: .7rem; font-weight: 700; padding: .3rem .65rem;
-  border-radius: 6px; border: none; cursor: pointer;
-  background: var(--sand2); color: var(--navy);
-  transition: background .2s;
-}
-.bi-btn:hover { background: var(--border); }
-.bi-btn.resend { background: rgba(184,136,42,.1); color: var(--gold); }
-.bi-btn.confirm-res { background: rgba(245,158,11,.16); color: #b45309; border-color: rgba(245,158,11,.4); font-weight: 700; }
-.bi-btn.confirm-res:hover { background: rgba(245,158,11,.28); }
-.bi-btn.confirm-res.is-confirmed { background: rgba(16,185,129,.15); color: #059669; border-color: rgba(16,185,129,.3); cursor: default; }
-.bi-btn.confirm-res.is-confirmed:hover { background: rgba(16,185,129,.15); }
 .no-bookings { font-size: .85rem; color: var(--muted2); text-align: center; padding: 1rem 0; font-style: italic; }
 
 /* ── CONFIRMED RESERVATIONS TAB ── */
 #adm-panel-confirmed { padding: 1.5rem; max-width: 860px; margin: 0 auto; }
 .conf-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .5rem; }
 .conf-header h3 { margin: 0; font-size: 1.1rem; color: var(--navy); }
-.conf-card {
-  background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
-  margin-bottom: .85rem; overflow: hidden;
-}
-.conf-card-main { display: flex; align-items: flex-start; gap: .85rem; padding: .9rem 1rem; }
-.conf-prop-icon { font-size: 1.5rem; flex-shrink: 0; padding-top: .1rem; }
-.conf-info { flex: 1; min-width: 0; }
-.conf-guest { font-size: .97rem; font-weight: 700; color: var(--navy); margin-bottom: .18rem; }
-.conf-detail { font-size: .78rem; color: var(--muted); margin-bottom: .15rem; }
-.conf-payment { font-size: .75rem; color: var(--gold); font-weight: 600; margin-bottom: .12rem; }
-.conf-email-display { font-size: .75rem; color: var(--muted2); }
-.conf-actions { display: flex; flex-direction: column; gap: .35rem; flex-shrink: 0; }
 .conf-btn {
   font-size: .7rem; font-weight: 700; padding: .3rem .65rem; border-radius: 5px;
   border: 1.5px solid var(--border); background: var(--sand); cursor: pointer; white-space: nowrap;
@@ -359,29 +304,7 @@ a { color: inherit; text-decoration: none; }
 .conf-notes-box { width: 100%; box-sizing: border-box; border: 1.5px solid var(--border); border-radius: 8px; padding: .6rem .8rem; font-size: .85rem; font-family: inherit; resize: vertical; min-height: 70px; }
 .conf-notes-status { font-size: .72rem; color: var(--muted); margin-top: .3rem; height: 1em; }
 .conf-modal-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
-.conf-resend-panel {
-  border-top: 1px solid var(--border); background: var(--sand2); padding: .85rem 1rem;
-}
-.conf-resend-label { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .5rem; }
-.rp-email-row { display: flex; gap: .4rem; margin-bottom: .4rem; }
-.conf-email-inp {
-  flex: 1; padding: .35rem .6rem; border: 1.5px solid var(--border); border-radius: 5px;
-  font-size: .82rem; font-family: inherit; background: var(--white); color: var(--navy);
-}
-.rp-rm { background: none; border: none; font-size: 1rem; color: var(--muted); cursor: pointer; padding: 0 .3rem; }
-.rp-footer { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
-.rp-add-btn {
-  font-size: .75rem; font-weight: 700; padding: .3rem .75rem; border-radius: 5px;
-  border: 1.5px dashed var(--border); background: transparent; cursor: pointer; color: var(--muted);
-}
-.rp-add-btn:hover { border-color: var(--navy); color: var(--navy); }
-.rp-send-btn {
-  font-size: .75rem; font-weight: 700; padding: .35rem .9rem; border-radius: 5px;
-  border: none; background: var(--navy); color: #fff; cursor: pointer;
-}
-.rp-send-btn:hover { background: var(--gold); }
 .conf-loading { text-align: center; padding: 2rem; color: var(--muted); font-size: .9rem; }
-.conf-error { color: #dc2626; font-size: .85rem; text-align: center; padding: 1rem; }
 
 /* ── STATUS BADGE ── */
 .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: .35rem; }
@@ -391,7 +314,6 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 600px) {
   .field-row { grid-template-columns: 1fr; }
   .field-row.three { grid-template-columns: 1fr 1fr; }
-  .prop-selector { grid-template-columns: 1fr; }
   .adm-header { padding: .8rem 1rem; }
   /* A reservation row's icon+guest-info and its action buttons used to stay side-by-side down to
      any width, squeezing guest name/property/dates into a narrow column that wrapped one word per
@@ -650,15 +572,6 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
   padding-top: 1.1rem; border-top: 1px solid var(--border); margin-top: .5rem;
 }
-.prc-save-btn {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
-  color: var(--white); border: none; border-radius: 50px;
-  padding: .8rem 2rem; font-weight: 700; font-size: .95rem;
-  cursor: pointer; transition: opacity .2s; font-family: 'Inter', sans-serif;
-  display: flex; align-items: center; gap: .4rem;
-}
-.prc-save-btn:hover { opacity: .9; }
-.prc-save-btn:disabled { opacity: .55; cursor: not-allowed; }
 .prc-reset-btn {
   font-size: .78rem; color: var(--muted); text-decoration: underline;
   cursor: pointer; background: none; border: none;
@@ -1696,22 +1609,6 @@ function _loadIntoForm(code) {
   document.querySelector('.adm-col-left')?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ── PRICING TABLE (mirrors app.js exactly) ──
-const _RATES = {
-  prop1: { wd: [100,120,140,180,210,300,350,280,190,160,140,120], we: [140,150,180,270,350,480,500,450,300,250,180,180] },
-  prop2: { wd: [80,80,100,100,120,160,180,140,120,100,80,90],     we: [100,100,120,160,190,230,260,230,170,140,120,100] },
-  prop3: { wd: [80,80,100,100,120,160,180,140,120,100,80,90],     we: [100,100,120,160,190,230,260,230,170,140,120,100] },
-};
-function _isWeekendNight(d) {
-  const dow = d.getDay();
-  if (dow === 5 || dow === 6) return true;
-  if (dow !== 0) return false;
-  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
-  if (m === 4) { const lastDay = new Date(y,5,0).getDate(); const lastMon = lastDay-((new Date(y,4,lastDay).getDay()+6)%7); if (day===lastMon-1) return true; }
-  if (m === 6 && day === 3 && new Date(y,6,4).getDay()===1) return true;
-  if (m === 8) { const firstDow = new Date(y,8,1).getDay(); const firstMon = 1+((8-firstDow)%7); if (day===firstMon-1) return true; }
-  return false;
-}
 // ── PROPERTY ──
 const PROPS = {
   prop1: { name: 'Home in The Heart Of CB (Front Home)', icon: '🏠', short: 'Front Home'  },
@@ -2877,13 +2774,6 @@ function _mergeCloudData(cloudData) {
 function _updateSyncStatus(msg) {
   const el = document.getElementById('cloud-sync-status');
   if (el) { el.textContent = msg; setTimeout(() => { el.textContent = ''; }, 3000); }
-}
-
-async function refreshFromCloud() {
-  _updateSyncStatus('⏳ Syncing…');
-  const data = await _cloudRead();
-  if (data) { _mergeCloudData(data); }
-  else { _updateSyncStatus('⚠️ Sync failed'); }
 }
 
 // ══════════════════════════════════════════
@@ -5184,11 +5074,6 @@ function _showAutoSave(state) {
   el.style.color = c.color;
   el.style.background = c.bg;
   if (state === 'saved') setTimeout(() => { el.textContent = ''; el.style.background = 'transparent'; }, 2500);
-}
-
-// Keep savePricing for the cloud-read merge path
-async function savePricing() {
-  try { await _cloudWrite(); } catch(e) { console.warn('savePricing failed', e); }
 }
 
 function _prcStatus(msg, tone) {
