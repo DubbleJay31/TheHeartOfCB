@@ -1955,7 +1955,7 @@ function _buildConfirmationEmailHtml(sigData) {
     const bookUrl = sigData.bookUrl || '';
 
     // Cash-with-deposit means "received" and "owed at check-in" are different numbers -
-    // showing only the full cash price as "Total Received" is wrong once a deposit is
+    // showing only the full cash price as "Total Paid" is wrong once a deposit is
     // involved, so these are split out for Cash specifically.
     const _confIsCash = sigData.paymentMethod === 'Cash';
     const _confRecvNow = _confIsCash ? (sigData.cashDep || 0) : _amountForMethod(sigData.paymentMethod);
@@ -2064,7 +2064,7 @@ function _buildConfirmationEmailHtml(sigData) {
     ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee<br><span style="font-size:11px;font-weight:400;color:#9ca3af;">Non-refundable</span>', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
     ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, priorCredit > 0 || (!_confIsCash && _confRecvNow > noFee) ? '#f2ede3' : '#f9f6f0') : ''}
     ${_confRecvNow > 0 ? `<tr>
-      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</td>
+      <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Paid' : 'Total Paid')}</td>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(_confRecvNow)}</td>
     </tr>${_confIsCash ? `<tr><td colspan="2" bgcolor="#f2ede3" style="padding:0 14px 9px;font-size:11px;font-weight:400;color:#6b7280;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">Refunded in full the moment your cash payment is received at check-in.</td></tr>` : ''}` : ''}
     ${_confDueAtCheckin > 0 ? `<tr>
@@ -2854,7 +2854,7 @@ async function _notifyJesse(method) {
       : `<div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong><div style="font-size:.62rem;text-transform:none;letter-spacing:normal;color:var(--muted);font-weight:400;margin-top:.1rem;">Non-refundable</div></div>` : ''}
-    ${apRecvNow > 0 ? `<div class="apr-si"><span>${apIsCash ? 'Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
+    ${apRecvNow > 0 ? `<div class="apr-si"><span>${apIsCash ? 'Deposit Received' : (priorCredit > 0 ? 'Balance Paid' : 'Total Paid')}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)
   const cancelEl = document.getElementById('apr-cancel');
