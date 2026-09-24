@@ -3850,6 +3850,13 @@ async function _confirmCancel() {
   const refundAmt = Math.max(0, parseFloat(document.getElementById('cancel-refund-amt')?.value) || 0);
   const btn = document.getElementById('cancel-send-btn');
   btn.disabled = true; btn.textContent = '⏳ Canceling…';
+  // A network/service-worker hang here used to leave this button stuck on "Canceling…" forever,
+  // with no error and no way out except reloading the whole page - Jesse hit this live, twice in a
+  // row, on 2026-09-24. 15s is generous for a single small PATCH; if it's not back by then
+  // something's genuinely wrong (not just a slow response), so abort and tell him plainly instead
+  // of leaving him staring at a spinner with no idea whether to keep waiting.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const updateResp = await fetch(`/.netlify/functions/reservations-update?code=${encodeURIComponent(code)}`, {
       method: 'PATCH',
@@ -3859,16 +3866,21 @@ async function _confirmCancel() {
         cancel_refund_amount: refundAmt,
         host_notes: (r.host_notes ? r.host_notes + '\n\n' : '') + 'Canceled' + (reason ? ': ' + reason : ' (no reason given)')
           + (refundAmt > 0.005 ? ` · $${refundAmt.toFixed(2)} refund owed` : '')
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (!updateResp.ok) throw new Error(await updateResp.text());
     modal.style.display = 'none';
     _closeReservationDetail();
     await loadReservations();
     _openCancelNotifyModal(code, reason);
   } catch(e) {
+    clearTimeout(timeoutId);
     console.error(e);
-    alert('Cancel failed - check console.');
+    alert(e.name === 'AbortError'
+      ? 'This is taking way longer than it should (15s+) - something\'s stuck. Try refreshing the page fully before trying again.'
+      : 'Cancel failed - check console.');
     btn.disabled = false; btn.textContent = 'Cancel Reservation';
   }
 }
