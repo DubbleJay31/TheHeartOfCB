@@ -1161,6 +1161,50 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       <div class="adm-card-body" id="booking-funnel"><div class="no-bookings">Loading…</div></div>
     </div>
 
+    <!-- Tax & Payment Report - Jesse: "how will i know how much tax i have collected by type
+         and room fare etc? how do i see that reporting from website for all payment methods?"
+         Sums confirmed reservations' room fare / occupancy tax / sales tax by payment method
+         over a date range, for tax filing. Basis is CHECK-IN date (the date of the taxable stay,
+         not when payment was received) - flagged in the note below since that's a real judgment
+         call, not the only defensible choice. All 3 properties share one address/tax jurisdiction
+         (213 Harper Ave), so this deliberately isn't split by property. -->
+    <div class="adm-card" style="margin-top:1.25rem;">
+      <div class="adm-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+        <h3>🧾 Tax &amp; Payment Report</h3>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+          <button class="stat-pill" onclick="_taxReportQuick('month')">This Month</button>
+          <button class="stat-pill" onclick="_taxReportQuick('lastmonth')">Last Month</button>
+          <button class="stat-pill" onclick="_taxReportQuick('quarter')">This Quarter</button>
+          <button class="stat-pill" onclick="_taxReportQuick('ytd')">YTD</button>
+          <button class="stat-pill" onclick="_taxReportQuick('all')">All Time</button>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <label style="font-size:.78rem;font-weight:700;color:var(--muted);">Check-in from</label>
+          <input type="date" id="tax-report-start" onchange="_renderTaxReport()" style="padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;" />
+          <label style="font-size:.78rem;font-weight:700;color:var(--muted);">through</label>
+          <input type="date" id="tax-report-end" onchange="_renderTaxReport()" style="padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;" />
+        </div>
+        <div class="stat-table-wrap" style="margin-bottom:.75rem;box-shadow:none;border-radius:10px;">
+          <table class="stat-table" id="tax-report-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Payment Method</th>
+                <th>Stays</th>
+                <th>Room Fare</th>
+                <th>Occupancy Tax</th>
+                <th>Sales Tax</th>
+                <th>Total Collected</th>
+              </tr>
+            </thead>
+            <tbody id="tax-report-tbody"></tbody>
+          </table>
+        </div>
+        <div id="tax-report-note" style="font-size:.75rem;color:var(--muted);line-height:1.6;"></div>
+      </div>
+    </div>
+
     <!-- Filter bar -->
     <div class="stat-filter-bar" style="margin-top:1.25rem;">
       <span class="stat-filter-label">Year</span>
@@ -4360,7 +4404,7 @@ function switchAdmTab(tab) {
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
   if (tab === 'pricing')   { renderBaseRates(); }
-  if (tab === 'stats')     { _renderStats(); _renderBookingFunnel(); }
+  if (tab === 'stats')     { _renderStats(); _renderBookingFunnel(); _renderTaxReport(); }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'booking')   { loadReservations(); }
   if (tab === 'confirmed') { loadReservations(); }
@@ -5218,6 +5262,93 @@ function _statDayLabels(year) {
     }
   }
   return labels;
+}
+
+// ── TAX & PAYMENT REPORT ── Jesse: "how will i know how much tax i have collected by type and
+// room fare etc? how do i see that reporting from website for all payment methods?" Sums
+// CONFIRMED reservations' room fare / occupancy tax / sales tax, grouped by payment method, over
+// a date range - the data (rate/tax_occ/tax_sales/payment_method) already lived on every
+// reservation row, nothing summed it up anywhere before this.
+const _TAX_REPORT_METHOD_LABELS = {
+  stripe: 'Credit Card', paypal: 'PayPal', venmo: 'Venmo', cashapp: 'Cash App',
+  Zelle: 'Zelle', Cash: 'Cash'
+};
+const _TAX_REPORT_METHOD_ORDER = ['stripe', 'paypal', 'venmo', 'cashapp', 'Zelle', 'Cash', '_other'];
+
+function _taxReportQuick(range) {
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth();
+  const iso = d => d.toISOString().split('T')[0];
+  let start, end;
+  if (range === 'month') { start = new Date(y, m, 1); end = new Date(y, m + 1, 0); }
+  else if (range === 'lastmonth') { start = new Date(y, m - 1, 1); end = new Date(y, m, 0); }
+  else if (range === 'quarter') { const q = Math.floor(m / 3); start = new Date(y, q * 3, 1); end = new Date(y, q * 3 + 3, 0); }
+  else if (range === 'ytd') { start = new Date(y, 0, 1); end = today; }
+  else { start = new Date(2020, 0, 1); end = new Date(y + 1, 0, 0); } // 'all'
+  document.getElementById('tax-report-start').value = iso(start);
+  document.getElementById('tax-report-end').value = iso(end);
+  _renderTaxReport();
+}
+
+function _renderTaxReport() {
+  const startEl = document.getElementById('tax-report-start');
+  const endEl   = document.getElementById('tax-report-end');
+  if (!startEl || !endEl) return;
+  // Default to "this month" on first render so the report never opens empty/unset.
+  if (!startEl.value || !endEl.value) { _taxReportQuick('month'); return; }
+  const start = startEl.value, end = endEl.value;
+
+  const rows = _reservationsCache.filter(r =>
+    r.status === 'confirmed' && r.check_in && r.check_in >= start && r.check_in <= end
+  );
+
+  const groups = {};
+  _TAX_REPORT_METHOD_ORDER.forEach(k => { groups[k] = { stays: 0, fare: 0, taxOcc: 0, taxSales: 0, total: 0 }; });
+  let creditedCount = 0, creditedTotal = 0;
+
+  rows.forEach(r => {
+    const fare     = parseFloat(r.rate) || 0;
+    const taxOcc   = parseFloat(r.tax_occ) || 0;
+    const taxSales = parseFloat(r.tax_sales) || 0;
+    const credit   = parseFloat(r.credit) || 0;
+    const preTax   = fare + taxOcc + taxSales;
+    // rate/tax_occ/tax_sales are stored at their full, uncredited values (see calcTotal()'s own
+    // comment) - a reservation with a credit applied didn't actually collect that full amount, so
+    // reporting the raw stored numbers would overstate what's actually owed for filing. Prorate
+    // all three components down by the same ratio the credit reduced the pre-fee total by.
+    const ratio = preTax > 0 ? Math.max(0, preTax - credit) / preTax : 1;
+    if (credit > 0.005) { creditedCount++; creditedTotal += credit; }
+
+    const key = _TAX_REPORT_METHOD_LABELS[r.payment_method] ? r.payment_method : '_other';
+    const g = groups[key];
+    g.stays++;
+    g.fare     += fare * ratio;
+    g.taxOcc   += taxOcc * ratio;
+    g.taxSales += taxSales * ratio;
+    g.total    += preTax * ratio;
+  });
+
+  const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let bodyHtml = '';
+  let grand = { stays: 0, fare: 0, taxOcc: 0, taxSales: 0, total: 0 };
+  _TAX_REPORT_METHOD_ORDER.forEach(key => {
+    const g = groups[key];
+    if (!g.stays) return;
+    grand.stays += g.stays; grand.fare += g.fare; grand.taxOcc += g.taxOcc; grand.taxSales += g.taxSales; grand.total += g.total;
+    const label = key === '_other' ? 'Other / Unrecorded' : _TAX_REPORT_METHOD_LABELS[key];
+    bodyHtml += `<tr><td>${label}</td><td>${g.stays}</td><td>${fmt(g.fare)}</td><td>${fmt(g.taxOcc)}</td><td>${fmt(g.taxSales)}</td><td>${fmt(g.total)}</td></tr>`;
+  });
+  bodyHtml += grand.stays
+    ? `<tr class="tot-row"><td>Total</td><td>${grand.stays}</td><td>${fmt(grand.fare)}</td><td>${fmt(grand.taxOcc)}</td><td>${fmt(grand.taxSales)}</td><td>${fmt(grand.total)}</td></tr>`
+    : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.2rem;">No confirmed stays with check-in in this range.</td></tr>`;
+  document.getElementById('tax-report-tbody').innerHTML = bodyHtml;
+
+  const noteEl = document.getElementById('tax-report-note');
+  if (noteEl) {
+    noteEl.innerHTML = `Based on <strong>check-in date</strong> (the date of the stay), not payment date - confirmed reservations only.`
+      + (creditedCount ? ` ${creditedCount} reservation${creditedCount !== 1 ? 's' : ''} in this range had a credit applied (${fmt(creditedTotal)} total) - fare/tax figures above are prorated down to reflect what was actually collected, not the full pre-credit amount.` : '')
+      + ` Excludes the non-refundable card/PayPal processing fee, which isn't part of room fare or tax.`;
+  }
 }
 
 function statSetYear(y) {
