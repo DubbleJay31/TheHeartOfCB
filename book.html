@@ -646,7 +646,7 @@ a { color: inherit; text-decoration: none; }
   </div>
 
   <!-- RENTAL AGREEMENT + SIGNATURE -->
-  <div class="bk-card">
+  <div class="bk-card" id="rental-agreement-card">
     <div class="bk-card-header">
       <span>📄</span>
       <h3>Rental Agreement & Signature</h3>
@@ -659,6 +659,14 @@ a { color: inherit; text-decoration: none; }
            shown when the identity card above is actually gating this reservation. -->
       <div id="agreement-lock-banner" class="pay-lock-banner" style="display:none;">
         🔒 Verify your identity above to unlock the rental agreement.
+      </div>
+      <!-- Shown the moment the gate clears, same .pay-unlock-banner treatment (navy, bold,
+           centered) the payment section already uses for its own "you just unlocked this, here's
+           what's next" moment - Jesse: "This needs to be highlighted that its the next thing to
+           do." Without this, unlocking was silent - the section just stopped being greyed out,
+           easy to miss as "the next step" versus just a visual state change. -->
+      <div id="agreement-unlock-banner" class="pay-unlock-banner">
+        ✅ Identity verified - read and sign the rental agreement below to continue.
       </div>
       <div id="agreement-signing-body">
 
@@ -1611,16 +1619,19 @@ function _revealPaymentSection() {
 async function _revealAgreementSection() {
   const idCard = document.getElementById('idverify-card');
   const lockBanner = document.getElementById('agreement-lock-banner');
+  const unlockBanner = document.getElementById('agreement-unlock-banner');
   const signingBody = document.getElementById('agreement-signing-body');
   const clear = await _idVerifyGateClear();
   if (!clear) {
     if (idCard) idCard.style.display = '';
     if (lockBanner) lockBanner.style.display = '';
+    if (unlockBanner) unlockBanner.classList.remove('show');
     if (signingBody) signingBody.classList.add('locked');
     return false;
   }
   if (idCard) idCard.style.display = 'none';
   if (lockBanner) lockBanner.style.display = 'none';
+  if (unlockBanner) unlockBanner.classList.add('show');
   if (signingBody) signingBody.classList.remove('locked');
   return true;
 }
@@ -1674,7 +1685,11 @@ async function startIdentityVerification() {
       if (await _revealAgreementSection()) break;
       await new Promise(res => setTimeout(res, 2000));
     }
-    setTimeout(() => document.getElementById('agreement-signing-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    // Scrolls to the CARD (header included), not just the inner signing body - Jesse: "it needs
+    // to scroll focus to include the section banner Rental agreement and signature after ID
+    // verified." Landing on just the body cut off the "RENTAL AGREEMENT & SIGNATURE" title above
+    // it, losing context for what section this even is.
+    setTimeout(() => document.getElementById('rental-agreement-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   } catch (e) { console.error('idverify_return handling failed:', e); }
 })();
 
