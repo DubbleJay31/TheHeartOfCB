@@ -63,17 +63,28 @@ exports.handler = async function(event) {
       // that signed state in the dashboard even though signed_name/signed_at never actually
       // changed. This read also catches a stale/deleted `code` before the write, instead of
       // PATCHing zero rows and reporting success anyway.
-      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out,guest,email,phone,prop,prop_label,nights,url,host_notes,credit,contact_pref,signed_name,signed_at,cancelled_at,prior_terms`);
+      const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,total,rate,tax_occ,tax_sales,check_in,check_out,guest,email,phone,prop,prop_label,nights,url,host_notes,credit,contact_pref,signed_name,signed_at,cancelled_at,prior_terms,id_verify_skip,no_card`);
       const cur = curResp.ok ? await curResp.json() : [];
       if (!cur.length) {
         return { statusCode: 404, body: JSON.stringify({ ok: false, message: 'No reservation found for that code' }) };
       }
       const c = cur[0];
+      // Jesse, after waiving ID verification on an already-signed reservation and finding it
+      // didn't trigger a new quote: "if i change ANYTHING i want it to change." `prop` and the two
+      // override checkboxes (id_verify_skip/no_card) are genuine TERMS of what the guest is
+      // agreeing to - which unit, and what's required of them before they can pay - same category
+      // as dates/price, just not dollar amounts. Deliberately still excludes guest/email/phone/
+      // host_notes/contact_pref - those are contact-detail corrections, not renegotiations, and
+      // forcing a re-signature just to fix a typo would be wrong (see the comment block below this
+      // one for the original reasoning on why this check exists at all).
       const sameTerms = c.check_in === row.check_in && c.check_out === row.check_out
+        && c.prop === row.prop
         && Math.abs((parseFloat(c.total) || 0) - row.total) < 0.01
         && Math.abs((parseFloat(c.rate) || 0) - (row.rate || 0)) < 0.01
         && Math.abs((parseFloat(c.tax_occ) || 0) - (row.tax_occ || 0)) < 0.01
-        && Math.abs((parseFloat(c.tax_sales) || 0) - (row.tax_sales || 0)) < 0.01;
+        && Math.abs((parseFloat(c.tax_sales) || 0) - (row.tax_sales || 0)) < 0.01
+        && !!c.id_verify_skip === !!row.id_verify_skip
+        && !!c.no_card === !!row.no_card;
       // `cancelled` matters here too, same reasoning as confirmed/signed - a private-note tweak
       // or a Copy Link on an already-cancelled reservation used to silently reactivate it (status
       // unconditionally reset to 'quoted') just from editing something that has nothing to do with
