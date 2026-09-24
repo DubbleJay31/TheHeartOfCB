@@ -36,15 +36,21 @@ async function _sendEmail(to, subject, html) {
 // lifecycle (inquiry -> quoted -> signed -> confirmed), identified by a reservation code from
 // here on - not a JSONBin array entry correlated later by guessing which quote matches it.
 async function _submitInquiry(inquiry) {
-  try {
-    const r = await fetch('/.netlify/functions/reservations-inquiry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inquiry)
-    });
-    const j = await r.json().catch(() => ({}));
-    return j.code || '';
-  } catch(e) { console.warn('Inquiry submit failed:', e); return ''; }
+  // Used to swallow every failure (network error OR a non-2xx response) and just return '' -
+  // submitBooking() below never checked for that, so a failed insert (Supabase down, env
+  // misconfig, a transient 500) still showed the guest "Request Received!" and emailed both
+  // sides a confirmation, with no reservation row ever created. Found live 2026-09-24 during an
+  // overnight audit. Throwing here routes the failure into submitBooking()'s existing catch,
+  // which already has the right guest-facing behavior (reset the button, tell them to email
+  // Jesse directly) - no new UI needed, just stop hiding the failure from it.
+  const r = await fetch('/.netlify/functions/reservations-inquiry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(inquiry)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.message || `Inquiry submit failed (${r.status})`);
+  return j.code || '';
 }
 
 async function _sendGuestConfirmation(inquiry) {
