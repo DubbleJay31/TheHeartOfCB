@@ -69,6 +69,12 @@ exports.handler = async function(event) {
 
 function _buildCheckoutHtml(res) {
   const firstName = (res.guest || '').split(' ')[0] || 'there';
+  // "under the front stairs" only describes the Front Home's own layout - house-rules.html
+  // deliberately uses vaguer "ask Jesse" wording for the suites for the same reason, found
+  // 2026-09-24 while tracing the Front-Home-only content bug fixed in book.html/9955ab1.
+  const trashLine = res.prop === 'prop1'
+    ? 'Take kitchen and bathroom trash to the outdoor cans under the front stairs'
+    : "Take your trash to the outdoor cans - ask Jesse if you're not sure where";
   return `<!DOCTYPE html>
 <html>
 <head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head>
@@ -95,7 +101,7 @@ function _buildCheckoutHtml(res) {
           ✓ Wash used dishes<br>
           ✓ Remove all food and drinks from the refrigerator<br>
           ✓ Wipe up spills, pick up trash, return items where they belong<br>
-          ✓ Take kitchen and bathroom trash to the outdoor cans under the front stairs<br>
+          ✓ ${trashLine}<br>
           ✓ Do a final walk-through - make sure nothing is left behind<br>
           <strong>✓ Text Jesse when you leave: (910) 599-8118</strong>
         </p>
