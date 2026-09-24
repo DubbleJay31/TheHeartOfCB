@@ -685,6 +685,10 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 .stat-card.accent .stat-card-val { color: #fff; }
 .stat-card.accent .stat-card-sub { color: rgba(255,255,255,.55); }
 .stat-card.warn .stat-card-val { color: #c0392b; }
+.trust-total-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; background: var(--navy); border-left: 6px solid var(--gold); border-radius: 12px; padding: 1.1rem 1.4rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+.trust-total-label { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gold-light); margin-bottom: .3rem; }
+.trust-total-val { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1.1; }
+.trust-total-sub { font-size: .78rem; color: rgba(255,255,255,.65); margin-top: .25rem; }
 .stat-chart-wrap { background: var(--white); border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
 .stat-chart-title { font-size: .88rem; font-weight: 800; color: var(--navy); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
 .stat-chart-title span { font-size: .72rem; font-weight: 500; color: var(--muted); }
@@ -1252,7 +1256,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     <div class="adm-card" style="margin-top:1.25rem;">
       <div class="adm-card-header"><h3>💰 Trust Account Balance</h3></div>
       <div class="adm-card-body">
-        <div class="stat-cards" id="trust-balance-cards" style="margin-bottom:1.25rem;"></div>
+        <div id="trust-balance-cards"></div>
 
         <div style="background:var(--sand);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;">
           <div style="font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.04em;">Log a Deposit or Draw</div>
@@ -3484,6 +3488,16 @@ function openGuestDashboard(code) {
   const _feeLabel = r.payment_method === 'paypal' ? 'PayPal fee' : 'card fee';
   const statusLbl = _rowStatusLabel(r);
   const idLbl = _idVerifyLabel(r);
+  // Jesse: "why does it not say payment method here." Payment method used to only ever surface as
+  // a side-mention buried inside whichever conditional message happened to fire (an "(via X)" tag,
+  // or "Originally paid via X") - nothing showed it when NONE of those fired, i.e. exactly the
+  // case Jesse hit: a reservation declined/cancelled before ever reaching payment. One explicit,
+  // always-shown line now, reusing the same method labels as the Tax Report for consistency.
+  const _pmLabel = r.payment_method === 'Refund' ? 'None (covered by existing credit)'
+    : r.payment_method === 'Even' ? 'None (credit matched the new total exactly)'
+    : r.payment_method ? (_TAX_REPORT_METHOD_LABELS[r.payment_method] || r.payment_method)
+    : isCancelled ? 'None - declined/cancelled before a method was chosen'
+    : 'Not yet chosen';
 
   _closeReservationDetail();
   const backdrop = document.createElement('div');
@@ -3511,11 +3525,11 @@ function openGuestDashboard(code) {
         ${r.message ? `<div style="margin-top:.3rem;"><b>Message:</b> "${_esc(r.message)}"</div>` : ''}
         ` : `
         <div style="color:${idLbl.color};font-weight:700;font-size:.85em;">${idLbl.text}</div>
+        <div><b>Payment Method:</b> ${_esc(_pmLabel)}</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} (non-refundable) ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
         ${_refundOwed > 0 ? `
         <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
-        ${r.payment_method ? `<div style="color:var(--muted);font-size:.85em;">Originally paid via ${_esc(r.payment_method === 'stripe' ? 'Credit/Debit Card' : r.payment_method)}</div>` : ''}
         ${(r.payment_method === 'stripe' || r.payment_method === 'paypal') ? `<div style="color:var(--muted);font-size:.78em;">Stripe/PayPal keep their processing fee on a refund - it won't come back to you either way.</div>` : ''}
         ` : (r.payment_method === 'Refund' || r.payment_method === 'Even') ? `
         <div style="color:var(--muted);"><b>${r.payment_method === 'Refund' ? 'No new payment - credit already covered the refund above' : 'No new payment - credit landed exactly on the new total'}</b></div>
@@ -3523,11 +3537,17 @@ function openGuestDashboard(code) {
         ${_cashDepositAmt > 0 ? `
         <div style="color:#166534;"><b>Deposit Received:</b> ${fmt$(_cashDepositAmt)} <span style="color:var(--muted);font-size:.82em;">(refundable - full ${fmt$(Math.max(0, _noFeeTotal(r) - (r.credit||0)))} due in cash at check-in)</span></div>
         ` : `
-        <div style="color:#166534;"><b>${r.payment_method === 'stripe' ? 'Paid by Card' : 'Amount Paid'}:</b> ${fmt$((r.payment_method === 'stripe' || r.payment_method === 'paypal') ? r.total : Math.max(0, _noFeeTotal(r) - (r.credit||0)))}${r.payment_method !== 'stripe' ? ` <span style="color:var(--muted);font-size:.82em;">(via ${_esc(r.payment_method)})</span>` : ''}</div>
+        <div style="color:#166534;"><b>${r.payment_method === 'stripe' ? 'Paid by Card' : 'Amount Paid'}:</b> ${fmt$((r.payment_method === 'stripe' || r.payment_method === 'paypal') ? r.total : Math.max(0, _noFeeTotal(r) - (r.credit||0)))}</div>
         `}
         ` : `
         ${r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
-        ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes non-refundable 3% fee)</div>` : ''}
+        <!-- Used to always show "If paid by card: $X" whenever r.total existed, phrased as a live
+             hypothetical regardless of whether payment could still ever happen. Jesse, looking at
+             a DECLINED/cancelled reservation that never reached payment: "the message about card
+             shouldnt be an 'if' statement, it should just know to put that message there or not."
+             A dead reservation has no "if" left to state - card total is only worth surfacing
+             while the reservation is still alive and awaiting a payment choice. -->
+        ${(r.total && !isCancelled) ? `<div style="color:var(--muted);font-size:.85em;">Card total (includes non-refundable 3% fee): ${fmt$(r.total)}</div>` : ''}
         `}`}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
@@ -5491,29 +5511,46 @@ function _renderTrustBalance() {
 
   const cardsEl = document.getElementById('trust-balance-cards');
   if (cardsEl) {
-    const card = (label, val, sub, accent, warn) => `
-      <div class="stat-card${accent ? ' accent' : ''}${warn ? ' warn' : ''}">
-        <div class="stat-card-label">${label}</div>
-        <div class="stat-card-val">${fmt(val)}</div>
-        <div class="stat-card-sub">${sub}</div>
-      </div>`;
     // Jesse: "there needs to be a total for the trust account. a grand total of everything so i
     // know what the balance should be." All 6 categories below are money that should currently
     // be sitting in whatever account holds this - "available now" vs "future" is about DRAW
     // eligibility, not about whether the cash has actually been collected yet (it has, for both).
     const grandTotal = shouldBe.owner + shouldBe.sales_tax + shouldBe.rot + held.owner + held.sales_tax + held.rot;
-    // Jesse: "i want the future held money broken down by owner money, sales tax, rot" - was one
-    // lump "Held for Future Stays" card; now mirrors the same 3-way split as the "available now"
-    // row above it, just for the not-yet-eligible (future check-in) bucket instead of the earned
-    // one - same _trustBalances() data, already split this way, just wasn't surfaced per-category.
-    cardsEl.innerHTML =
-      card('Total in Trust Account', grandTotal, 'Available now + held for future stays', true) +
-      card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, false, shouldBe.owner < 0) +
-      card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, false, shouldBe.sales_tax < 0) +
-      card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, false, shouldBe.rot < 0) +
-      card('Owner (Future)', held.owner, 'Not eligible until check-in') +
-      card('Sales Tax (Future)', held.sales_tax, 'Not eligible until check-in') +
-      card('ROT (Future)', held.rot, 'Not eligible until check-in');
+    // Jesse, after the total was first added as a 7th tile in the same grid: "I still like it
+    // highlighted but not inline with the other stats." Pulled into its own banner, above and
+    // visually separate from the per-category breakdown, instead of just another tile in the row.
+    // He also asked for the whole thing to read "more of a table than tiles," AND for Available
+    // Now/Future to go back to being paired per category the way they were before the future
+    // breakdown got its own separate row of 3 tiles ("i liked before how the oner draw avai and
+    // future... how it was parallelled") - a real <table> with one row per category and Available
+    // Now/Held (Future) as columns satisfies both asks in one shape.
+    const cell = (val, sub, warn) => `
+      <div style="font-size:.95rem;font-weight:800;color:${warn ? '#c0392b' : 'var(--navy)'};">${fmt(val)}</div>
+      <div style="font-size:.68rem;color:var(--muted);font-weight:400;margin-top:.15rem;">${sub}</div>`;
+    const row = (label, avail, availSub, availWarn, future) => `
+      <tr>
+        <td>${label}</td>
+        <td>${cell(avail, availSub, availWarn)}</td>
+        <td>${cell(future, 'Not eligible until check-in', false)}</td>
+      </tr>`;
+    cardsEl.innerHTML = `
+      <div class="trust-total-banner">
+        <div>
+          <div class="trust-total-label">Total in Trust Account</div>
+          <div class="trust-total-val">${fmt(grandTotal)}</div>
+        </div>
+        <div class="trust-total-sub">Available now + held for future stays</div>
+      </div>
+      <div class="stat-table-wrap" style="box-shadow:none;border-radius:10px;">
+        <table class="stat-table">
+          <thead><tr><th style="text-align:left;">Category</th><th>Available Now</th><th>Held (Future)</th></tr></thead>
+          <tbody>
+            ${row('Owner Draw', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, shouldBe.owner < 0, held.owner)}
+            ${row('Sales Tax', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, shouldBe.sales_tax < 0, held.sales_tax)}
+            ${row('ROT', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, shouldBe.rot < 0, held.rot)}
+          </tbody>
+        </table>
+      </div>`;
   }
 
   const tbody = document.getElementById('tl-history-tbody');
