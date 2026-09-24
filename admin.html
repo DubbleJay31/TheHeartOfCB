@@ -1535,8 +1535,8 @@ function _fmtDate(s, opts) {
 // markup, so this is deliberately scoped to just these two rather than a codebase-wide unification.
 function _emailHeaderHtml(title) {
   return `<div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:50%;">
+      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:50%;">
         <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
       </td></tr></table>
     </td></tr></table>
@@ -2543,14 +2543,20 @@ function sendEmail() {
 <div style="font-family:'Georgia',serif;background:#f5f0e8;padding:32px 16px;min-height:100%;">
   <div style="max-width:580px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);">
 
-    <!-- Header -->
+    <!-- Header - the gold ring/white circle badge is two nested table cells with a fixed
+         width/height. border-radius here is 50% (not a fixed half-width px value like 54px) so
+         it always matches whatever the cell actually renders at - a webmail client that doesn't
+         perfectly honor the px width/height (Gmail's own preview rendering included) would
+         otherwise round a slightly-off box to the WRONG fixed radius, reading as an uneven ring.
+         Jesse, on this exact badge: "this gold circle around the logo doesn't look quite round
+         or something is off it's not consistent weight of the gold circle." -->
     <div style="background:#0a1f3a;padding:32px 40px;text-align:center;">
       <table align="center" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;border-collapse:collapse;">
         <tr>
-          <td width="108" height="108" align="center" valign="middle" style="background:#b8882a;border-radius:54px;width:108px;height:108px;line-height:108px;">
+          <td width="108" height="108" align="center" valign="middle" style="background:#b8882a;border-radius:50%;width:108px;height:108px;line-height:108px;">
             <table align="center" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
               <tr>
-                <td width="96" height="96" align="center" valign="middle" style="background:#ffffff;border-radius:48px;width:96px;height:96px;line-height:96px;">
+                <td width="96" height="96" align="center" valign="middle" style="background:#ffffff;border-radius:50%;width:96px;height:96px;line-height:96px;">
                   <img src="https://theheartofcb.com/THOCB%20Pin%20NO%20BACKGROUND.png" alt="The Heart Of CB" width="68" height="auto" style="display:inline-block;width:68px;height:auto;vertical-align:middle;" />
                 </td>
               </tr>
@@ -3017,7 +3023,15 @@ async function _initNotifications() {
   const btn = document.getElementById('adm-notif-btn');
   if (!btn || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js');
+    // Scoped to admin.html specifically, not the whole site (the default for a /sw.js registered
+    // with no scope) - Jesse: "my personal quote opened in my admin app... will that be a problem
+    // for other guests?" It wasn't (only his own phone has this PWA installed), but a root-scoped
+    // install is still exactly what makes Android treat any theheartofcb.com link - including a
+    // guest quote link he taps himself - as "belongs to this app" and opens it in the standalone
+    // admin window instead of the browser. Narrowing this requires Jesse to remove and re-add the
+    // admin app to his home screen once - an already-installed PWA's scope doesn't update itself
+    // just because manifest.json/this registration call changed.
+    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin.html' });
     if (Notification.permission === 'denied') return; // blocked at the browser/OS level - nothing this page can do, no point offering a button that can't work
     const existing = await reg.pushManager.getSubscription();
     btn.style.display = '';
@@ -3284,9 +3298,14 @@ function _rowActionState(r) {
   // to actually send that money himself, outside this system - this is his own attestation that he
   // did, same trust-the-click pattern as confirmation_sent_at.
   const needsRefundSent = r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005 && !r.cancel_refund_sent_at;
+  // Jesse: "a new inquiry should be highlighted and registered as action needed." A bare inquiry
+  // has no sub-state to wait on the way the others do (quoted/signed/confirmed all have a
+  // guest-side step in between) - being in 'inquiry' AT ALL inherently means nobody has responded
+  // to it yet, unconditionally, for as long as it stays in that status.
+  const needsInquiryResponse = r.status === 'inquiry';
   return {
-    isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent,
-    isActionNeeded: isChangePendingSigned || needsSend || needsFirstConfirm || needsRefundSent
+    isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent, needsInquiryResponse,
+    isActionNeeded: needsInquiryResponse || isChangePendingSigned || needsSend || needsFirstConfirm || needsRefundSent
   };
 }
 
@@ -3295,7 +3314,7 @@ function _rowActionState(r) {
 // different way once opened. Built on _rowActionState so both always agree on the underlying
 // conditions too.
 function _rowStatusLabel(r) {
-  const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent } = _rowActionState(r);
+  const { isChangePending, isChangePendingQuoted, isChangePendingSigned, needsSend, needsFirstConfirm, needsRefundSent, needsInquiryResponse } = _rowActionState(r);
   // "Change Pending" alone didn't say what kind of action it needs - verifying a claimed payment,
   // sending a refund, or just confirming a wash - three different next steps that all collapsed
   // into one vague label. Sub-status derived from the same payment_method Change Reservation
@@ -3305,14 +3324,15 @@ function _rowStatusLabel(r) {
   const changePendingLabel = r.payment_method === 'Refund' ? '💰 Refund Owed - Confirm'
     : r.payment_method === 'Even' ? '✅ No Balance - Confirm'
     : '💳 Payment Submitted - Confirm';
-  const text = isChangePendingQuoted ? '🔄 Confirmed - Change Quoted'
+  const text = needsInquiryResponse ? '📥 New Inquiry - Respond'
+    : isChangePendingQuoted ? '🔄 Confirmed - Change Quoted'
     : isChangePendingSigned ? changePendingLabel
     : needsSend ? '✅ Confirmed - Send Confirmation'
     : needsFirstConfirm ? '✍️ Signed - Confirm Needed'
     : needsRefundSent ? `💰 Refund Owed - $${parseFloat(r.cancel_refund_amount).toFixed(2)}`
     : (r.status === 'cancelled' && (parseFloat(r.cancel_refund_amount) || 0) > 0.005) ? '🚫 Cancelled - Refund Sent'
     : (_STATUS_LABEL[r.status] || r.status);
-  const color = isChangePending ? '#7c3aed' : (needsSend || needsFirstConfirm || needsRefundSent) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
+  const color = isChangePending ? '#7c3aed' : (needsInquiryResponse || needsSend || needsFirstConfirm || needsRefundSent) ? '#b45309' : (_STATUS_COLOR[r.status] || '#666');
   return { text, color };
 }
 
@@ -3493,9 +3513,16 @@ function openGuestDashboard(code) {
   // or "Originally paid via X") - nothing showed it when NONE of those fired, i.e. exactly the
   // case Jesse hit: a reservation declined/cancelled before ever reaching payment. One explicit,
   // always-shown line now, reusing the same method labels as the Tax Report for consistency.
+  // Jesse, on a signed-but-not-yet-confirmed reservation the guest had already self-reported
+  // paying via PayPal (clicking book.html's green "I've sent it" button - see
+  // reservations-report-payment.js): "I understand it's not confirmed by me yet but why can't
+  // that info be there now? that would be helpful to me at this stage." r.reported_payment_method
+  // is purely the guest's own unverified claim - r.payment_method (checked first, above) stays
+  // the authoritative source once Jesse actually confirms and it gets written for real.
   const _pmLabel = r.payment_method === 'Refund' ? 'None (covered by existing credit)'
     : r.payment_method === 'Even' ? 'None (credit matched the new total exactly)'
     : r.payment_method ? (_TAX_REPORT_METHOD_LABELS[r.payment_method] || r.payment_method)
+    : r.reported_payment_method ? `${_TAX_REPORT_METHOD_LABELS[r.reported_payment_method] || r.reported_payment_method} (guest-reported, not yet confirmed by you)`
     : isCancelled ? 'None - declined/cancelled before a method was chosen'
     : 'Not yet chosen';
 
@@ -3547,7 +3574,7 @@ function openGuestDashboard(code) {
              shouldnt be an 'if' statement, it should just know to put that message there or not."
              A dead reservation has no "if" left to state - card total is only worth surfacing
              while the reservation is still alive and awaiting a payment choice. -->
-        ${(r.total && !isCancelled) ? `<div style="color:var(--muted);font-size:.85em;">Card total (includes non-refundable 3% fee): ${fmt$(r.total)}</div>` : ''}
+        ${(r.total && !isCancelled && !r.reported_payment_method) ? `<div style="color:var(--muted);font-size:.85em;">Card total (includes non-refundable 3% fee): ${fmt$(r.total)}</div>` : ''}
         `}`}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
@@ -3953,6 +3980,18 @@ function _onCancelRefundFeeToggle() {
   }
 }
 
+// After a state-changing action succeeds, refresh the cache and - if the Guest Dashboard modal is
+// currently open (it always is, for these callers - every one of them is triggered by a button
+// living inside that same modal) - rebuild it in place with the fresh data, instead of leaving
+// stale status/buttons on screen until Jesse manually closes the modal, hits Refresh on the list,
+// and reopens it. Jesse, after Decline left "Delete Permanently" missing until he did exactly that:
+// "is there any way that we can make these things auto update including the reservations list
+// without the refresh button?"
+async function _refreshAfterAction(code) {
+  await loadReservations();
+  if (document.getElementById('conf-modal-backdrop')) openGuestDashboard(code);
+}
+
 async function _confirmCancel() {
   const modal = document.getElementById('cancel-modal');
   const code = modal.dataset.code;
@@ -3984,8 +4023,7 @@ async function _confirmCancel() {
     clearTimeout(timeoutId);
     if (!updateResp.ok) throw new Error(await updateResp.text());
     modal.style.display = 'none';
-    _closeReservationDetail();
-    await loadReservations();
+    await _refreshAfterAction(code);
     _openCancelNotifyModal(code, reason);
   } catch(e) {
     clearTimeout(timeoutId);
@@ -4158,7 +4196,7 @@ async function undoReservationChange(code) {
       body: JSON.stringify({ code })
     });
     if (resp.ok) {
-      await loadReservations();
+      await _refreshAfterAction(code);
       _openUndoNotifyModal(code);
     } else {
       alert('Revert failed - check console.');
@@ -4318,7 +4356,7 @@ async function _confirmDecline() {
     });
     if (!updateResp.ok) throw new Error(await updateResp.text());
     modal.style.display = 'none';
-    await loadReservations();
+    await _refreshAfterAction(code);
     _openDeclineNotifyModal(code, reason);
   } catch(e) {
     console.error(e);

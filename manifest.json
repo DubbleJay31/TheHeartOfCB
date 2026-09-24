@@ -3,7 +3,7 @@
   "short_name": "THOCB Admin",
   "description": "Booking admin dashboard for The Heart Of CB",
   "start_url": "/admin.html",
-  "scope": "/",
+  "scope": "/admin.html",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#faf7f2",
