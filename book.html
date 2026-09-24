@@ -1522,7 +1522,7 @@ async function submitAgreement() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ guest, email, ci: ciRaw, co: coRaw, prop, total: totalRaw, qtok, code })
     });
-    if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; }
+    if (r.ok) { const j = await r.json(); tok = j.tok || ''; sip = j.ip || ''; _capTok = tok; }
     else {
       const errBody = await r.json().catch(() => ({}));
       console.error('sign-link rejected (status ' + r.status + '):', errBody);
@@ -2008,9 +2008,9 @@ function _buildConfirmationEmailHtml(sigData) {
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d">
     <tr><td align="center" bgcolor="#0f1e3d" style="padding:32px 32px 24px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
       <table cellpadding="0" cellspacing="0" border="0" align="center">
-        <tr><td width="80" height="80" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:40px;">
+        <tr><td width="80" height="80" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:50%;">
           <table cellpadding="0" cellspacing="0" border="0" align="center">
-            <tr><td width="70" height="70" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:35px;">
+            <tr><td width="70" height="70" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:50%;">
               <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" height="64" width="64" alt="" style="display:block;border-radius:50%;object-fit:contain;"/>
             </td></tr>
           </table>
@@ -2194,6 +2194,10 @@ function _buildConfirmationEmailHtml(sigData) {
 // Agreement email is sent in submitAgreement() - this just guards against expired bookings
 let _agreementSent = false;
 let _agreementUrl = '';
+// The same capability token sign-link.js mints and bakes into _agreementUrl (&tok=), kept here
+// too as its own raw value so _confirmPaymentSent() can hand it to reservations-report-payment.js
+// without re-parsing it back out of a URL.
+let _capTok = '';
 
 // _agreementUrl is fixed at signing time, before any payment method is chosen - without this,
 // the "Print/Save Agreement" view (and anything else reopening it) never learns which method
@@ -2288,10 +2292,20 @@ function _showPaymentSentSection(method) {
   setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200);
 }
 
+function _reportPaymentMethod(method) {
+  if (!_capTok) return;
+  fetch('/.netlify/functions/reservations-report-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, guest, email, check_in: ciRaw, check_out: coRaw, method, tok: _capTok })
+  }).catch(() => {}); // purely informational for Jesse's dashboard - never blocks this flow
+}
+
 async function _confirmPaymentSent() {
   const btn = document.getElementById('pm-sent-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Notifying Jesse…'; }
   const method = btn ? btn.dataset.method || 'Unknown' : 'Unknown';
+  _reportPaymentMethod(method);
   await _notifyJesse(method);
   await _notifyGuest(method);
   if (btn) { btn.textContent = '✅ Jesse notified - you\'ll hear back shortly'; btn.style.background = '#166534'; }
@@ -2520,11 +2534,16 @@ async function _notifyJesse(method) {
     }
   }
 
-  // Same guest-facing link sendGuestConfirmation()/sendGuestConfirmationText() build fresh at
-  // click-time (see _signedBookUrl calls below) - computed once here too so Copy Link/Open Live
-  // Link can offer the identical URL Jesse would see in admin's own Guest Booking Link card,
-  // instead of a separately-derived one that could drift from it.
-  const _guestLiveUrl = _signedBookUrl(window.location.href.replace(/&action=confirm/, ''));
+  // The plain saved link - no &signed=1/&tok/&action=confirm - same shape as admin.html's own
+  // Copy Link/View buttons for a confirmed reservation (_reservationLinks' viewUrl there), which is
+  // what actually redirects a visitor into the rich _showAlreadyConfirmedPage() once this
+  // reservation is confirmed (see the freshness-check IIFE near the top of this script, gated on
+  // NEITHER signed nor action being present). Used to run through _signedBookUrl() instead - that
+  // helper exists for the CONTRACT-only receipt link embedded inside the confirmation email body, a
+  // different destination - which meant this always opened the bare signed agreement no matter
+  // what. Jesse: "the open live link on the send booking confirmation just opens the contract. I
+  // want to see the whole booking confirmation."
+  const _guestLiveUrl = window.location.href.replace(/&action=confirm/, '');
 
   const div = document.createElement('div');
   div.style.cssText = 'max-width:520px;margin:2.5rem auto;padding:0 1.25rem 3rem;font-family:Inter,sans-serif;';
