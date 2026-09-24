@@ -1786,17 +1786,6 @@ function _checkDateConflict() {
 
 // ── NIGHTS ──
 let _nights = 0;
-function updateRateHint() {
-  const fare = parseFloat(document.getElementById('f-rate').value) || 0;
-  const hint = document.getElementById('rate-total-hint');
-  if (!hint) return;
-  if (fare > 0 && _nights > 0) {
-    const perNight = fare / _nights;
-    hint.textContent = `= $${perNight.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}/night`;
-  } else {
-    hint.textContent = '';
-  }
-}
 
 function calcNights() {
   const ci = document.getElementById('f-ci').value;
@@ -1917,7 +1906,7 @@ function calcFromGuestTotal() {
   const rateEl = document.getElementById('f-rate');
   if (!gtEl || !rateEl) return;
   const guestTotal = parseFloat(gtEl.value) || 0;
-  if (guestTotal <= 0) { rateEl.value = ''; calcTotal(); generate(); updateRateHint(); return; }
+  if (guestTotal <= 0) { rateEl.value = ''; calcTotal(); generate(); return; }
   // Reverse: guestTotal = subtotal * (1 + TAX_OCC + TAX_SALES). The credit card fee is never
   // baked into this - it's only an optional add-on if the guest chooses to pay by card, so the
   // entered Guest Total is treated as the fare+tax base, not a card-inclusive price.
@@ -1925,7 +1914,6 @@ function calcFromGuestTotal() {
   rateEl.value = subtotal.toFixed(2);
   calcTotal();
   generate();
-  updateRateHint();
 }
 
 const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2832,6 +2820,7 @@ async function _doSaveQuote() {
   const privateNote = document.getElementById('f-private-note')?.value?.trim() || '';
   const credit = parseFloat(document.getElementById('f-credit')?.value) || 0;
   const idVerifySkip = document.getElementById('f-id-verify-skip')?.checked || false;
+  const noCard = document.getElementById('f-override-cc')?.checked || false;
   if (statusEl) statusEl.textContent = '⏳ Saving…';
   try {
     const r = await fetch('/.netlify/functions/reservations-upsert', {
@@ -2841,7 +2830,7 @@ async function _doSaveQuote() {
         code: _editingCode || undefined,
         guest, email, phone, prop: _prop, ci, co, nights: _nights || 0,
         total: _total, rate: _rate, taxOcc: _taxOcc, taxSales: _taxSales,
-        url: _generatedUrl, exp, privateNote, credit, contactPref: _contactPref || '', idVerifySkip
+        url: _generatedUrl, exp, privateNote, credit, contactPref: _contactPref || '', idVerifySkip, noCard
       })
     });
     const j = await r.json().catch(() => ({}));
@@ -3664,6 +3653,10 @@ async function _gdSendSignedAgreement(code, method, el) {
   if (!r) return;
   const orig = el.textContent;
   el.textContent = '…';
+  // Matches _gdViewSignedAgreement's try/finally above - this used to only reset el.textContent
+  // on the email path (explicitly, before opening that modal) and in the catch block, so the
+  // "no signature found" and text-message branches (both `return` from inside the try) left the
+  // button/link stuck on "…" until the whole Guest Dashboard modal was closed and reopened.
   try {
     const url = await _gdSignedAgreementUrl(code);
     if (!url) { alert('Could not verify a signature on file for this reservation - try refreshing the list.'); return; }
@@ -3689,7 +3682,6 @@ async function _gdSendSignedAgreement(code, method, el) {
     📧 <a href="mailto:stay@theheartofcb.com" style="color:#b8882a;">stay@theheartofcb.com</a></p>
   </div>
 </div></div>`;
-    el.textContent = orig;
     _openEmailPreviewModal({
       to: r.email,
       subject: 'Your Signed Agreement - The Heart Of CB',
@@ -3705,12 +3697,12 @@ async function _gdSendSignedAgreement(code, method, el) {
         setTimeout(() => { el.textContent = orig; }, 2200);
       }
     });
-    return;
   } catch (e) {
     console.error('Send Signed Agreement failed:', e);
     alert('Could not send the signed agreement - check console.');
+  } finally {
+    el.textContent = orig;
   }
-  el.textContent = orig;
 }
 
 // List's quick "Confirm Reservation" button (status='signed', not yet confirmed at all) - opens
