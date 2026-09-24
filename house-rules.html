@@ -21,6 +21,7 @@
   --muted: #6b7280;
   --red: #8b1a1a;
   --red2: #a82020;
+  --white: #ffffff;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; background: var(--sand); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
@@ -128,8 +129,11 @@ h1, h2 { font-family: 'Playfair Display', serif; }
   background: var(--navy); color: #fff; border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 2rem;
 }
 .hr-quickglance h2 { font-size: 1rem; font-weight: 700; color: var(--gold2); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .8rem; font-family: 'Inter', sans-serif; }
-.hr-quickglance ul { padding-left: 1.2rem; }
-.hr-quickglance li { font-size: .88rem; line-height: 1.75; margin-bottom: .25rem; color: rgba(255,255,255,.85); }
+/* .hr-acc-body ul/li below match these on specificity and come later in the sheet, so without the
+   .hr-acc-body prefix here those rules win the cascade and silently repaint this box's text near-black
+   on navy - invisible. Scoping under .hr-acc-body (where this box always lives) outranks them instead. */
+.hr-acc-body .hr-quickglance ul { padding-left: 1.2rem; }
+.hr-acc-body .hr-quickglance li { font-size: .88rem; line-height: 1.75; margin-bottom: .25rem; color: rgba(255,255,255,.85); }
 
 /* ── ACCORDION ── */
 .hr-acc-item { border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: .6rem; }
@@ -229,14 +233,21 @@ h1, h2 { font-family: 'Playfair Display', serif; }
   .hr-no-parties { background: #222 !important; }
   .hr-no-parties-main { color: #fff !important; }
   .hr-no-parties-sub { color: #ddd !important; }
-  .hr-quickglance { background: #f0f0f0 !important; }
-  .hr-quickglance h2 { color: #333 !important; }
-  .hr-quickglance li { color: #000 !important; }
+  .hr-acc-body .hr-quickglance { background: #f0f0f0 !important; }
+  .hr-acc-body .hr-quickglance h2 { color: #333 !important; }
+  .hr-acc-body .hr-quickglance li { color: #000 !important; }
   .hr-closing { background: #f0f0f0 !important; }
   .hr-closing p { color: #000 !important; }
   .hr-closing .hr-sig { color: #333 !important; }
   .hr-closing .hr-phone { color: #555 !important; }
   .hr-section-lk { border-color: #000; }
+  /* Accordion sections default closed on screen (only the one a guest last opened has .open) - printing
+     without this shows nothing but 7 collapsed header bars, no actual rules/content. Force every body
+     open and strip the interactive chrome (arrows, dark "active" header) since print has no click state. */
+  .hr-acc-item { break-inside: avoid; page-break-inside: avoid; border-color: #999; }
+  .hr-acc-body { display: block !important; }
+  .hr-acc-hd, .hr-acc-hd.active { background: #fff !important; color: #000 !important; cursor: default; }
+  .hr-acc-arrow { display: none !important; }
 }
 @media (max-width: 600px) {
   .hr-header { padding: .75rem 1rem; }
