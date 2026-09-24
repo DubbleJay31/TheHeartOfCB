@@ -3362,13 +3362,15 @@ function renderConfirmedPanel() {
 
   el.innerHTML = list.map(r => {
     const dates = r.check_in ? `${fmtD(r.check_in)} → ${fmtD(r.check_out)}` : 'No dates yet';
-    // Every status but 'inquiry' now opens the same Guest Dashboard - inquiry has no saved link
-    // yet (nothing's been quoted), so there's nothing for a dashboard to show or send; it goes
-    // straight to Quote Builder to build the first quote instead. Jesse: "when status is inquiry,
-    // it needs to bring me to quote builder. the email did, but from admin didnt." Everything from
-    // 'quoted' onward - a lead awaiting Jesse, a change-pending edit, a live confirmed booking, a
-    // cancelled one - shares one consistent view now instead of three different destinations.
-    const clickable = r.status === 'inquiry' ? `_openInQuotesForm('${r.code}')` : `openGuestDashboard('${r.code}')`;
+    // Every status, including 'inquiry', opens the same Guest Dashboard now - a fresh inquiry
+    // used to skip straight to Quote Builder instead, which meant Decline (a Manage-section
+    // button that only ever lived inside this dashboard) was completely unreachable for an
+    // inquiry, even though the decline flow itself has always supported it. Jesse: "How do i
+    // decline an inquiry. I want the guest page to pop up here with options like i asked for with
+    // every reservation in every status." Quote Builder is still one click away (Manage's
+    // "Customize Quote" button, inquiry's version of "Change Reservation"), just not the
+    // immediate destination anymore.
+    const clickable = `openGuestDashboard('${r.code}')`;
     // A 'quoted'/'signed' row can mean two very different things: a brand-new lead that's never
     // been confirmed, or an ALREADY-confirmed reservation mid-edit via Change Reservation, reset
     // to 'quoted' pending the guest's re-signature for the new terms - upsert resets status but
@@ -3414,24 +3416,26 @@ function _closeReservationDetail() {
 }
 
 // ══════════════════════════════════════════
-// GUEST DASHBOARD - the one place any quoted/signed/confirmed/cancelled reservation opens, on a
-// row click or from a notification email's deep link. 'inquiry' still goes straight to Quote
-// Builder (_openInQuotesForm) - there's no saved link or real terms yet for a dashboard to show.
-// Replaces the old three-way split (a lightweight Send Quote Link popup for quoted/signed, a
-// separate detail modal for confirmed/cancelled) with one consistent view: guest info, pricing,
-// ID verification, private note, and whichever actions actually apply to THIS reservation's
-// current stage - not one fixed button set for every status. "Change Reservation" stays the one
-// deliberate door into full Quote Builder editing, same as before.
+// GUEST DASHBOARD - the one place ANY reservation opens, every status, on a row click or from a
+// notification email's deep link. Replaces the old three-way split (a lightweight Send Quote Link
+// popup for quoted/signed, a separate detail modal for confirmed/cancelled, straight-to-Quote-
+// Builder for inquiry) with one consistent view: guest info, pricing, ID verification, private
+// note, and whichever actions actually apply to THIS reservation's current stage - not one fixed
+// button set for every status. "Change Reservation" (renamed "Customize Quote" for a bare inquiry
+// - there's no quote to "change" yet) stays the one deliberate door into full Quote Builder
+// editing, same as before.
 // ══════════════════════════════════════════
 function openGuestDashboard(code) {
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
   const isCancelled = r.status === 'cancelled';
   const isConfirmed = r.status === 'confirmed';
-  // Everything before confirmation - a fresh lead awaiting Jesse, or a Change Reservation edit
-  // reset to 'quoted'/'signed' pending re-signature. Needs the send/copy/preview actions the old
-  // Send Quote Link popup offered; confirmed/cancelled don't (their link is already finalized).
-  const isPreConfirm = r.status === 'quoted' || r.status === 'signed';
+  // Everything before confirmation - a brand-new inquiry, a fresh lead awaiting Jesse, or a Change
+  // Reservation edit reset to 'quoted'/'signed' pending re-signature. Needs the send/copy/preview
+  // actions the old Send Quote Link popup offered; confirmed/cancelled don't (their link is
+  // already finalized, and a bare inquiry has no link yet to send/copy/preview at all - see the
+  // "No saved link yet" fallback below).
+  const isPreConfirm = r.status === 'inquiry' || r.status === 'quoted' || r.status === 'signed';
   const { isChangePending, needsRefundSent } = _rowActionState(r);
 
   // _loadIntoForm(code) is what builds _generatedUrl and everything sendEmail()/sendSMS()/
@@ -3494,6 +3498,18 @@ function openGuestDashboard(code) {
       <div class="conf-modal-rows">
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
+        ${r.status === 'inquiry' ? `
+        <!-- Nothing's been quoted yet, so there's no real total/credit/payment to show - and
+             ID verification this early would read as a demand before Jesse's even responded.
+             Shows what the guest actually submitted instead, same fields as the Quote Builder's
+             own "From the guest's original inquiry" box (see the inqBox logic above _loadIntoForm
+             fills in), so the info is visible directly in the dashboard, not hidden behind the
+             Quote Builder panel this modal deliberately keeps closed. -->
+        <div><b>Estimated Rate:</b> ${r.rate != null ? fmt$(r.rate) + '/night' : '-'} <span style="color:var(--muted);font-size:.82em;">(what the guest saw before inquiring - build a quote below to lock in final pricing)</span></div>
+        ${r.guests_count ? `<div><b>Guests:</b> ${_esc(r.guests_count)}</div>` : ''}
+        ${r.pets ? `<div><b>Pets:</b> ${_esc(r.pets)}</div>` : ''}
+        ${r.message ? `<div style="margin-top:.3rem;"><b>Message:</b> "${_esc(r.message)}"</div>` : ''}
+        ` : `
         <div style="color:${idLbl.color};font-weight:700;font-size:.85em;">${idLbl.text}</div>
         <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} (non-refundable) ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
@@ -3512,7 +3528,7 @@ function openGuestDashboard(code) {
         ` : `
         ${r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
         ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes non-refundable 3% fee)</div>` : ''}
-        `}
+        `}`}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
         ${r.contact_pref ? `<div><b>Prefers:</b> <span style="color:#166534;font-weight:600;">★ ${r.contact_pref === 'email' ? '📧 Email' : r.contact_pref === 'text' ? '💬 Text' : '📧💬 Both'}</span></div>` : ''}
@@ -3557,7 +3573,7 @@ function openGuestDashboard(code) {
               <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
               <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
             </span>
-            ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use Change Reservation below to build one.</span>`}
+            ` : `<span style="font-size:.78rem;color:var(--muted);">No saved link yet - use ${r.status === 'inquiry' ? 'Customize Quote' : 'Change Reservation'} below to build one.</span>`}
           </div>
         </div>` : ''}
 
@@ -3626,7 +3642,7 @@ function openGuestDashboard(code) {
         <div>
           <label>Manage</label>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-            <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">✏️ Change Reservation</button>
+            <button class="conf-btn" onclick="_changeReservation('${r.code}', ${isCancelled})">${r.status === 'inquiry' ? '📝 Customize Quote' : '✏️ Change Reservation'}</button>
             ${isPreConfirm ? `<button class="conf-btn del" onclick="${isChangePending ? `cancelReservation('${r.code}')` : `_openDeclineModal('${r.code}')`}">${isChangePending ? '🚫 Cancel Reservation' : '🚫 Decline'}</button>` : ''}
             ${isCancelled ? `<button class="conf-btn" onclick="reactivateReservation('${r.code}')">↺ Reactivate Reservation</button>` : ''}
             ${isConfirmed ? `<button class="conf-btn del" onclick="cancelReservation('${r.code}')">🚫 Cancel Reservation</button>` : ''}
