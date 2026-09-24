@@ -5475,20 +5475,26 @@ function _renderTrustBalance() {
 
   const cardsEl = document.getElementById('trust-balance-cards');
   if (cardsEl) {
-    const card = (label, val, sub, warn) => `
-      <div class="stat-card${warn ? ' warn' : ''}">
+    const card = (label, val, sub, accent, warn) => `
+      <div class="stat-card${accent ? ' accent' : ''}${warn ? ' warn' : ''}">
         <div class="stat-card-label">${label}</div>
         <div class="stat-card-val">${fmt(val)}</div>
         <div class="stat-card-sub">${sub}</div>
       </div>`;
+    // Jesse: "there needs to be a total for the trust account. a grand total of everything so i
+    // know what the balance should be." All 6 categories below are money that should currently
+    // be sitting in whatever account holds this - "available now" vs "future" is about DRAW
+    // eligibility, not about whether the cash has actually been collected yet (it has, for both).
+    const grandTotal = shouldBe.owner + shouldBe.sales_tax + shouldBe.rot + held.owner + held.sales_tax + held.rot;
     // Jesse: "i want the future held money broken down by owner money, sales tax, rot" - was one
     // lump "Held for Future Stays" card; now mirrors the same 3-way split as the "available now"
     // row above it, just for the not-yet-eligible (future check-in) bucket instead of the earned
     // one - same _trustBalances() data, already split this way, just wasn't surfaced per-category.
     cardsEl.innerHTML =
-      card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, shouldBe.owner < 0) +
-      card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, shouldBe.sales_tax < 0) +
-      card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, shouldBe.rot < 0) +
+      card('Total in Trust Account', grandTotal, 'Available now + held for future stays', true) +
+      card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, false, shouldBe.owner < 0) +
+      card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, false, shouldBe.sales_tax < 0) +
+      card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, false, shouldBe.rot < 0) +
       card('Owner (Future)', held.owner, 'Not eligible until check-in') +
       card('Sales Tax (Future)', held.sales_tax, 'Not eligible until check-in') +
       card('ROT (Future)', held.rot, 'Not eligible until check-in');
