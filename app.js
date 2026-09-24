@@ -175,8 +175,18 @@ const _visitedTabs = new Set();
 const _ALL_TABS = ['rules','cancel','checkin','area','inunit','emergency','checkout'];
 // Which property's guidebook _visitedTabs/attestation currently reflects - each listing has its
 // own rules/amenities/access info, so reading and agreeing to prop1's doesn't count toward prop2's
-// gate. Reset whenever the active property page actually changes (see showPage()).
+// gate. Swapped (not cleared) whenever the active property page actually changes (see showPage()) -
+// _guideStateByProp below is what makes that swap possible instead of losing progress.
 let _guideProp = null;
+// Jesse, after fully reviewing Front Home, switching to another property, then coming back: "all
+// the check marks were there but the box was no longer eligible to be clicked nor highlighted...
+// the check marks need to stay as if they were already checked... I would prefer if they've
+// already clicked through it they don't have to click through it again." The per-section ✓ marks
+// live as CSS classes directly on each property's own (never-removed, just hidden) accordion DOM,
+// so those always survived a switch - only _visitedTabs/_attestedRules (bare globals, unconditionally
+// wiped on every property change) didn't, creating exactly the mismatch he saw. Stashes each
+// property's progress here on the way out and restores it on the way back in, instead of erasing it.
+const _guideStateByProp = {};
 let _lastPropCalOffset = 0;
 const _calInst   = {}; // wrapId → { prop, wrap, sentinel, observer, months, startOffset }
 
@@ -1327,13 +1337,17 @@ function showPage(id, _skipHistory) {
   if (!_calToday) { _calToday = new Date(); _calToday.setHours(0,0,0,0); }
 
   // Landing on a DIFFERENT property's page than whatever guide state is currently tracked -
-  // reset the read-and-agree gate so it reflects THIS listing's rules, not whichever one was
-  // last browsed. Also repaints the button/counter for the newly-active page, which otherwise
-  // stays wherever _checkAttestReady() last left the DOM (e.g. still showing prop1's "7 of 7").
+  // swap the read-and-agree gate to reflect THIS listing's own progress instead of whichever one
+  // was last browsed (still correctly starts blank the first time any given property is visited).
+  // Also repaints the button/counter for the newly-active page, which otherwise stays wherever
+  // _checkAttestReady() last left the DOM (e.g. still showing prop1's "7 of 7").
   if (/^prop\d+$/.test(id) && id !== _guideProp) {
+    if (_guideProp) _guideStateByProp[_guideProp] = { visited: new Set(_visitedTabs), attested: _attestedRules };
     _guideProp = id;
+    const saved = _guideStateByProp[id];
     _visitedTabs.clear();
-    _attestedRules = false;
+    if (saved) saved.visited.forEach(t => _visitedTabs.add(t));
+    _attestedRules = !!(saved && saved.attested);
     _resetAttestBtn();
   }
 
