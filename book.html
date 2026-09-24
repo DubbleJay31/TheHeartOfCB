@@ -534,12 +534,12 @@ a { color: inherit; text-decoration: none; }
     <h1>Guest Rental Agreement - Signed Copy</h1>
     <div class="apr-summary" id="apr-summary"></div>
 
-    <div class="apr-sec"><h4>1. Parties</h4><p>This Short-Term Rental Agreement is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the <strong>Front Unit at 213 Harper Avenue, Carolina Beach, NC 28428.</strong></p></div>
+    <div class="apr-sec"><h4>1. Parties</h4><p>This Short-Term Rental Agreement is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the <strong><span id="apr1-unit">Front Unit</span> at 213 Harper Avenue, Carolina Beach, NC 28428.</strong></p></div>
     <div class="apr-sec"><h4>2. Term, Check-In & Check-Out</h4><p>The rental period begins at <strong>3:00 PM</strong> on the Check-In date and ends at <strong>11:00 AM</strong> on the Check-Out date. Guest agrees to vacate by 11:00 AM. Early check-in or late check-out may be available upon request but cannot be guaranteed and may incur an additional fee.</p></div>
     <div class="apr-sec"><h4>3. Payment</h4><p>The total amount due is as stated in the Booking Summary above. Full payment is due at signing. <strong>This Agreement is NOT binding and dates are NOT held until full payment is received and confirmed by Host.</strong></p></div>
     <div class="apr-sec"><h4>4. Cancellation Policy</h4><p id="apr-cancel"></p></div>
-    <div class="apr-sec"><h4>5. Maximum Occupancy</h4><p>Maximum occupancy is <strong>6 guests and 2 dogs - no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors allowed without prior Host approval. Unauthorized guests: <strong>$150 per person per night.</strong></p></div>
-    <div class="apr-sec"><h4>6. Pets</h4><p>Dogs allowed, maximum 2. No cats, ferrets, or other animals permitted under any circumstances, including service animals (severe family allergy). Dogs must be housebroken, friendly, and leashed outside. Do not allow dogs on furniture without your own covering. Guest is solely responsible for any damage or injury caused by pets. Unauthorized pets: <strong>$100 per pet per night.</strong></p></div>
+    <div class="apr-sec"><h4>5. Maximum Occupancy</h4><p>Maximum occupancy is <strong><span id="apr5-occ">6 guests and 2 dogs</span> - no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors allowed without prior Host approval. Unauthorized guests: <strong>$150 per person per night.</strong></p></div>
+    <div class="apr-sec"><h4>6. Pets</h4><p>Dogs allowed, maximum <span id="apr6-max">2</span>. No cats, ferrets, or other animals permitted under any circumstances, including service animals (severe family allergy). Dogs must be housebroken, friendly, and leashed outside. Do not allow dogs on furniture without your own covering. Guest is solely responsible for any damage or injury caused by pets. Unauthorized pets: <strong>$100 per pet per night.</strong></p></div>
     <div class="apr-sec"><h4>7. No Smoking</h4><p>Smoking of any substance is strictly prohibited inside the property. Smoking permitted on the front porch only, door closed. Cigarette butts in the designated container. <strong>$500 fee for smoking inside.</strong></p></div>
     <div class="apr-sec"><h4>8. Quiet Hours & Low-Key Stay</h4><p>Quiet hours: <strong>10:00 PM – 9:00 AM.</strong> Not allowed at any time: parties, loud music, roughhousing, heavy drinking, drinking games, rowdy behavior. Home shares walls - be mindful of noise. Violations may result in <strong>immediate termination without refund.</strong></p></div>
     <div class="apr-sec"><h4>9. No Parties or Events</h4><p>Property may not be used for parties, events, or gatherings beyond stated occupancy. No outside guests without prior Host approval. Unauthorized parties: <strong>$500 fee and immediate termination without refund.</strong></p></div>
@@ -678,7 +678,7 @@ a { color: inherit; text-decoration: none; }
         <div class="ag-items-note">Check each section to confirm you have read and understood it. All 15 sections must be checked before you can sign.</div>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag1" onchange="checkAgreementItems()"> 1. Parties</label></h4>
-        <p>This Short-Term Rental Agreement ("Agreement") is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the Front Unit at 213 Harper Avenue, Carolina Beach, NC 28428.</p>
+        <p>This Short-Term Rental Agreement ("Agreement") is entered into between Jesse Jones ("Host") and the guest identified above ("Guest") for the <span id="ag1-unit">Front Unit</span> at 213 Harper Avenue, Carolina Beach, NC 28428.</p>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag2" onchange="checkAgreementItems()"> 2. Term, Check-In & Check-Out</label></h4>
         <p>The rental period begins at <strong>3:00 PM</strong> on the Check-In date and ends at <strong>11:00 AM</strong> on the Check-Out date. Guest agrees to vacate the property by 11:00 AM on Check-Out. Early check-in or late check-out may be available upon request but cannot be guaranteed and may incur an additional fee.</p>
@@ -722,10 +722,10 @@ a { color: inherit; text-decoration: none; }
         </script>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag5" onchange="checkAgreementItems()"> 5. Maximum Occupancy</label></h4>
-        <p>Maximum occupancy is <strong>6 guests and 2 dogs - no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors are allowed without prior approval from Host. Unauthorized guests are subject to a fee of <strong>$150 per person per night.</strong> Guest, as reservation holder, is responsible for all members of their group.</p>
+        <p>Maximum occupancy is <strong><span id="ag5-occ">6 guests and 2 dogs</span> - no exceptions.</strong> Only registered guests and approved pets may be on the property at any time. No outside visitors are allowed without prior approval from Host. Unauthorized guests are subject to a fee of <strong>$150 per person per night.</strong> Guest, as reservation holder, is responsible for all members of their group.</p>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag6" onchange="checkAgreementItems()"> 6. Pets</label></h4>
-        <p>Dogs are allowed, maximum 2. No cats, ferrets, or other animals are permitted under any circumstances, including service animals (due to a severe family allergy). All pets must be disclosed at time of booking. Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Do not allow dogs on furniture or bedding without your own clean covering. Do not bathe dogs inside the home. Guest is solely responsible for any damage, disturbance, or injury caused by their pet(s). Unauthorized pets are subject to a <strong>$100 per pet per night fee.</strong></p>
+        <p>Dogs are allowed, maximum <span id="ag6-max">2</span>. No cats, ferrets, or other animals are permitted under any circumstances, including service animals (due to a severe family allergy). All pets must be disclosed at time of booking. Dogs must be housebroken, friendly with people and other dogs, and leashed outside at all times. Do not allow dogs on furniture or bedding without your own clean covering. Do not bathe dogs inside the home. Guest is solely responsible for any damage, disturbance, or injury caused by their pet(s). Unauthorized pets are subject to a <strong>$100 per pet per night fee.</strong></p>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag7" onchange="checkAgreementItems()"> 7. No Smoking</label></h4>
         <p>Smoking of any substance is strictly prohibited inside the property. Smoking is permitted on the front porch only, with the door closed. Cigarette butts must be placed in the designated disposal container - not on the porch, yard, or driveway. A <strong>$500 fee</strong> will be charged for smoking inside the property.</p>
@@ -756,8 +756,8 @@ a { color: inherit; text-decoration: none; }
         <p>Guest assumes all risk and responsibility for their use of the property and its surroundings. Host is not liable for accidents, injuries, theft, or damage to Guest's personal property during the stay. Guest agrees to indemnify and hold harmless Host from any claims arising from Guest's or their group's use of the property. Host reserves the right to access the property in case of emergency or to address a rule violation. Host may terminate this rental immediately and without refund for any serious violation of these terms.</p>
 
         <h4><label class="ag-item"><input type="checkbox" class="ag-item-check" id="ag14" onchange="checkAgreementItems()"> 14. House Rules Acknowledgment</label></h4>
-        <p>Guest confirms they have read and agree to the complete House Rules for the Front Unit posted at <a href="https://theheartofcb.com/house-rules.html" target="_blank" style="color:var(--gold);">theheartofcb.com/house-rules</a>, which are incorporated into this Agreement by reference. Key rules include:<br/>
-        • Max 6 guests, 2 dogs - no exceptions &nbsp;•&nbsp; Quiet hours 10 PM – 9 AM<br/>
+        <p>Guest confirms they have read and agree to the complete House Rules for the <span id="ag14-unit">Front Unit</span> posted at <a id="ag14-link" href="https://theheartofcb.com/house-rules.html" target="_blank" style="color:var(--gold);">theheartofcb.com/house-rules</a>, which are incorporated into this Agreement by reference. Key rules include:<br/>
+        • Max <span id="ag14-occ">6 guests, 2 dogs</span> - no exceptions &nbsp;•&nbsp; Quiet hours 10 PM – 9 AM<br/>
         • No parties, events, or outside visitors without approval<br/>
         • No smoking inside - $500 fee &nbsp;•&nbsp; No pets on furniture without your own covering<br/>
         • Dogs leashed outside at all times &nbsp;•&nbsp; Report all damage immediately<br/>
@@ -1087,6 +1087,22 @@ const expRaw  = get('exp')     || '';
 const firstName = guest.split(' ')[0];
 document.getElementById('hero-greeting').textContent = 'Hey ' + firstName + '!';
 const propShort = prop.includes('Front') ? 'Front Home' : prop.includes('Left') ? 'Left Suite' : prop.includes('Right') ? 'Right Suite' : prop;
+// The rental agreement text below (both the live signing checklist and the read-only Agreement
+// Print View) used to hardcode "Front Unit" and "6 guests and 2 dogs" as literal, unconditional
+// legal text - correct for prop1 but wrong for every Left/Right Suite reservation (real limit is
+// 2 guests/1 dog), found live 2026-09-24 while checking house-rules.html for the same class of
+// bug. propKey drives which house-rules.html variant guests get linked to; OCC drives the
+// occupancy numbers actually written into the signed agreement.
+const propKey = propShort === 'Front Home' ? 'prop1' : propShort === 'Left Suite' ? 'prop2' : propShort === 'Right Suite' ? 'prop3' : 'prop1';
+const propUnitName = propShort === 'Front Home' ? 'Front Unit' : propShort;
+const OCC = propShort === 'Front Home' ? { guests: 6, dogs: 2 } : { guests: 2, dogs: 1 };
+const _occDogWord = OCC.dogs === 1 ? 'dog' : 'dogs';
+document.querySelectorAll('#ag1-unit, #apr1-unit').forEach(el => el.textContent = propUnitName);
+document.querySelectorAll('#ag5-occ, #apr5-occ').forEach(el => el.textContent = `${OCC.guests} guests and ${OCC.dogs} ${_occDogWord}`);
+document.querySelectorAll('#ag6-max, #apr6-max').forEach(el => el.textContent = OCC.dogs);
+const ag14Unit = document.getElementById('ag14-unit'); if (ag14Unit) ag14Unit.textContent = propUnitName;
+const ag14Occ  = document.getElementById('ag14-occ');  if (ag14Occ)  ag14Occ.textContent  = `${OCC.guests} guests, ${OCC.dogs} ${_occDogWord}`;
+const ag14Link = document.getElementById('ag14-link'); if (ag14Link) ag14Link.href = `https://theheartofcb.com/house-rules.html?prop=${propKey}`;
 
 // ── FORMAT DATES ──
 function fmtDate(str) {
@@ -2117,10 +2133,10 @@ function _buildConfirmationEmailHtml(sigData) {
   <p style="margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#0a1f3a;border-top:3px solid #b8882a;padding-top:14px;font-family:Arial,Helvetica,sans-serif;">🚩 KEY HOUSE RULES - QUICK GLANCE</p>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr><td bgcolor="#f9f6f0" style="padding:6px 14px 14px;font-size:13px;color:#333;line-height:2;background-color:#f9f6f0;font-family:Arial,Helvetica,sans-serif;">
-      &#8226; Max 6 guests, 2 dogs &mdash; no exceptions<br/>
+      &#8226; Max ${OCC.guests} guests, ${OCC.dogs} ${_occDogWord} &mdash; no exceptions<br/>
       &#8226; No parties, events, or outside gatherings &mdash; <strong>$500 fee &amp; immediate cancellation</strong><br/>
       &#8226; Quiet hours: <strong>10:00 PM &ndash; 9:00 AM</strong> &mdash; walls are shared, be considerate<br/>
-      &#8226; No smoking inside &mdash; <strong>$500 fee.</strong> Front porch only, door closed.<br/>
+      &#8226; No smoking inside &mdash; <strong>$500 fee.</strong> ${propKey === 'prop1' ? 'Front porch only, door closed.' : 'Designated outdoor area only.'}<br/>
       &#8226; White towels for people only &mdash; no pets, beach, or spills<br/>
       &#8226; Checkout: <strong>11:00 AM SHARP</strong> &mdash; text Jesse when you leave<br/>
       &#8226; Guests remain responsible for all actual damages, repair, and remediation costs, including any that exceed the amounts of listed violation fees.
@@ -2128,7 +2144,7 @@ function _buildConfirmationEmailHtml(sigData) {
   </table>
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
     <tr><td align="center" style="padding-bottom:4px;">
-      <a href="https://theheartofcb.com/house-rules.html" style="display:inline-block;background:#0a1f3a;color:#ffffff;padding:13px 32px;text-decoration:none;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;letter-spacing:.03em;">📋 VIEW COMPLETE HOUSE RULES &rarr;</a>
+      <a href="https://theheartofcb.com/house-rules.html?prop=${propKey}" style="display:inline-block;background:#0a1f3a;color:#ffffff;padding:13px 32px;text-decoration:none;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;letter-spacing:.03em;">📋 VIEW COMPLETE HOUSE RULES &rarr;</a>
     </td></tr>
     <tr><td align="center" style="font-size:11px;color:#999;font-family:Arial,Helvetica,sans-serif;">Please read in full and share with your entire group before arriving</td></tr>
   </table>
@@ -2157,7 +2173,7 @@ function _buildConfirmationEmailHtml(sigData) {
   <p style="font-size:14px;font-weight:700;color:#0a1f3a;margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;">Jesse &amp; Family</p>
   <p style="font-size:13px;color:#666;margin:0 0 2px;font-family:Arial,Helvetica,sans-serif;">(910) 599-8118 &middot; Text or call anytime</p>
   <p style="font-size:13px;color:#666;margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;">213 Harper Ave &middot; Carolina Beach, NC 28428</p>
-  <p style="font-size:11px;color:#999;margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
+  <p style="font-size:11px;color:#999;margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;">Full house rules: <a href="https://theheartofcb.com/house-rules.html?prop=${propKey}" style="color:#b8882a;">theheartofcb.com/house-rules</a></p>
   <p style="font-size:11px;color:#bbb;margin:0;font-family:Arial,Helvetica,sans-serif;">📥 Save this email somewhere handy - worth checking spam/junk if future messages from us go missing.</p>
 </td></tr>
 
