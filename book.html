@@ -1372,11 +1372,11 @@ function toggleCheck(e) {
   // hides it.
   if (!noCardOption) {
     document.getElementById('pm-cc-card').style.display = '';
-    document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} CC fee)` : ''}`;
+    document.getElementById('pm-cc-amount').textContent = `${fmtAmt(total)}${ccFee > 0 ? ` (incl. ${fmtAmt(ccFee)} non-refundable CC fee)` : ''}`;
   }
 
   // PayPal
-  document.getElementById('pm-pp-amount').textContent = `${fmtAmt(paypalTotal)} (incl. ${fmtAmt(paypalFee)} fee)`;
+  document.getElementById('pm-pp-amount').textContent = `${fmtAmt(paypalTotal)} (incl. ${fmtAmt(paypalFee)} non-refundable fee)`;
 
   // Venmo
   document.getElementById('pm-v-amount').textContent = noFeeLabel;
@@ -2014,7 +2014,7 @@ function _buildConfirmationEmailHtml(sigData) {
       : isZeroBalance
       ? `<tr><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">✅ Nothing More to Pay</td><td bgcolor="#f2ede3" style="padding:9px 14px;color:#166534;font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${fmt2(0)}</td></tr>`
       : priorCredit > 0 ? ROW('Balance Due', fmt2(noFee), '#f2ede3') : ''}
-    ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
+    ${!_confIsCash && _confRecvNow > noFee ? ROW((sigData.paymentMethod === 'paypal' ? 'PayPal' : 'Card') + ' Processing Fee<br><span style="font-size:11px;font-weight:400;color:#9ca3af;">Non-refundable</span>', '+' + fmt2(_confRecvNow - noFee), '#f9f6f0') : ''}
     ${sigData.paymentMethod ? ROW('Payment via', _confMethodLabel, priorCredit > 0 || (!_confIsCash && _confRecvNow > noFee) ? '#f2ede3' : '#f9f6f0') : ''}
     ${_confRecvNow > 0 ? `<tr>
       <td bgcolor="#f2ede3" style="padding:9px 14px;color:#0a1f3a;font-weight:700;font-size:15px;border-top:2px solid #ddd;font-family:Arial,Helvetica,sans-serif;background-color:#f2ede3;">${_confIsCash ? 'Refundable Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</td>
@@ -2806,7 +2806,7 @@ async function _notifyJesse(method) {
       ? `<div class="apr-si"><span style="color:#166534;font-weight:700;">Nothing More to Pay</span><strong style="color:#166534;">${fmtAmt2(0)}</strong></div>`
       : `<div class="apr-si"><span>Balance Due${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
     ` : `<div class="apr-si"><span>Total${apIsCash ? ' (Cash Price)' : ''}</span><strong>${fmtAmt2(apTotal)}</strong></div>`}
-    ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong></div>` : ''}
+    ${apFee > 0 ? `<div class="apr-si"><span>${apMethod === 'paypal' ? 'PayPal' : 'Card'} Processing Fee</span><strong>+${fmtAmt2(apFee)}</strong><div style="font-size:.62rem;text-transform:none;letter-spacing:normal;color:var(--muted);font-weight:400;margin-top:.1rem;">Non-refundable</div></div>` : ''}
     ${apRecvNow > 0 ? `<div class="apr-si"><span>${apIsCash ? 'Deposit Received' : (priorCredit > 0 ? 'Balance Received' : 'Total Received')}</span><strong>${fmtAmt2(apRecvNow)}</strong></div>` : ''}`;
 
   // Cancellation policy (section 4)

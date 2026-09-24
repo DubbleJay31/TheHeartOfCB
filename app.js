@@ -88,13 +88,18 @@ async function _sendGuestConfirmation(inquiry) {
 const _esc = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 async function _notifyHost(inquiry, code) {
+  // Declared here, not inside the try block below, so the push-notification try block further
+  // down can see them too - they were originally scoped inside that first try{}, which meant the
+  // push block's own reference to guestName/propLabel threw a ReferenceError (caught locally,
+  // silent to Jesse) every single time, before the push fetch ever ran. Real bug, found live:
+  // Jesse submitted a real test inquiry and got the email but no app notification.
+  const guestName = [inquiry.first, inquiry.last].filter(Boolean).join(' ');
+  const propLabel = inquiry.propLabel || inquiry.prop;
   try {
     const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
     const adminUrl = code
       ? 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code)
       : 'https://theheartofcb.com/admin.html';
-    const guestName = [inquiry.first, inquiry.last].filter(Boolean).join(' ');
-    const propLabel = inquiry.propLabel || inquiry.prop;
     const html = `<div style="font-family:Georgia,serif;background:#f5f0e8;padding:24px 16px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
     <div style="background:#0a1f3a;padding:20px 32px;text-align:center;">
@@ -1156,7 +1161,7 @@ function _updateFormSummary(start, end) {
       <div class="fcs-row"><span>NC Sales Tax (7%)</span><span>$${Math.round(est.salesTax)}</span></div>
       <div class="fcs-row"><span>Room Occupancy Tax (6%)</span><span>$${Math.round(est.occTax)}</span></div>
       <div class="fcs-row fcs-total"><span>Estimated Total</span><span>~$${Math.round(est.preTax)}</span></div>
-      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%)</span><span>$${Math.round(est.ccFee)}</span></div>
+      <div class="fcs-row" style="font-size:.8rem;color:#6b7280;padding-top:.2rem;"><span>+ Credit Card Fee (3%, non-refundable)</span><span>$${Math.round(est.ccFee)}</span></div>
     </div>
     <div class="fcs-note" style="color:#166534;">Free with Venmo, Cash App, or Zelle - card is just one option.</div>
     <div class="fcs-note">Estimate - Jesse will confirm your exact rate.</div>

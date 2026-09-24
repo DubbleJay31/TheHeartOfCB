@@ -1875,7 +1875,7 @@ function renderGuestBreakdown() {
   html += r('Sales Tax (7%)', fmt(taxSales));
   html += `<div style="border-top:2px solid var(--border);margin:.25rem 0;"></div>`;
   html += r('<strong>Total</strong>', `<strong>${fmt(displayTotal)}</strong>`, true);
-  html += `<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem;color:var(--muted);"><span>Credit Card Fee (3%)</span><span>${fmt(ccFee)}</span></div>`;
+  html += `<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem;color:var(--muted);"><span>Credit Card Fee (3%, non-refundable)</span><span>${fmt(ccFee)}</span></div>`;
   if (_nights > 0) {
     html += `<div style="height:.15rem;"></div>`;
     html += r('Per night - room fare basis', fmt(subtotal / _nights) + '/night');
@@ -1947,7 +1947,7 @@ function renderCalc() {
     html += row(nightLabel, fmt(subtotal));
     html += row('Plus: Room Occupancy Tax (6%)', fmt(taxOcc));
     html += row('Plus: Sales Tax (7%)', fmt(taxSales));
-    html += row('Plus: Credit Card Fee (3%)', fmt(ccFee));
+    html += row('Plus: Credit Card Fee (3%, non-refundable)', fmt(ccFee));
     html += row('<strong>Total Due</strong>', `<strong>${fmt(total)}</strong>`, 'total');
   }
   rows.innerHTML = html || `<div class="no-bookings">Fill in room fare above.</div>`;
@@ -3422,7 +3422,7 @@ function openGuestDashboard(code) {
         <div><b>Property:</b> ${_esc(r.prop_label || PROPS[r.prop]?.name || r.prop || '-')}</div>
         <div><b>Dates:</b> ${fmtD(r.check_in)} → ${fmtD(r.check_out)} (${r.nights || _sbNights(r.check_in, r.check_out)} nights)</div>
         <div style="color:${idLbl.color};font-weight:700;font-size:.85em;">${idLbl.text}</div>
-        <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
+        <div><b>${r.credit ? 'Full Stay Value' : 'Total'}:</b> ${fmt$(_hasFee ? (parseFloat(r.total) || _noFeeTotal(r)) : _noFeeTotal(r))}${r.rate != null ? ` <span style="color:var(--muted);font-size:.82em;">(fare ${fmt$(r.rate)}, occ tax ${fmt$(r.tax_occ)}, sales tax ${fmt$(r.tax_sales)}${_feeAmt > 0 ? `, ${_feeLabel} (non-refundable) ${fmt$(_feeAmt)}` : ''})</span>` : ''}</div>
         ${r.credit ? `<div style="color:#166534;"><b>Credit Applied:</b> &minus;${fmt$(r.credit)}</div>` : ''}
         ${_refundOwed > 0 ? `
         <div style="color:#7c1d1d;font-weight:700;"><b>Refund Owed To Guest:</b> ${fmt$(_refundOwed)}</div>
@@ -3438,7 +3438,7 @@ function openGuestDashboard(code) {
         `}
         ` : `
         ${r.credit ? `<div><b>Balance Due (no card fee):</b> ${fmt$(Math.max(0, _noFeeTotal(r) - r.credit))}</div>` : ''}
-        ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes 3% fee)</div>` : ''}
+        ${r.total ? `<div style="color:var(--muted);font-size:.85em;"><b>If paid by card:</b> ${fmt$(r.total)} (includes non-refundable 3% fee)</div>` : ''}
         `}
         <div><b>Email:</b> ${_esc(r.email) || '-'}</div>
         ${phone ? `<div><b>Phone:</b> ${_esc(phone)}</div>` : ''}
