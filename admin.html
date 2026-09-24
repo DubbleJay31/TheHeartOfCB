@@ -4014,51 +4014,72 @@ async function markRefundSent(code) {
 // Cancelling shouldn't force a notification to go out automatically (same reasoning as Decline
 // below it) - Jesse asked for a choice popup right after cancelling instead of having to remember
 // to reopen the reservation and click Send Cancellation Email/Text himself.
-function _openCancelNotifyModal(code, reason) {
+// Shared builder for the "action taken, now notify the guest?" modals (Cancel/Undo/Decline) -
+// these were three near-identical copies (~150 combined lines): same singleton-modal-with-
+// overlay pattern, same email/text/close button layout, same _contactStar-driven label+disable
+// logic, same reused-singleton reset. Only the title, element-id prefix, button labels, and which
+// _send*Notification function the buttons call actually differed. The three _send*Notification
+// functions themselves are NOT consolidated here - their content-building (email HTML, SMS text,
+// which reservation fields they read) genuinely differs per action, so forcing them through one
+// shared function would trade a real, working, if verbose, implementation for a callback-heavy
+// one with more ways to subtly diverge. idPrefix must match what that action's own
+// _send*Notification function expects (e.g. 'cancel-notify' -> #cancel-notify-status/-email-btn/
+// etc, exactly as before) - those functions were left untouched, so this has to keep matching them.
+function _openActionNotifyModal(opts) {
+  const { idPrefix, title, code, reason, sendFnName, emailLabel, textLabel } = opts;
+  const modalId = `${idPrefix}-modal`;
   const r = _reservationsCache.find(x => x.code === code);
   if (!r) return;
-  let modal = document.getElementById('cancel-notify-modal');
+  let modal = document.getElementById(modalId);
   if (!modal) {
     modal = document.createElement('div');
-    modal.id = 'cancel-notify-modal';
+    modal.id = modalId;
     modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
     modal.innerHTML = `
       <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
         <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
-          <span style="color:#fff;font-weight:700;">🚫 Reservation Canceled</span>
-          <button onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+          <span style="color:#fff;font-weight:700;">${title}</span>
+          <button onclick="document.getElementById('${modalId}').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
         </div>
         <div style="padding:1.2rem 1.4rem;">
-          <div id="cancel-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
+          <div id="${idPrefix}-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
           <div style="display:flex;flex-direction:column;gap:.6rem;">
-            <button id="cancel-notify-email-btn" onclick="_sendCancelNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Cancellation Email</button>
-            <button id="cancel-notify-text-btn" onclick="_sendCancelNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Cancellation Text</button>
-            <button id="cancel-notify-close-btn" onclick="document.getElementById('cancel-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
+            <button id="${idPrefix}-email-btn" onclick="${sendFnName}('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">${emailLabel}</button>
+            <button id="${idPrefix}-text-btn" onclick="${sendFnName}('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">${textLabel}</button>
+            <button id="${idPrefix}-close-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
           </div>
-          <div id="cancel-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
+          <div id="${idPrefix}-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
         </div>
       </div>`;
     document.body.appendChild(modal);
   }
   modal.dataset.code = code;
-  modal.dataset.reason = reason || '';
-  const emailBtn = modal.querySelector('#cancel-notify-email-btn');
-  const textBtn = modal.querySelector('#cancel-notify-text-btn');
-  emailBtn.textContent = `📧 Send Cancellation Email${_contactStar(r, 'email')}`;
+  if (reason !== undefined) modal.dataset.reason = reason || '';
+  const emailBtn = modal.querySelector(`#${idPrefix}-email-btn`);
+  const textBtn = modal.querySelector(`#${idPrefix}-text-btn`);
+  emailBtn.textContent = `${emailLabel}${_contactStar(r, 'email')}`;
   emailBtn.disabled = !r.email;
   emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Cancellation Text${_contactStar(r, 'text')}`;
+  textBtn.textContent = `${textLabel}${_contactStar(r, 'text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
   // The modal DOM node is a reused singleton - without resetting this, reopening for a DIFFERENT
   // reservation right after sending for a previous one left it reading "Close" before anything
   // had actually been sent this time, which could read as "already handled."
-  const closeBtn = modal.querySelector('#cancel-notify-close-btn');
+  const closeBtn = modal.querySelector(`#${idPrefix}-close-btn`);
   if (closeBtn) closeBtn.textContent = "Don't Send Anything";
-  modal.querySelector('#cancel-notify-who').textContent =
+  modal.querySelector(`#${idPrefix}-who`).textContent =
     `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
-  modal.querySelector('#cancel-notify-status').textContent = '';
+  modal.querySelector(`#${idPrefix}-status`).textContent = '';
   modal.style.display = 'flex';
+}
+
+function _openCancelNotifyModal(code, reason) {
+  _openActionNotifyModal({
+    idPrefix: 'cancel-notify', title: '🚫 Reservation Canceled', code, reason,
+    sendFnName: '_sendCancelNotification',
+    emailLabel: '📧 Send Cancellation Email', textLabel: '💬 Send Cancellation Text'
+  });
 }
 
 function _sendCancelNotification(method) {
@@ -4113,46 +4134,11 @@ async function undoReservationChange(code) {
 // wording though, since "canceled"/"declined" would both be wrong here. The reservation was never
 // actually canceled or declined; a proposed change to it just got discarded.
 function _openUndoNotifyModal(code) {
-  const r = _reservationsCache.find(x => x.code === code);
-  if (!r) return;
-  let modal = document.getElementById('undo-notify-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'undo-notify-modal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
-        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
-          <span style="color:#fff;font-weight:700;">↩ Original Terms Restored</span>
-          <button onclick="document.getElementById('undo-notify-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
-        </div>
-        <div style="padding:1.2rem 1.4rem;">
-          <div id="undo-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
-          <div style="display:flex;flex-direction:column;gap:.6rem;">
-            <button id="undo-notify-email-btn" onclick="_sendUndoNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Email</button>
-            <button id="undo-notify-text-btn" onclick="_sendUndoNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Text</button>
-            <button id="undo-notify-close-btn" onclick="document.getElementById('undo-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
-          </div>
-          <div id="undo-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  modal.dataset.code = code;
-  const emailBtn = modal.querySelector('#undo-notify-email-btn');
-  const textBtn = modal.querySelector('#undo-notify-text-btn');
-  emailBtn.textContent = `📧 Send Email${_contactStar(r, 'email')}`;
-  emailBtn.disabled = !r.email;
-  emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Text${_contactStar(r, 'text')}`;
-  textBtn.disabled = !r.phone;
-  textBtn.style.opacity = r.phone ? '1' : '.5';
-  const closeBtn = modal.querySelector('#undo-notify-close-btn');
-  if (closeBtn) closeBtn.textContent = "Don't Send Anything";
-  modal.querySelector('#undo-notify-who').textContent =
-    `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
-  modal.querySelector('#undo-notify-status').textContent = '';
-  modal.style.display = 'flex';
+  _openActionNotifyModal({
+    idPrefix: 'undo-notify', title: '↩ Original Terms Restored', code,
+    sendFnName: '_sendUndoNotification',
+    emailLabel: '📧 Send Email', textLabel: '💬 Send Text'
+  });
 }
 
 function _sendUndoNotification(method) {
@@ -4319,49 +4305,11 @@ function _declineEmailHtml(r, reason) {
 }
 
 function _openDeclineNotifyModal(code, reason) {
-  const r = _reservationsCache.find(x => x.code === code);
-  if (!r) return;
-  let modal = document.getElementById('decline-notify-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'decline-notify-modal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,31,58,.72);z-index:9001;align-items:center;justify-content:center;padding:1rem;';
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden;">
-        <div style="background:#0a1f3a;padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;">
-          <span style="color:#fff;font-weight:700;">✅ Reservation Declined</span>
-          <button onclick="document.getElementById('decline-notify-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
-        </div>
-        <div style="padding:1.2rem 1.4rem;">
-          <div id="decline-notify-who" style="font-size:.85rem;color:#374151;margin-bottom:1rem;"></div>
-          <div style="display:flex;flex-direction:column;gap:.6rem;">
-            <button id="decline-notify-email-btn" onclick="_sendDeclineNotification('email')" style="background:#0f1e3d;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">📧 Send Decline Email</button>
-            <button id="decline-notify-text-btn" onclick="_sendDeclineNotification('text')" style="background:#166534;color:#fff;border:none;border-radius:8px;padding:.75rem;font-weight:700;cursor:pointer;">💬 Send Decline Text</button>
-            <button id="decline-notify-close-btn" onclick="document.getElementById('decline-notify-modal').style.display='none'" style="background:#eee;color:#333;border:none;border-radius:8px;padding:.7rem;cursor:pointer;">Don't Send Anything</button>
-          </div>
-          <div id="decline-notify-status" style="margin-top:.7rem;font-size:.82rem;text-align:center;"></div>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  modal.dataset.code = code;
-  modal.dataset.reason = reason || '';
-  const emailBtn = modal.querySelector('#decline-notify-email-btn');
-  const textBtn = modal.querySelector('#decline-notify-text-btn');
-  emailBtn.textContent = `📧 Send Decline Email${_contactStar(r, 'email')}`;
-  emailBtn.disabled = !r.email;
-  emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Decline Text${_contactStar(r, 'text')}`;
-  textBtn.disabled = !r.phone;
-  textBtn.style.opacity = r.phone ? '1' : '.5';
-  // Same reused-singleton reset as the cancel-notify modal - without this, reopening for a
-  // different reservation right after sending could still read "Close" from the previous one.
-  const closeBtn = modal.querySelector('#decline-notify-close-btn');
-  if (closeBtn) closeBtn.textContent = "Don't Send Anything";
-  modal.querySelector('#decline-notify-who').textContent =
-    `${r.guest}${r.contact_pref ? ` prefers ${r.contact_pref === 'either' ? 'email or text' : r.contact_pref}` : ''}`;
-  modal.querySelector('#decline-notify-status').textContent = '';
-  modal.style.display = 'flex';
+  _openActionNotifyModal({
+    idPrefix: 'decline-notify', title: '✅ Reservation Declined', code, reason,
+    sendFnName: '_sendDeclineNotification',
+    emailLabel: '📧 Send Decline Email', textLabel: '💬 Send Decline Text'
+  });
 }
 
 function _sendDeclineNotification(method) {
