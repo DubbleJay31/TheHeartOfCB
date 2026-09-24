@@ -1205,6 +1205,69 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
       </div>
     </div>
 
+    <!-- Trust Account Balance - Jesse: guest money isn't really his until the stay happens (room
+         fare) or ever (the two tax portions, always the state's/county's money). Tracks what
+         SHOULD currently be sitting in whatever account he's calling "trust": earned/owed per
+         category (same past/future check-in split as the Tax Report above) minus draws he's
+         actually logged taking. Deposits are logged for his own reference only - they don't move
+         the balance, since guest payments are already fully counted via reservation data. -->
+    <div class="adm-card" style="margin-top:1.25rem;">
+      <div class="adm-card-header"><h3>💰 Trust Account Balance</h3></div>
+      <div class="adm-card-body">
+        <div class="stat-cards" id="trust-balance-cards" style="margin-bottom:1.25rem;"></div>
+
+        <div style="background:var(--sand);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.04em;">Log a Deposit or Draw</div>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;">
+            <div>
+              <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem;">Date</label>
+              <input type="date" id="tl-date" style="padding:.45rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem;">Type</label>
+              <select id="tl-type" onchange="_tlToggleCategory()" style="padding:.45rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;">
+                <option value="draw">Draw (money out)</option>
+                <option value="deposit">Deposit (record only)</option>
+              </select>
+            </div>
+            <div id="tl-category-wrap">
+              <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem;">Category</label>
+              <select id="tl-category" style="padding:.45rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;">
+                <option value="owner">Owner Draw</option>
+                <option value="sales_tax">Sales Tax Draw</option>
+                <option value="rot">ROT Draw</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem;">Amount</label>
+              <input type="number" id="tl-amount" min="0.01" step="0.01" placeholder="0.00" style="padding:.45rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;width:110px;" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem;">Note (optional)</label>
+              <input type="text" id="tl-note" placeholder="e.g. HCB-ABC123 cash" style="padding:.45rem .6rem;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;width:100%;box-sizing:border-box;" />
+            </div>
+            <button onclick="_tlAddEntry()" style="padding:.5rem 1.2rem;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">Add</button>
+          </div>
+          <div id="tl-status" style="font-size:.78rem;margin-top:.5rem;height:1em;"></div>
+        </div>
+
+        <div class="stat-table-wrap" style="box-shadow:none;border-radius:10px;">
+          <table class="stat-table" id="tl-history-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Date</th>
+                <th style="text-align:left;">Entry</th>
+                <th style="text-align:left;">Note</th>
+                <th>Amount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tl-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Filter bar -->
     <div class="stat-filter-bar" style="margin-top:1.25rem;">
       <span class="stat-filter-label">Year</span>
@@ -4404,7 +4467,11 @@ function switchAdmTab(tab) {
   document.getElementById('adm-tab-btn-stats').classList.toggle('active',     tab === 'stats');
   document.getElementById('adm-tab-btn-photos').classList.toggle('active',    tab === 'photos');
   if (tab === 'pricing')   { renderBaseRates(); }
-  if (tab === 'stats')     { _renderStats(); _renderBookingFunnel(); _renderTaxReport(); }
+  if (tab === 'stats')     {
+    _renderStats(); _renderBookingFunnel(); _renderTaxReport(); loadTrustLedger();
+    const tlDate = document.getElementById('tl-date');
+    if (tlDate && !tlDate.value) tlDate.value = new Date().toISOString().split('T')[0];
+  }
   if (tab === 'photos')    { _photosInit(); }
   if (tab === 'booking')   { loadReservations(); }
   if (tab === 'confirmed') { loadReservations(); }
@@ -5348,6 +5415,148 @@ function _renderTaxReport() {
     noteEl.innerHTML = `Based on <strong>check-in date</strong> (the date of the stay), not payment date - confirmed reservations only.`
       + (creditedCount ? ` ${creditedCount} reservation${creditedCount !== 1 ? 's' : ''} in this range had a credit applied (${fmt(creditedTotal)} total) - fare/tax figures above are prorated down to reflect what was actually collected, not the full pre-credit amount.` : '')
       + ` Excludes the non-refundable card/PayPal processing fee, which isn't part of room fare or tax.`;
+  }
+}
+
+// ── TRUST ACCOUNT (deposit/draw ledger) ── Jesse: "I need to know whats owed out (past
+// reservations) and what im holding (future reservations)... i will say owner draw, sales tax
+// draw, rot draw." None of a confirmed reservation's money is really his until the stay happens
+// (room fare) or ever (the two tax portions - always the state's/county's money). This ties ALL
+// THREE categories to the same past/future check-in split he described, rather than inventing a
+// different accrual rule for tax vs fare - matches his own stated mental model exactly.
+let _trustLedgerCache = [];
+
+async function loadTrustLedger() {
+  try {
+    const r = await fetch('/.netlify/functions/trust-ledger-list', { headers: _adminAuthHeader() });
+    if (!r.ok) throw new Error(await r.text());
+    _trustLedgerCache = await r.json();
+  } catch (e) {
+    console.error('Trust ledger load failed:', e);
+  }
+  _renderTrustBalance();
+}
+
+function _trustBalances() {
+  const today = new Date().toISOString().split('T')[0];
+  const earned = { owner: 0, sales_tax: 0, rot: 0 };
+  const held   = { owner: 0, sales_tax: 0, rot: 0 };
+  _reservationsCache.filter(r => r.status === 'confirmed').forEach(r => {
+    const fare     = parseFloat(r.rate) || 0;
+    const taxOcc   = parseFloat(r.tax_occ) || 0;
+    const taxSales = parseFloat(r.tax_sales) || 0;
+    const credit   = parseFloat(r.credit) || 0;
+    const preTax   = fare + taxOcc + taxSales;
+    // Same credit-proration reasoning as the Tax Report above - rate/tax_occ/tax_sales are
+    // stored at their full, uncredited values.
+    const ratio = preTax > 0 ? Math.max(0, preTax - credit) / preTax : 1;
+    const bucket = (r.check_in && r.check_in <= today) ? earned : held;
+    bucket.owner     += fare * ratio;
+    bucket.rot       += taxOcc * ratio;
+    bucket.sales_tax += taxSales * ratio;
+  });
+  const drawn = { owner: 0, sales_tax: 0, rot: 0 };
+  _trustLedgerCache.forEach(e => {
+    if (e.type === 'draw' && drawn[e.category] != null) drawn[e.category] += parseFloat(e.amount) || 0;
+  });
+  return {
+    earned, held, drawn,
+    shouldBe: { owner: earned.owner - drawn.owner, sales_tax: earned.sales_tax - drawn.sales_tax, rot: earned.rot - drawn.rot }
+  };
+}
+
+const _TL_CATEGORY_LABELS = { owner: 'Owner Draw', sales_tax: 'Sales Tax Draw', rot: 'ROT Draw' };
+
+function _renderTrustBalance() {
+  const { earned, held, drawn, shouldBe } = _trustBalances();
+  const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const heldTotal = held.owner + held.sales_tax + held.rot;
+
+  const cardsEl = document.getElementById('trust-balance-cards');
+  if (cardsEl) {
+    const card = (label, val, sub, warn) => `
+      <div class="stat-card${warn ? ' warn' : ''}">
+        <div class="stat-card-label">${label}</div>
+        <div class="stat-card-val">${fmt(val)}</div>
+        <div class="stat-card-sub">${sub}</div>
+      </div>`;
+    cardsEl.innerHTML =
+      card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, shouldBe.owner < 0) +
+      card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, shouldBe.sales_tax < 0) +
+      card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, shouldBe.rot < 0) +
+      `<div class="stat-card">
+        <div class="stat-card-label">Held for Future Stays</div>
+        <div class="stat-card-val">${fmt(heldTotal)}</div>
+        <div class="stat-card-sub">Not eligible for any draw yet</div>
+      </div>`;
+  }
+
+  const tbody = document.getElementById('tl-history-tbody');
+  if (tbody) {
+    if (!_trustLedgerCache.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.2rem;">No entries logged yet.</td></tr>`;
+    } else {
+      tbody.innerHTML = _trustLedgerCache.map(e => {
+        const label = e.type === 'deposit'
+          ? '💵 Deposit' + (e.category ? ` (${_TL_CATEGORY_LABELS[e.category] || e.category})` : '')
+          : `➖ ${_TL_CATEGORY_LABELS[e.category] || e.category}`;
+        return `<tr>
+          <td>${e.entry_date}</td>
+          <td>${label}</td>
+          <td style="color:var(--muted);">${_esc(e.note || '')}</td>
+          <td>${fmt(parseFloat(e.amount) || 0)}</td>
+          <td><button onclick="_tlDeleteEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;" title="Delete">🗑️</button></td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+
+function _tlToggleCategory() {
+  const isDraw = document.getElementById('tl-type').value === 'draw';
+  document.getElementById('tl-category-wrap').style.display = isDraw ? '' : 'none';
+}
+
+async function _tlAddEntry() {
+  const dateEl = document.getElementById('tl-date');
+  const statusEl = document.getElementById('tl-status');
+  const date = dateEl.value || new Date().toISOString().split('T')[0];
+  const type = document.getElementById('tl-type').value;
+  const category = type === 'draw' ? document.getElementById('tl-category').value : '';
+  const amount = parseFloat(document.getElementById('tl-amount').value);
+  const note = document.getElementById('tl-note').value.trim();
+  if (!(amount > 0)) { if (statusEl) { statusEl.textContent = '⚠️ Enter an amount'; statusEl.style.color = '#dc2626'; } return; }
+  if (statusEl) { statusEl.textContent = '⏳ Saving…'; statusEl.style.color = 'var(--muted)'; }
+  try {
+    const r = await fetch('/.netlify/functions/trust-ledger-add', {
+      method: 'POST',
+      headers: { ..._adminAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entryDate: date, type, category, amount, note })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.message || 'Save failed');
+    document.getElementById('tl-amount').value = '';
+    document.getElementById('tl-note').value = '';
+    if (statusEl) { statusEl.textContent = '✅ Added'; setTimeout(() => { if (statusEl.textContent === '✅ Added') statusEl.textContent = ''; }, 2000); }
+    await loadTrustLedger();
+  } catch (e) {
+    console.error('Add ledger entry failed:', e);
+    if (statusEl) { statusEl.textContent = '⚠️ Could not save - check console'; statusEl.style.color = '#dc2626'; }
+  }
+}
+
+async function _tlDeleteEntry(id) {
+  if (!confirm('Delete this ledger entry?')) return;
+  try {
+    const r = await fetch(`/.netlify/functions/trust-ledger-delete?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: _adminAuthHeader()
+    });
+    if (!r.ok && r.status !== 204) throw new Error(await r.text());
+    await loadTrustLedger();
+  } catch (e) {
+    console.error('Delete ledger entry failed:', e);
+    alert('Could not delete - check console.');
   }
 }
 
