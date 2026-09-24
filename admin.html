@@ -5489,9 +5489,9 @@ function _renderTrustBalance() {
       card('Owner Draw Available', shouldBe.owner, `${fmt(earned.owner)} earned &minus; ${fmt(drawn.owner)} drawn`, shouldBe.owner < 0) +
       card('Sales Tax Owed', shouldBe.sales_tax, `${fmt(earned.sales_tax)} collected &minus; ${fmt(drawn.sales_tax)} drawn`, shouldBe.sales_tax < 0) +
       card('ROT Owed', shouldBe.rot, `${fmt(earned.rot)} collected &minus; ${fmt(drawn.rot)} drawn`, shouldBe.rot < 0) +
-      card('Owner (Future Stays)', held.owner, 'Not eligible until check-in') +
-      card('Sales Tax (Future Stays)', held.sales_tax, 'Not eligible until check-in') +
-      card('ROT (Future Stays)', held.rot, 'Not eligible until check-in');
+      card('Owner (Future)', held.owner, 'Not eligible until check-in') +
+      card('Sales Tax (Future)', held.sales_tax, 'Not eligible until check-in') +
+      card('ROT (Future)', held.rot, 'Not eligible until check-in');
   }
 
   const tbody = document.getElementById('tl-history-tbody');
