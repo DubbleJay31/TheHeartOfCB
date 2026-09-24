@@ -28,6 +28,7 @@
   --white:      #ffffff;
   --text:       #1a1f2e;
   --muted:      #6b7280;
+  --muted2:     #9ca3af;
   --border:     #e8e3d8;
   --green:      #16a34a;
   --radius:     12px;
@@ -626,6 +627,43 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 }
 #adm-panel-pricing { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
 #adm-panel-pricing .adm-card { max-width: none; }
+
+/* ── PHOTOS TAB ── these classes were referenced in the Photos panel markup below with no CSS
+   definitions anywhere in the file - some elements had inline styles covering their look, but
+   others (the intro box, the prop tab strip, the generic .btn family) rendered with plain browser
+   defaults instead of matching the rest of the admin UI. Found in an overnight audit. .prc-tab
+   (pricing panel's own property tabs) already solves the identical "tab strip" look - .photos-
+   prop-tab mirrors it exactly rather than inventing a second visual language for the same pattern. */
+.photos-tab-intro {
+  background: var(--sand2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: .85rem; color: var(--text);
+}
+.photos-tab-intro h4 { color: var(--navy); font-size: .92rem; margin-bottom: .5rem; }
+.photos-tab-intro ol { padding-left: 1.2rem; line-height: 1.7; }
+.photos-save-bar {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  padding: .85rem 1rem; background: var(--sand); border-radius: 10px; margin-bottom: 1rem;
+}
+.photos-save-status { font-size: .78rem; color: var(--muted); flex: 1; min-width: 160px; }
+.photos-prop-tabs { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.photos-prop-tab {
+  flex: 1; padding: .6rem .5rem;
+  border: 2px solid var(--border); border-radius: 10px;
+  background: var(--white); color: var(--muted);
+  font-size: .78rem; font-weight: 700; cursor: pointer;
+  transition: all .18s; font-family: 'Inter', sans-serif;
+}
+.photos-prop-tab:hover { border-color: var(--gold); color: var(--navy); }
+.photos-prop-tab.active { background: var(--navy); color: var(--gold2); border-color: var(--navy); }
+.photos-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+.btn {
+  padding: .55rem 1.1rem; border-radius: 8px; border: none; cursor: pointer;
+  font-size: .82rem; font-weight: 700; font-family: 'Inter', sans-serif;
+  color: var(--navy); background: var(--white); transition: opacity .15s;
+}
+.btn:hover { opacity: .85; }
+.btn-sm { padding: .4rem .8rem; font-size: .76rem; }
+.btn-navy { background: var(--navy); color: #fff; }
 
 /* ── STATS TAB ── */
 #adm-panel-stats { padding: 1.5rem; max-width: 1300px; margin: 0 auto; }
@@ -1460,6 +1498,33 @@ function _esc(s) {
     .replace(/'/g, '&#39;');
 }
 
+// ★-on-the-preferred-contact-method pattern, used on Email/Text send buttons everywhere that
+// choice shows up (reservation detail, cancel/undo/decline notify modals - book.html's own
+// confirm-page buttons mirror this same rule independently). Was copy-pasted as an identical
+// local `const star = m => ...` closure in 4 separate functions - hoisted here, taking `r`
+// explicitly instead of closing over it, since callers already have `r` in scope regardless.
+function _contactStar(r, m) {
+  return (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
+}
+
+// Consistent date formatting (new Date(s+'T12:00:00') sidesteps the UTC-midnight timezone shift
+// plain `new Date(s)` would cause) - was copy-pasted as 8 slightly different local `fmtD`
+// closures across the file (4 real variants: short vs long month, with/without weekday, with/
+// without a year, with/without an empty-string fallback). Centralizing the actual formatting
+// logic here while leaving each call site's own local `const fmtD = s => _fmtDate(s, {...})`
+// in place keeps every existing `fmtD(x)` call unchanged - only the risk of the copies silently
+// drifting apart is what's being removed.
+function _fmtDate(s, opts) {
+  opts = opts || {};
+  if (!s && 'empty' in opts) return opts.empty;
+  try {
+    const fmt = { day: 'numeric', month: opts.month || 'short' };
+    if (opts.year !== false) fmt.year = 'numeric';
+    if (opts.weekday) fmt.weekday = 'long';
+    return new Date(s + 'T12:00:00').toLocaleDateString('en-US', fmt);
+  } catch { return s; }
+}
+
 // ── PIN LOGIN ──
 // The PIN itself is checked server-side now (netlify/functions/admin-login.js) - nothing
 // secret lives in this page's JS anymore. A valid login returns a signed session token that
@@ -1618,7 +1683,7 @@ function _loadIntoForm(code) {
   const badge = document.getElementById('editing-badge');
   if (badge) {
     badge.style.display = 'flex';
-    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return s; } };
+    const fmtD = s => _fmtDate(s, {});
     // Used to be one unbroken run-on sentence cramming the reservation summary AND the whole
     // paid/fee/credit breakdown together - Jesse: "whew thats a lot to read lol. can we clean it
     // up maybe more itemized or bulleted?" Header line stays a sentence (it's short); the
@@ -3037,7 +3102,7 @@ function _renderConflictBanner() {
   if (!banner) return;
   const { doubleBookings, pendingOverlaps } = _detectReservationConflicts();
   if (!doubleBookings.length && !pendingOverlaps.length) { banner.style.display = 'none'; return; }
-  const fmtD = s => new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const fmtD = s => _fmtDate(s, { year: false });
   let html = '';
   if (doubleBookings.length) {
     html += '🚨 <strong>' + doubleBookings.length + ' double-booked date range' + (doubleBookings.length > 1 ? 's' : '') + '</strong> - two confirmed reservations overlap:<br>' +
@@ -3265,7 +3330,7 @@ function renderConfirmedPanel() {
     el.innerHTML = '<div class="no-bookings">Nothing here yet.</div>';
     return;
   }
-  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '?';
+  const fmtD = s => _fmtDate(s, { empty: '?' });
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
@@ -3351,7 +3416,7 @@ function openGuestDashboard(code) {
   // link directly via _reservationLinks() below, nothing left to (re)generate.
   if (isPreConfirm) _loadIntoForm(code);
 
-  const fmtD = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '-';
+  const fmtD = s => _fmtDate(s, { month: 'long', empty: '-' });
   const fmt$ = n => '$' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
   const fmtBooked = s => s ? new Date(s).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
   const { confirmUrl, viewUrl, phone } = _reservationLinks(r);
@@ -3387,10 +3452,6 @@ function openGuestDashboard(code) {
   const _hasFee = !r.credit && (r.payment_method === 'stripe' || r.payment_method === 'paypal');
   const _feeAmt = _hasFee ? Math.max(0, (parseFloat(r.total) || 0) - _noFeeTotal(r)) : 0;
   const _feeLabel = r.payment_method === 'paypal' ? 'PayPal fee' : 'card fee';
-  // Same ★-on-the-preferred-button pattern used everywhere else this choice shows up (book.html's
-  // confirm-page buttons, the cancellation-notify buttons) - 'either' (guest said "both please")
-  // stars both.
-  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const statusLbl = _rowStatusLabel(r);
   const idLbl = _idVerifyLabel(r);
 
@@ -3464,8 +3525,8 @@ function openGuestDashboard(code) {
                  Reservation as the other real option at this decision point. -->
             ${isChangePending && r.prior_terms ? `<button class="conf-btn" style="background:#b8882a;color:#fff;border-color:#b8882a;" onclick="undoReservationChange('${r.code}')">↩ Keep Original Terms</button>` : ''}
             ${r.url ? `
-            <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email${star('email')}</button>
-            <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text${star('text')}</button>
+            <button class="conf-btn" onclick="_closeReservationDetail();sendEmail();">✉️ Email${_contactStar(r, 'email')}</button>
+            <button class="conf-btn" onclick="_closeReservationDetail();sendSMS();">💬 Text${_contactStar(r, 'text')}</button>
             <span style="display:inline-flex;gap:.5rem;">
               <button class="conf-btn" id="gd-copy-btn" onclick="_gdCopyLink(this)">📋 Copy Link</button>
               <button class="conf-btn" onclick="previewLink()">🔗 Open Live Link</button>
@@ -3959,15 +4020,12 @@ function _openCancelNotifyModal(code, reason) {
   }
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
-  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
-  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#cancel-notify-email-btn');
   const textBtn = modal.querySelector('#cancel-notify-text-btn');
-  emailBtn.textContent = `📧 Send Cancellation Email${star('email')}`;
+  emailBtn.textContent = `📧 Send Cancellation Email${_contactStar(r, 'email')}`;
   emailBtn.disabled = !r.email;
   emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Cancellation Text${star('text')}`;
+  textBtn.textContent = `💬 Send Cancellation Text${_contactStar(r, 'text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
   // The modal DOM node is a reused singleton - without resetting this, reopening for a DIFFERENT
@@ -4059,15 +4117,12 @@ function _openUndoNotifyModal(code) {
     document.body.appendChild(modal);
   }
   modal.dataset.code = code;
-  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
-  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#undo-notify-email-btn');
   const textBtn = modal.querySelector('#undo-notify-text-btn');
-  emailBtn.textContent = `📧 Send Email${star('email')}`;
+  emailBtn.textContent = `📧 Send Email${_contactStar(r, 'email')}`;
   emailBtn.disabled = !r.email;
   emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Text${star('text')}`;
+  textBtn.textContent = `💬 Send Text${_contactStar(r, 'text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
   const closeBtn = modal.querySelector('#undo-notify-close-btn');
@@ -4085,7 +4140,7 @@ function _sendUndoNotification(method) {
   if (!r) return;
   const status = document.getElementById('undo-notify-status');
   const btn = document.getElementById(method === 'email' ? 'undo-notify-email-btn' : 'undo-notify-text-btn');
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const fmtD = s => _fmtDate(s, { month: 'long', weekday: true });
   const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
   const closeBtn = document.getElementById('undo-notify-close-btn');
   if (method === 'email') {
@@ -4225,7 +4280,7 @@ async function _confirmDecline() {
 }
 
 function _declineEmailHtml(r, reason) {
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const fmtD = s => _fmtDate(s, { month: 'long', weekday: true });
   const propName = r.prop_label || PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
   return `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
@@ -4277,15 +4332,12 @@ function _openDeclineNotifyModal(code, reason) {
   }
   modal.dataset.code = code;
   modal.dataset.reason = reason || '';
-  // 'either' (guest said "both please") stars both buttons - matches the send-quote-link popup
-  // and book.html's own confirm-page buttons, see openGuestDashboard's comment on this.
-  const star = m => (r.contact_pref === m || r.contact_pref === 'either') ? ' ★' : '';
   const emailBtn = modal.querySelector('#decline-notify-email-btn');
   const textBtn = modal.querySelector('#decline-notify-text-btn');
-  emailBtn.textContent = `📧 Send Decline Email${star('email')}`;
+  emailBtn.textContent = `📧 Send Decline Email${_contactStar(r, 'email')}`;
   emailBtn.disabled = !r.email;
   emailBtn.style.opacity = r.email ? '1' : '.5';
-  textBtn.textContent = `💬 Send Decline Text${star('text')}`;
+  textBtn.textContent = `💬 Send Decline Text${_contactStar(r, 'text')}`;
   textBtn.disabled = !r.phone;
   textBtn.style.opacity = r.phone ? '1' : '.5';
   // Same reused-singleton reset as the cancel-notify modal - without this, reopening for a
@@ -4344,7 +4396,7 @@ async function sendCancellationEmail(code, btn, message, onSent) {
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   if (!r.email) { alert('No email on file for this guest.'); return; }
   const propName = PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const fmtD = s => _fmtDate(s, { month: 'long', weekday: true });
   const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
   <div style="background:#0a1f3a;padding:24px;text-align:center;">
@@ -4395,7 +4447,7 @@ function sendCancellationText(code, message) {
   if (!r) { alert('Could not find that reservation - try refreshing.'); return; }
   const { phone } = _reservationLinks(r);
   const firstName = (r.guest || '').split(' ')[0] || r.guest;
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const fmtD = s => _fmtDate(s, { month: 'long' });
   const refundAmt = parseFloat(r.cancel_refund_amount) || 0;
   const refundNote = refundAmt > 0.005
     ? `You have a $${refundAmt.toFixed(2)} refund coming per the cancellation policy - I'll send that separately.`
@@ -4858,8 +4910,7 @@ function _initPricingInfinite() {
       if (!chk.classList.contains('prc-chk')) return;
       const prop = chk.dataset.prop, dk = chk.dataset.dk, type = chk.dataset.type;
       e.stopPropagation();
-      if (type === 'ci') prcToggleCI(prop, dk, chk.checked);
-      else               prcToggleCO(prop, dk, chk.checked);
+      _prcToggleRestriction(prop, dk, type, chk.checked);
     });
     container.addEventListener('mousedown', e => {
       if (e.target.classList.contains('prc-actual-input')) return; // let input handle
@@ -4897,26 +4948,19 @@ function _refreshAllBlocks() {
   _autoSave();
 }
 
-// ── INLINE CI/CO TOGGLES ──
-function prcToggleCI(prop, dk, checked) {
+// ── INLINE CI/CO TOGGLES ── prcToggleCI/prcToggleCO used to be two near-identical functions,
+// differing only by which restriction field they wrote and which label (first-child vs
+// last-child) they toggled active. Each only ever had one caller (the event-delegation handler
+// above), so collapsed into one parameterized function instead of keeping two thin wrappers.
+function _prcToggleRestriction(prop, dk, type, checked) {
   if (!_pricingData.restrictions[prop]) _pricingData.restrictions[prop] = {};
   const r = { ...((_pricingData.restrictions[prop][dk]) || {}) };
-  r.noCheckIn = checked; // store explicit false to override Saturday/holiday defaults
+  const field = type === 'ci' ? 'noCheckIn' : 'noCheckOut';
+  r[field] = checked; // store explicit false to override Saturday/holiday defaults
   // Clean up only if all values are default and no auto flag
   if (r.noCheckIn === false && r.noCheckOut === false && !r.minNights && !r.auto) delete _pricingData.restrictions[prop][dk];
   else _pricingData.restrictions[prop][dk] = r;
-  const lbl = document.querySelector(`.prc-dc[data-dk="${dk}"][data-prop="${prop}"] .prc-chk-lbl:first-child`);
-  if (lbl) lbl.classList.toggle('prc-chk-active', checked);
-  _autoSave();
-}
-
-function prcToggleCO(prop, dk, checked) {
-  if (!_pricingData.restrictions[prop]) _pricingData.restrictions[prop] = {};
-  const r = { ...((_pricingData.restrictions[prop][dk]) || {}) };
-  r.noCheckOut = checked;
-  if (r.noCheckIn === false && r.noCheckOut === false && !r.minNights && !r.auto) delete _pricingData.restrictions[prop][dk];
-  else _pricingData.restrictions[prop][dk] = r;
-  const lbl = document.querySelector(`.prc-dc[data-dk="${dk}"][data-prop="${prop}"] .prc-chk-lbl:last-child`);
+  const lbl = document.querySelector(`.prc-dc[data-dk="${dk}"][data-prop="${prop}"] .prc-chk-lbl:${type === 'ci' ? 'first-child' : 'last-child'}`);
   if (lbl) lbl.classList.toggle('prc-chk-active', checked);
   _autoSave();
 }
