@@ -1525,6 +1525,22 @@ function _fmtDate(s, opts) {
   } catch { return s; }
 }
 
+// Shared branded email header (logo badge + navy banner) - was duplicated verbatim between
+// _declineEmailHtml and sendCancellationEmail, differing only in the <h1> title text. Other
+// email-building functions elsewhere in this file construct their own headers with different
+// markup, so this is deliberately scoped to just these two rather than a codebase-wide unification.
+function _emailHeaderHtml(title) {
+  return `<div style="background:#0a1f3a;padding:24px;text-align:center;">
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
+      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
+        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
+      </td></tr></table>
+    </td></tr></table>
+    <div style="height:10px;"></div>
+    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">${title}</h1>
+  </div>`;
+}
+
 // ── PIN LOGIN ──
 // The PIN itself is checked server-side now (netlify/functions/admin-login.js) - nothing
 // secret lives in this page's JS anymore. A valid login returns a signed session token that
@@ -4284,15 +4300,7 @@ function _declineEmailHtml(r, reason) {
   const propName = r.prop_label || PROPS[r.prop]?.name || r.prop || 'The Heart Of CB';
   return `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-  <div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
-      </td></tr></table>
-    </td></tr></table>
-    <div style="height:10px;"></div>
-    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">About Your Request</h1>
-  </div>
+  ${_emailHeaderHtml('About Your Request')}
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
     <p>Hi ${_esc((r.guest||'').split(' ')[0] || r.guest)},</p>
     <p>Thank you for your interest in <strong>${_esc(propName)}</strong>${r.check_in ? ` for ${fmtD(r.check_in)}` : ''} - unfortunately I'm not able to accommodate this request.</p>
@@ -4399,15 +4407,7 @@ async function sendCancellationEmail(code, btn, message, onSent) {
   const fmtD = s => _fmtDate(s, { month: 'long', weekday: true });
   const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-  <div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:32px;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:28px;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
-      </td></tr></table>
-    </td></tr></table>
-    <div style="height:10px;"></div>
-    <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">Reservation Canceled</h1>
-  </div>
+  ${_emailHeaderHtml('Reservation Canceled')}
   <div style="padding:28px 32px;color:#374151;font-size:.97rem;line-height:1.6;">
     <p>Hi ${_esc((r.guest||'').split(' ')[0] || r.guest)},</p>
     <p>Your reservation at <strong>${propName}</strong> has been canceled:</p>
@@ -5702,8 +5702,14 @@ function _renderStats() {
     ).join('');
   }
 
-  // Aggregate monthly data across selected props
+  // Aggregate monthly data across selected props - computed once here and reused everywhere
+  // below via monthDataByProp instead of each chart/the table separately calling
+  // _statMonthData() again for the same prop/year (which itself loops all 12 months and, per
+  // month, rescans the whole year's blocked-date ranges via _statCheckIns()) - a naive render
+  // used to redo that full-year scan up to ~45 times for the charts plus another ~36 times for
+  // the monthly table, all for identical inputs already sitting in this same array.
   const allMonthData = props.map(p => ({ prop: p, months: _statMonthData(p, year) }));
+  const monthDataByProp = new Map(allMonthData.map(d => [d.prop, d.months]));
 
   // Summary cards
   let ytdActual = 0, ytdBooked = 0, ytdPotential = 0, ytdCI = 0, ytdDays = 0;
@@ -5792,7 +5798,7 @@ function _renderStats() {
   if (pCtx) {
     const datasets = [];
     props.forEach(prop => {
-      const months = _statMonthData(prop, year);
+      const months = monthDataByProp.get(prop);
       const col = PROP_COLORS[prop];
       datasets.push({
         label: `${PROP_LABELS[prop]} Actual`,
@@ -5828,7 +5834,7 @@ function _renderStats() {
   const oCtx = document.getElementById('stat-chart-occ');
   if (oCtx) {
     const datasets = props.map(prop => {
-      const months = _statMonthData(prop, year);
+      const months = monthDataByProp.get(prop);
       const col = PROP_COLORS[prop];
       return {
         label: PROP_LABELS[prop],
@@ -5863,7 +5869,7 @@ function _renderStats() {
 
   MONTHS_SHORT.forEach((mo, m) => {
     props.forEach(prop => {
-      const md = _statMonthData(prop, year)[m];
+      const md = monthDataByProp.get(prop)[m];
       const occ = md.days > 0 ? Math.round(md.booked / md.days * 100) : 0;
       const occCls = occ >= 70 ? 'stat-pct-good' : occ >= 40 ? 'stat-pct-mid' : 'stat-pct-low';
       const achv = (md.actual + md.potential) > 0 ? Math.round(md.actual / (md.actual + md.potential) * 100) : 0;
