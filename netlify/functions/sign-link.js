@@ -57,6 +57,25 @@ exports.handler = async function(event) {
   // host-config.json (e.g. "(FRONT) Home in The Heart Of CB") - the two were never meant to be
   // compared, and doing so made every single quote look stale regardless of whether anything had
   // actually changed. If that naming ever gets unified, this can safely compare prop too.
+  // Identity verification (Jesse's default policy - see create-identity-session.js) is required
+  // before signing unless he's explicitly waived it for this reservation. create-stripe-checkout.js
+  // and reservations-confirm.js already enforce this before payment/self-confirm, but this endpoint
+  // - the one that actually flips status to 'signed' - never did, so a guest who stripped book.html's
+  // .locked class (or POSTed here directly with the values already sitting in their own page) could
+  // sign before ever verifying, against the "identity check first, I don't want to hide it" policy.
+  // Found in an overnight audit 2026-09-24. Fails closed on a lookup error, same as the other gates.
+  try {
+    const idResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=id_verify_skip,id_verification_status`);
+    const idRows = idResp.ok ? await idResp.json() : [];
+    const idOk = idRows.length && (idRows[0].id_verify_skip || idRows[0].id_verification_status === 'verified');
+    if (!idOk) {
+      return { statusCode: 409, body: JSON.stringify({ message: 'Identity verification must be completed before signing.' }) };
+    }
+  } catch (e) {
+    console.error('Identity verification check failed:', e);
+    return { statusCode: 500, body: JSON.stringify({ message: 'Could not verify identity status - please try again.' }) };
+  }
+
   try {
     const curResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=total,check_in,check_out`);
     const cur = curResp.ok ? await curResp.json() : [];

@@ -15,7 +15,7 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { code, guest, email, phone, prop, ci, co, nights, total, rate, taxOcc, taxSales, url, exp, privateNote, credit, contactPref, idVerifySkip } = body;
+  const { code, guest, email, phone, prop, ci, co, nights, total, rate, taxOcc, taxSales, url, exp, privateNote, credit, contactPref, idVerifySkip, noCard } = body;
   if (!guest || !ci || !co) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Missing guest, ci, or co' }) };
   }
@@ -37,6 +37,11 @@ exports.handler = async function(event) {
     // always sent explicitly by Quote Builder's checkbox, defaults false (required) like every
     // guest not otherwise waived.
     id_verify_skip: !!idVerifySkip,
+    // Jesse's "Override - no card option" checkbox - used to only ever exist as a `no_card=1`
+    // flag on the guest link's own URL, never saved here or checked server-side, so a guest could
+    // still POST straight to create-stripe-checkout.js and pay by card on a reservation Jesse
+    // explicitly marked cash/Venmo/Zelle-only. Found in an overnight audit 2026-09-24.
+    no_card: !!noCard,
     status: 'quoted',
     // Clears any stale cancelled_at when this is a reinstate (editing a cancelled reservation
     // back to active) - harmless no-op otherwise, since it's already null on everything else.

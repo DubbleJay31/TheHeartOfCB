@@ -18,6 +18,24 @@ exports.handler = async function(event) {
   if (co && co <= ci) {
     return { statusCode: 400, body: JSON.stringify({ message: 'Check-out must be after check-in' }) };
   }
+  // The rest of this repo's business rules (guest cap, no past dates, min-night stay) only ever
+  // lived in app.js's calendar UI - this public, unauthenticated endpoint never checked any of
+  // them itself, so a direct POST (devtools/curl) could store an inquiry that violates all three.
+  // Min-night/holiday restrictions are date-specific and pulled live via cloud-sync.js - too much
+  // to safely re-derive here without risking blocking a legitimate late-breaking edit - so this
+  // only covers the two static, unconditional checks: a known property key, and a check-in date
+  // that isn't already in the past. Found in an overnight audit 2026-09-24.
+  const PROP_MAX_GUESTS = { prop1: 6, prop2: 2, prop3: 2 };
+  if (prop && !PROP_MAX_GUESTS[prop]) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Unrecognized property' }) };
+  }
+  if (prop && guests && parseInt(guests, 10) > PROP_MAX_GUESTS[prop]) {
+    return { statusCode: 400, body: JSON.stringify({ message: `Max ${PROP_MAX_GUESTS[prop]} guests for this property` }) };
+  }
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (ci < todayStr) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Check-in date cannot be in the past' }) };
+  }
 
   try {
     // Guards only against a true accidental double-submit (double-click, a flaky connection
