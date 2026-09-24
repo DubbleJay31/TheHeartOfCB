@@ -1905,11 +1905,21 @@ fetch('host-config.json').then(r => r.json()).then(cfg => {
   if (cfg?.tax?.creditCardFeePct != null) CC_FEE = cfg.tax.creditCardFeePct / 100;
 }).catch(e => console.warn('host-config.json not loaded, using default tax rates', e));
 
+// Single source of truth for the fare -> occupancy tax -> sales tax -> pre-card-fee-total math -
+// was independently recomputed identically in calcTotal(), renderGuestBreakdown(), renderCalc(),
+// and _cashBase() (4 copies - found while consolidating; the moderate-risk item that flagged this
+// only caught 3 of them). All four currently agree since TAX_OCC/TAX_SALES only ever change via
+// the one shared host-config.json fetch, but four independent copies of the same money formula is
+// a real drift risk if it ever needs to change (a per-property rate, a date-based rate, etc).
+function _taxBreakdown(subtotal) {
+  const taxOcc = subtotal * TAX_OCC;
+  const taxSales = subtotal * TAX_SALES;
+  return { subtotal, taxOcc, taxSales, preTax: subtotal + taxOcc + taxSales };
+}
+
 function calcTotal() {
   const subtotal = parseFloat(document.getElementById('f-rate').value) || 0;
-  const taxOcc   = subtotal * TAX_OCC;
-  const taxSales = subtotal * TAX_SALES;
-  const preTax   = subtotal + taxOcc + taxSales;
+  const { taxOcc, taxSales, preTax } = _taxBreakdown(subtotal);
   // Mirrors generate()'s credit math exactly - _total is what _saveQuote() persists as
   // reservations.total, and it used to never subtract credit at all, so a credited reservation's
   // saved total silently didn't match the balance the guest's own link (and everything else that
@@ -1933,9 +1943,7 @@ function renderGuestBreakdown() {
   const rows     = document.getElementById('guest-breakdown-rows');
   if (!panel || !rows) return;
   if (subtotal <= 0) { panel.style.display = 'none'; return; }
-  const taxOcc    = subtotal * TAX_OCC;
-  const taxSales  = subtotal * TAX_SALES;
-  const preTax    = subtotal + taxOcc + taxSales;
+  const { taxOcc, taxSales, preTax } = _taxBreakdown(subtotal);
   const ccFee     = preTax * CC_FEE;
   const displayTotal = preTax;
   const r = (label, val, bold) =>
@@ -2005,9 +2013,7 @@ const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, max
 
 function renderCalc() {
   const subtotal = parseFloat(document.getElementById('f-rate')?.value) || 0;
-  const taxOcc   = subtotal * TAX_OCC;
-  const taxSales = subtotal * TAX_SALES;
-  const preTax   = subtotal + taxOcc + taxSales;
+  const { taxOcc, taxSales, preTax } = _taxBreakdown(subtotal);
   const ccFee    = preTax * CC_FEE;
   const total    = preTax + ccFee;
   const rows = document.getElementById('calc-rows');
@@ -2038,7 +2044,7 @@ function toggleCashOptions() {
 function _cashBase() {
   const sub = parseFloat(document.getElementById('f-rate')?.value) || 0;
   if (sub <= 0) return 0;
-  const preTax = sub + sub * TAX_OCC + sub * TAX_SALES; // preTax = what guest pays without CC fee
+  const { preTax } = _taxBreakdown(sub); // preTax = what guest pays without CC fee
   // A cash discount is a discount on what the guest still actually owes, not on the full contract
   // value - a credited reservation ignored this and computed the discount off the full preTax, so
   // typing "10%" on a $505 stay with a $400 credit already applied discounted the WHOLE $505
