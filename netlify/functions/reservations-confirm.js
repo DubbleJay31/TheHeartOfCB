@@ -138,15 +138,44 @@ exports.handler = async function(event) {
 
     // Scoped to status=eq.signed (not just code) so two near-simultaneous requests can't both
     // pass the status check above and both write - only the first to actually commit still
-    // matches this filter, the second affects zero rows.
+    // matches this filter, the second affects zero rows. return=representation (not minimal) so
+    // we can tell the difference between "we won" and "we lost the race" - PostgREST returns 2xx
+    // either way for a scoped PATCH, so without checking the returned rows this used to report
+    // {ok:true} on a lost race while silently discarding this call's own signed_ip/contact_pref/
+    // payment_method/mark_sent, since the actual write never happened.
     const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&status=eq.signed`, {
       method: 'PATCH',
-      headers: { Prefer: 'return=minimal' },
+      headers: { Prefer: 'return=representation' },
       body: JSON.stringify(row)
     });
     if (!r.ok) {
       const err = await r.text();
       return { statusCode: 500, body: JSON.stringify({ ok: false, message: err }) };
+    }
+    const updatedRows = await r.json().catch(() => []);
+    if (!updatedRows.length) {
+      // Lost the race - another request (e.g. the Stripe webhook landing at nearly the same
+      // instant as a manual admin confirm) already flipped status away from 'signed' between our
+      // own read above and this PATCH. The status transition itself is a no-op now (someone else
+      // already made it), but this call's own side fields are real and still need to land -
+      // dbRate/tax_occ/tax_sales/total above are all derived from the same `existing` read the
+      // winner also started from, so there's nothing to reconcile there, but signed_ip/
+      // contact_pref/payment_method/mark_sent are THIS call's own data and would otherwise vanish.
+      const sideFields = {};
+      if (signed_ip) sideFields.signed_ip = signed_ip;
+      if (contact_pref) sideFields.contact_pref = contact_pref;
+      if (payment_method) sideFields.payment_method = payment_method;
+      if (Object.keys(sideFields).length) {
+        await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify(sideFields)
+        }).catch(e => console.error('Failed to apply side fields after a lost confirm race:', e));
+      }
+      const freshResp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=confirmation_sent_at`);
+      const fresh = freshResp.ok ? await freshResp.json() : [];
+      if (fresh.length) await _markSentIfNeeded(fresh[0]);
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
 
     return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true }) };

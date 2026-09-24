@@ -28,14 +28,39 @@ exports.handler = async function(event) {
   const results = [];
   for (const q of candidates) {
     try {
-      await _sendGuestNudge(q, RESEND_KEY);
-      await _sendHostHeadsUp(q, RESEND_KEY);
-      await sbReservations(`?code=eq.${encodeURIComponent(q.code)}`, {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ followup_sent_at: new Date().toISOString() })
-      });
-      results.push('sent');
+      // Claim BEFORE sending, not after - two overlapping invocations (a manual re-run, a
+      // platform retry) used to both see "not yet followed up" before either one's mark-sent
+      // PATCH landed, and both would email the same guest (plus double up Jesse's heads-up).
+      // Scoped by code AND followup_sent_at=is.null, with the row handed back if it matched - a
+      // near-simultaneous second invocation's identical PATCH matches zero rows and skips this
+      // quote entirely. Same fix as reminder.js/checkout-reminder.js/arrival-reminder.js.
+      const claimResp = await sbReservations(
+        `?code=eq.${encodeURIComponent(q.code)}&followup_sent_at=is.null`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ followup_sent_at: new Date().toISOString() })
+        }
+      );
+      const claimed = claimResp.ok ? await claimResp.json().catch(() => []) : [];
+      if (!claimed.length) {
+        console.log(`Skipping ${q.guest} (${q.code}) - lost the claim race or already sent.`);
+        continue;
+      }
+      try {
+        await _sendGuestNudge(q, RESEND_KEY);
+        await _sendHostHeadsUp(q, RESEND_KEY);
+        results.push('sent');
+      } catch (sendErr) {
+        // Release the claim so a genuine same-day retry can still send - this attempt failed,
+        // it didn't lose a race, so there's nothing to protect here.
+        await sbReservations(`?code=eq.${encodeURIComponent(q.code)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ followup_sent_at: null })
+        }).catch(err => console.error(`Failed to release followup_sent_at claim for ${q.code}:`, err));
+        throw sendErr;
+      }
     } catch (e) {
       console.error(`Follow-up failed for ${q.guest}:`, e);
       results.push('failed');

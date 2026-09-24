@@ -36,6 +36,26 @@ exports.handler = async function(event) {
         console.log(`Skipping ${res.guest} - no email on file`);
         continue;
       }
+      // Claim BEFORE sending, not after - the query above and the mark-sent PATCH used to be two
+      // separate steps with a gap between them, so two overlapping invocations (a manual re-run,
+      // a platform retry) could both see "not yet reminded" and both email the same guest. Scoped
+      // by code AND checkout_reminder_sent_at=is.null, with the row handed back if it matched -
+      // only the first invocation's claim actually lands for a given code, a near-simultaneous
+      // second one matches zero rows and skips this guest entirely.
+      const claimResp = await sbReservations(
+        `?code=eq.${encodeURIComponent(res.code)}&checkout_reminder_sent_at=is.null`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
+        }
+      );
+      const claimed = claimResp.ok ? await claimResp.json().catch(() => []) : [];
+      if (!claimed.length) {
+        console.log(`Skipping ${res.guest} (${res.code}) - lost the claim race or already sent.`);
+        continue;
+      }
+
       const emailResp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
@@ -51,12 +71,14 @@ exports.handler = async function(event) {
       console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
       results.push(status);
 
-      if (emailResp.ok) {
+      if (!emailResp.ok) {
+        // Release the claim so a genuine same-day retry can still send - this attempt failed, it
+        // didn't lose a race, so there's nothing to protect here.
         await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
           method: 'PATCH',
           headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify({ checkout_reminder_sent_at: new Date().toISOString() })
-        }).catch(err => console.error(`Failed to mark checkout_reminder_sent_at for ${res.code}:`, err));
+          body: JSON.stringify({ checkout_reminder_sent_at: null })
+        }).catch(err => console.error(`Failed to release checkout_reminder_sent_at claim for ${res.code}:`, err));
       }
     } catch (e) {
       console.error(`Checkout reminder failed for ${res.code}:`, e);

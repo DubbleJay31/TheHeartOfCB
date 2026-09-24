@@ -25,10 +25,35 @@ exports.handler = async function(event) {
     return { statusCode: 500, body: 'Supabase error: ' + err };
   }
 
-  const reservations = await sbResp.json();
-  console.log(`Arrival reminder: ${reservations.length} check-in(s) tomorrow (${tomorrowStr})`);
+  const candidates = await sbResp.json();
+  console.log(`Arrival reminder: ${candidates.length} check-in(s) tomorrow (${tomorrowStr})`);
 
+  if (!candidates.length) {
+    return { statusCode: 200, body: JSON.stringify({ processed: 0 }) };
+  }
+
+  // Claim BEFORE sending, not after - the query above and the mark-sent PATCH used to be two
+  // separate steps with a gap between them, so two overlapping invocations of this same function
+  // (a manual re-run landing next to the real cron tick, a platform-level retry) could both read
+  // "not yet reminded" before either one's mark-sent PATCH landed, and both would email Jesse the
+  // same digest. This PATCH is scoped by BOTH code AND arrival_reminder_sent_at=is.null and asks
+  // for the updated rows back - only the first invocation's PATCH actually matches any rows for
+  // a given code; a second, near-simultaneous invocation's identical PATCH matches zero of them,
+  // so only the winner sends. If the send below fails, the claim is released (reset back to null)
+  // so a genuine same-day retry can still go out - what this closes is a real duplicate send,
+  // not a legitimate resend after a transient failure.
+  const codes = candidates.map(r => r.code);
+  const claimResp = await sbReservations(
+    `?code=in.(${codes.map(c => encodeURIComponent(c)).join(',')})&arrival_reminder_sent_at=is.null`,
+    {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ arrival_reminder_sent_at: new Date().toISOString() })
+    }
+  );
+  const reservations = claimResp.ok ? await claimResp.json().catch(() => []) : [];
   if (!reservations.length) {
+    console.log('Arrival reminder: lost the claim race (or claim failed) - nothing to send this run.');
     return { statusCode: 200, body: JSON.stringify({ processed: 0 }) };
   }
 
@@ -47,15 +72,15 @@ exports.handler = async function(event) {
   const result = await emailResp.json().catch(() => ({}));
   console.log(emailResp.ok ? 'sent' : 'failed', result.id || '');
 
-  if (emailResp.ok) {
-    // One email covers the whole batch, so every reservation in it gets marked together - an
-    // `in.()` filter instead of a loop of individual PATCHes.
-    const codes = reservations.map(r => r.code);
-    await sbReservations(`?code=in.(${codes.map(c => encodeURIComponent(c)).join(',')})`, {
+  if (!emailResp.ok) {
+    // Release the claim so a genuine retry (same day, before "tomorrow" rolls over) can still
+    // send - this send attempt failed, it didn't lose a race, so there's nothing to protect here.
+    const claimedCodes = reservations.map(r => r.code);
+    await sbReservations(`?code=in.(${claimedCodes.map(c => encodeURIComponent(c)).join(',')})`, {
       method: 'PATCH',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({ arrival_reminder_sent_at: new Date().toISOString() })
-    }).catch(err => console.error('Failed to mark arrival_reminder_sent_at:', err));
+      body: JSON.stringify({ arrival_reminder_sent_at: null })
+    }).catch(err => console.error('Failed to release arrival_reminder_sent_at claim:', err));
   }
 
   return { statusCode: 200, body: JSON.stringify({ processed: reservations.length }) };

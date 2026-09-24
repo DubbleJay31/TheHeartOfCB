@@ -1,4 +1,4 @@
-const { sbReservations } = require('./_reservations');
+const { sbReservations, hostConfig } = require('./_reservations');
 
 // Public, read-only, unauthenticated - a second source for the guest-facing availability
 // calendar (app.js), alongside Airbnb's iCal feed. A guest who signs and pays through book.html
@@ -13,8 +13,12 @@ exports.handler = async function(event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
   const prop = (event.queryStringParameters || {}).prop;
-  if (!prop) {
-    return { statusCode: 400, body: JSON.stringify({ message: 'Missing prop' }) };
+  // Same check ical-export.js already does for the same reason - was previously just checking
+  // truthiness, so a typo'd or garbled prop value (a display label instead of the short key, a
+  // stray "prop9") silently returned an empty busy-dates list instead of a clear 400, which just
+  // reads as "nothing booked" rather than surfacing the actual mistake.
+  if (!prop || !hostConfig.properties[prop]) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Missing or unknown prop' }) };
   }
   try {
     // Also includes a change-pending row (status reset to quoted/signed by an in-progress Change

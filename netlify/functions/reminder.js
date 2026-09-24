@@ -41,6 +41,26 @@ exports.handler = async function(event) {
         continue;
       }
 
+      // Claim BEFORE sending, not after - two overlapping invocations (a manual re-run, a
+      // platform retry) used to both see "not yet reminded" before either one's mark-sent PATCH
+      // landed, and both would email the same guest. Scoped by code AND reminder_sent_at=is.null,
+      // with the row handed back if it matched - a near-simultaneous second invocation's identical
+      // PATCH matches zero rows and skips this guest entirely. Same fix as checkout-reminder.js/
+      // arrival-reminder.js, found here while applying it to those two.
+      const claimResp = await sbReservations(
+        `?code=eq.${encodeURIComponent(res.code)}&reminder_sent_at=is.null`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ reminder_sent_at: new Date().toISOString() })
+        }
+      );
+      const claimed = claimResp.ok ? await claimResp.json().catch(() => []) : [];
+      if (!claimed.length) {
+        console.log(`Skipping ${res.guest} (${res.code}) - lost the claim race or already sent.`);
+        continue;
+      }
+
       const html = buildReminderHtml(res);
 
       const emailResp = await fetch('https://api.resend.com/emails', {
@@ -62,12 +82,13 @@ exports.handler = async function(event) {
       console.log(`${status}: ${res.guest} → ${recipients.join(', ')}`);
       results.push(status);
 
-      if (emailResp.ok) {
+      if (!emailResp.ok) {
+        // Release the claim so a genuine same-day retry can still send.
         await sbReservations(`?code=eq.${encodeURIComponent(res.code)}`, {
           method: 'PATCH',
           headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify({ reminder_sent_at: new Date().toISOString() })
-        }).catch(err => console.error(`Failed to mark reminder_sent_at for ${res.code}:`, err));
+          body: JSON.stringify({ reminder_sent_at: null })
+        }).catch(err => console.error(`Failed to release reminder_sent_at claim for ${res.code}:`, err));
       }
     } catch (e) {
       console.error(`Reminder failed for ${res.code}:`, e);
