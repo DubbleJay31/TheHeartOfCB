@@ -28,6 +28,25 @@
   --transition: .28s cubic-bezier(.4,0,.2,1);
 }
 
+/* Skip link - off-screen until keyboard-focused, then jumps a keyboard/screen-reader user
+   straight past the nav to <main> instead of forcing them to tab through every nav link and
+   the logo first on every single page. */
+.skip-link {
+  position: absolute;
+  top: -999px;
+  left: 1rem;
+  z-index: 10000;
+  background: var(--navy);
+  color: #fff;
+  padding: .75rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
 html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
@@ -841,6 +860,11 @@ main { padding-top: 150px; }
 .bw-date label { font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text); margin-bottom: .2rem; }
 .bw-date input { border: none; padding: 0; font-size: .88rem; background: transparent; color: var(--text); font-family: inherit; -webkit-appearance: none; }
 .bw-date input:focus { outline: none; }
+/* The input's own outline is suppressed above (border:none/transparent background means it'd
+   render invisibly anyway) - this puts a real, visible focus indicator back on the field a
+   keyboard user is actually tabbed into, instead of leaving keyboard navigation through the
+   primary booking widget with no visible focus state at all. */
+.bw-date:has(input:focus) { box-shadow: inset 0 0 0 2px var(--gold); border-radius: 6px; }
 
 .bw-guests {
   border: 1.5px solid var(--border); border-radius: 10px; padding: .6rem .85rem;
@@ -848,6 +872,7 @@ main { padding-top: 150px; }
 .bw-guests label { display: block; font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text); margin-bottom: .2rem; }
 .bw-guests select { border: none; padding: 0; font-size: .88rem; background: transparent; color: var(--text); font-family: inherit; width: 100%; -webkit-appearance: none; cursor: pointer; }
 .bw-guests select:focus { outline: none; }
+.bw-guests:has(select:focus) { box-shadow: inset 0 0 0 2px var(--gold); }
 
 .bw-btn { border-radius: 10px; padding: 1rem; font-size: .95rem; }
 .bw-nofee { font-size: .78rem; color: var(--muted); text-align: center; }

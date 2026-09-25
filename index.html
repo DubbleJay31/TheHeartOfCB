@@ -26,11 +26,129 @@
   <meta name="twitter:description" content="Stay in the heart of Carolina Beach at 213 Harper Ave. Book direct with an 8-year Superhost and skip the platform fees." />
   <meta name="twitter:image" content="https://theheartofcb.com/THOCB%20Sign%20No%20Border.png" />
   <link rel="canonical" href="https://theheartofcb.com" />
+  <!-- Structured data for Google's rich vacation-rental results - one LodgingBusiness for the
+       overall brand/address (carries the site-wide 4.99/900+ rating and the 6 review cards
+       already shown below) plus one per independently-bookable unit (each with its own real
+       Airbnb rating/review count, capacity, and pet policy - all pulled from facts already
+       printed elsewhere on this page, nothing invented). Geo coordinates deliberately omitted -
+       the postal address is accurate and verified, a guessed lat/long wouldn't be. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LodgingBusiness",
+        "@id": "https://theheartofcb.com/#business",
+        "name": "The Heart Of CB",
+        "description": "Book direct at 213 Harper Ave, Carolina Beach, NC - no platform fees. 8-year Airbnb Superhost, 900+ reviews across 3 independently-bookable units.",
+        "url": "https://theheartofcb.com/",
+        "telephone": "+19105998118",
+        "priceRange": "$$",
+        "image": "https://theheartofcb.com/THOCB%20Sign%20No%20Border.png",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "213 Harper Avenue",
+          "addressLocality": "Carolina Beach",
+          "addressRegion": "NC",
+          "postalCode": "28428",
+          "addressCountry": "US"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.99",
+          "reviewCount": "900",
+          "bestRating": "5"
+        },
+        "review": [
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Emily" }, "reviewBody": "Jesse's place was exactly what the doctor ordered. The space felt so clean without smelling like cleaner and had everything perfectly organized to make it feel like home." },
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Clayton" }, "reviewBody": "Clean, bigger than expected, great location - walkable to the boardwalk, great parking, nice patio. Great option for a weekend trip to the beach." },
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Jessica" }, "reviewBody": "We had such a wonderful stay! The place was spotless, cozy, and incredibly comfortable - especially the beds, which made it so easy to relax after long days out." },
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Jenifer" }, "reviewBody": "Great hosts! Shared property but this space felt completely like your own - really well insulated sound wise from the adjoining property." },
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Emily" }, "reviewBody": "Jesse was a great host! Great location. Beach and lots of restaurants and shops within walking distance. Very clean home - perfect spring break getaway." },
+          { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" }, "author": { "@type": "Person", "name": "Arika" }, "reviewBody": "Jesse was a very accommodating and gracious host. The apartment was clean and spacious enough for our needs. There were even musical instruments we could use!" }
+        ]
+      },
+      {
+        "@type": "LodgingBusiness",
+        "@id": "https://theheartofcb.com/prop1#business",
+        "name": "(FRONT) Home in The Heart Of CB",
+        "description": "1,000 sqft, 3-bedroom, 2-full-bath home at 213 Harper Ave - sleeps up to 6 guests, up to 2 dogs, full kitchen, front porch with patio furniture, on-site parking for 2 vehicles.",
+        "url": "https://theheartofcb.com/prop1",
+        "telephone": "+19105998118",
+        "priceRange": "$$",
+        "image": "https://theheartofcb.com/THOCB%20Sign%20No%20Border.png",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "213 Harper Avenue",
+          "addressLocality": "Carolina Beach",
+          "addressRegion": "NC",
+          "postalCode": "28428",
+          "addressCountry": "US"
+        },
+        "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.98", "reviewCount": "459", "bestRating": "5" },
+        "numberOfRooms": 3,
+        "occupancy": { "@type": "QuantitativeValue", "maxValue": 6 },
+        "petsAllowed": true,
+        "amenityFeature": [
+          { "@type": "LocationFeatureSpecification", "name": "Full kitchen", "value": true },
+          { "@type": "LocationFeatureSpecification", "name": "On-site parking (2 vehicles)", "value": true },
+          { "@type": "LocationFeatureSpecification", "name": "Front porch with patio furniture", "value": true }
+        ]
+      },
+      {
+        "@type": "LodgingBusiness",
+        "@id": "https://theheartofcb.com/prop2#business",
+        "name": "(LEFT) Private Guest Suite in The Heart Of CB",
+        "description": "Private 1-bedroom, 1-bath guest suite at 213 Harper Ave - sleeps up to 2 guests, 1 dog welcome.",
+        "url": "https://theheartofcb.com/prop2",
+        "telephone": "+19105998118",
+        "priceRange": "$$",
+        "image": "https://theheartofcb.com/THOCB%20Sign%20No%20Border.png",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "213 Harper Avenue",
+          "addressLocality": "Carolina Beach",
+          "addressRegion": "NC",
+          "postalCode": "28428",
+          "addressCountry": "US"
+        },
+        "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5.0", "reviewCount": "205", "bestRating": "5" },
+        "numberOfRooms": 1,
+        "occupancy": { "@type": "QuantitativeValue", "maxValue": 2 },
+        "petsAllowed": true
+      },
+      {
+        "@type": "LodgingBusiness",
+        "@id": "https://theheartofcb.com/prop3#business",
+        "name": "(RIGHT) Private Guest Suite in The Heart Of CB",
+        "description": "Private 1-bedroom, 1-bath guest suite at 213 Harper Ave - sleeps up to 2 guests, 1 dog welcome.",
+        "url": "https://theheartofcb.com/prop3",
+        "telephone": "+19105998118",
+        "priceRange": "$$",
+        "image": "https://theheartofcb.com/THOCB%20Sign%20No%20Border.png",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "213 Harper Avenue",
+          "addressLocality": "Carolina Beach",
+          "addressRegion": "NC",
+          "postalCode": "28428",
+          "addressCountry": "US"
+        },
+        "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5.0", "reviewCount": "231", "bestRating": "5" },
+        "numberOfRooms": 1,
+        "occupancy": { "@type": "QuantitativeValue", "maxValue": 2 },
+        "petsAllowed": true
+      }
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="site-home page-home-active">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- NAV -->
 <header class="site-header" id="site-header">
@@ -79,7 +197,7 @@
   </div>
 </header>
 
-<main>
+<main id="main-content">
 
 <!-- ══════════════════════════════════════
      HOME
@@ -262,6 +380,84 @@
       </div>
     </div>
   </div>
+
+  <!-- FAQ - real, always-visible Q&A (not hidden behind a JS accordion) so it's guaranteed
+       readable by both search crawlers and screen readers without needing JS to run first.
+       Every answer is pulled from a policy already stated elsewhere on this site (house rules,
+       cancellation policy, the booking flow's ID-verification gate) - nothing here is new/looser
+       than what's actually enforced at booking time. Matching FAQPage schema right below the
+       content it describes, not buried in <head>, so the two stay easy to keep in sync. -->
+  <div class="section" id="faq" style="padding-top:4rem;padding-bottom:4rem;max-width:760px;margin:0 auto;">
+    <div class="section-header center">
+      <span class="section-label">Good To Know</span>
+      <h2 class="section-title">Frequently Asked Questions</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem;">
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">What time is check-in and check-out?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Check-in is at 3:00 PM and check-out is at 11:00 AM sharp.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">What's the cancellation policy?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Cancel 5 or more days before check-in for a full refund. 1-4 days out, you'll get half your accommodation cost back. Same-day cancellations (on your check-in day) aren't refundable.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Are pets allowed?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Yes - dogs only, and they need to be approved in advance. Up to 2 dogs at the Front Home, 1 dog at either private suite.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">How many guests can stay?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">The Front Home sleeps up to 6 across 3 bedrooms. Each private guest suite sleeps up to 2.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Is parking available?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Yes - on-site parking for 2 vehicles, plus free public parking nearby.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">What's the minimum stay?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">2 nights standard, though it can run longer during certain holiday periods.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Are parties or events allowed?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">No parties or events, and no outside visitors without approval in advance.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Can I smoke on the property?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">No smoking inside - there's a $500 fee if that happens. Outdoor smoking areas only.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">What payment methods do you accept?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Credit/debit card, PayPal, Venmo, Cash App, Zelle, or cash. Booking direct means no platform fees no matter how you pay.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Do I need to verify my identity to book?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Yes - a quick ID verification through Stripe is required before you sign your rental agreement. Takes about a minute and keeps everyone safe.</p>
+      </div>
+      <div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin:0 0 .4rem;">Why book direct instead of through Airbnb?</h3>
+        <p style="color:#444;line-height:1.6;margin:0;">Same host, same place, same reviews - booking direct just skips the platform fees. Nothing about the stay itself changes.</p>
+      </div>
+    </div>
+  </div>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "What time is check-in and check-out?", "acceptedAnswer": { "@type": "Answer", "text": "Check-in is at 3:00 PM and check-out is at 11:00 AM sharp." } },
+      { "@type": "Question", "name": "What's the cancellation policy?", "acceptedAnswer": { "@type": "Answer", "text": "Cancel 5 or more days before check-in for a full refund. 1-4 days out, you'll get half your accommodation cost back. Same-day cancellations (on your check-in day) aren't refundable." } },
+      { "@type": "Question", "name": "Are pets allowed?", "acceptedAnswer": { "@type": "Answer", "text": "Yes - dogs only, and they need to be approved in advance. Up to 2 dogs at the Front Home, 1 dog at either private suite." } },
+      { "@type": "Question", "name": "How many guests can stay?", "acceptedAnswer": { "@type": "Answer", "text": "The Front Home sleeps up to 6 across 3 bedrooms. Each private guest suite sleeps up to 2." } },
+      { "@type": "Question", "name": "Is parking available?", "acceptedAnswer": { "@type": "Answer", "text": "Yes - on-site parking for 2 vehicles, plus free public parking nearby." } },
+      { "@type": "Question", "name": "What's the minimum stay?", "acceptedAnswer": { "@type": "Answer", "text": "2 nights standard, though it can run longer during certain holiday periods." } },
+      { "@type": "Question", "name": "Are parties or events allowed?", "acceptedAnswer": { "@type": "Answer", "text": "No parties or events, and no outside visitors without approval in advance." } },
+      { "@type": "Question", "name": "Can I smoke on the property?", "acceptedAnswer": { "@type": "Answer", "text": "No smoking inside - there's a $500 fee if that happens. Outdoor smoking areas only." } },
+      { "@type": "Question", "name": "What payment methods do you accept?", "acceptedAnswer": { "@type": "Answer", "text": "Credit/debit card, PayPal, Venmo, Cash App, Zelle, or cash. Booking direct means no platform fees no matter how you pay." } },
+      { "@type": "Question", "name": "Do I need to verify my identity to book?", "acceptedAnswer": { "@type": "Answer", "text": "Yes - a quick ID verification through Stripe is required before you sign your rental agreement. Takes about a minute and keeps everyone safe." } },
+      { "@type": "Question", "name": "Why book direct instead of through Airbnb?", "acceptedAnswer": { "@type": "Answer", "text": "Same host, same place, same reviews - booking direct just skips the platform fees. Nothing about the stay itself changes." } }
+    ]
+  }
+  </script>
 
 </section>
 
@@ -671,7 +867,7 @@
         <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
         <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
         <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
-          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <label for="cancel-calc-date-prop1" style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
           <input type="date" id="cancel-calc-date-prop1" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
         </div>
         <div id="cancel-calc-result-prop1" style="margin-top:1rem;display:none;">
@@ -1183,7 +1379,7 @@
         <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
         <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
         <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
-          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <label for="cancel-calc-date-prop2" style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
           <input type="date" id="cancel-calc-date-prop2" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
         </div>
         <div id="cancel-calc-result-prop2" style="margin-top:1rem;display:none;">
@@ -1664,7 +1860,7 @@
         <div style="font-weight:700;color:var(--navy);margin-bottom:.6rem;font-size:1rem;">📅 Look up your cutoff dates</div>
         <p style="font-size:.85rem;color:#555;margin:0 0 .9rem;">Enter your check-in date to see the exact deadlines that apply to your reservation.</p>
         <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
-          <label style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
+          <label for="cancel-calc-date-prop3" style="font-size:.85rem;font-weight:600;color:var(--navy);">Check-in date:</label>
           <input type="date" id="cancel-calc-date-prop3" oninput="cancelCalc()" style="padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;background:var(--white);color:var(--navy);font-family:inherit;" />
         </div>
         <div id="cancel-calc-result-prop3" style="margin-top:1rem;display:none;">
@@ -1989,17 +2185,17 @@
           <input type="hidden" id="form-property-hidden" name="property" />
           <input type="hidden" id="form-prop-key" name="propKey" />
           <div class="form-row">
-            <div class="form-group"><label>Guests</label><select name="guests" required><option value="" disabled selected>- How many? -</option><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 guests</option><option value="6">6 guests</option></select></div>
-            <div class="form-group"><label>Pets?</label><select name="pets" required><option value="" disabled selected>- Bringing a dog? -</option><option value="No pets">No pets</option><option value="1 dog">1 dog</option><option value="2 dogs (main home only)">2 dogs (main home only)</option></select></div>
+            <div class="form-group"><label for="bkf-guests">Guests</label><select id="bkf-guests" name="guests" required><option value="" disabled selected>- How many? -</option><option value="1">1 guest</option><option value="2">2 guests</option><option value="3">3 guests</option><option value="4">4 guests</option><option value="5">5 guests</option><option value="6">6 guests</option></select></div>
+            <div class="form-group"><label for="bkf-pets">Pets?</label><select id="bkf-pets" name="pets" required><option value="" disabled selected>- Bringing a dog? -</option><option value="No pets">No pets</option><option value="1 dog">1 dog</option><option value="2 dogs (main home only)">2 dogs (main home only)</option></select></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="First" required /></div>
-            <div class="form-group"><label>Last Name</label><input type="text" name="last_name" placeholder="Last" required /></div>
+            <div class="form-group"><label for="bkf-first">First Name</label><input type="text" id="bkf-first" name="first_name" placeholder="First" required /></div>
+            <div class="form-group"><label for="bkf-last">Last Name</label><input type="text" id="bkf-last" name="last_name" placeholder="Last" required /></div>
           </div>
-          <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="your@email.com" required /></div>
-          <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="(910) 599-8118" required /></div>
-          <div class="form-group"><label>Preferred Contact Method</label><select name="contact_pref" required><option value="" disabled selected>- How should I reach you? -</option><option value="email">Email</option><option value="text">Text</option><option value="either">Both please</option></select></div>
-          <div class="form-group"><label>Tell me about your trip</label><textarea name="trip_description" rows="3" placeholder="What's the occasion? Family vacation, couples getaway, friends trip? Low-key stays only - this is a peaceful, residential property. No parties, events, or excessive noise." required></textarea></div>
+          <div class="form-group"><label for="bkf-email">Email</label><input type="email" id="bkf-email" name="email" placeholder="your@email.com" required /></div>
+          <div class="form-group"><label for="bkf-phone">Phone</label><input type="tel" id="bkf-phone" name="phone" placeholder="(910) 599-8118" required /></div>
+          <div class="form-group"><label for="bkf-contact-pref">Preferred Contact Method</label><select id="bkf-contact-pref" name="contact_pref" required><option value="" disabled selected>- How should I reach you? -</option><option value="email">Email</option><option value="text">Text</option><option value="either">Both please</option></select></div>
+          <div class="form-group"><label for="bkf-trip">Tell me about your trip</label><textarea id="bkf-trip" name="trip_description" rows="3" placeholder="What's the occasion? Family vacation, couples getaway, friends trip? Low-key stays only - this is a peaceful, residential property. No parties, events, or excessive noise." required></textarea></div>
           <input type="hidden" name="estimated_total" id="form-est-total" value="" />
           <button type="submit" class="btn btn-primary full-width" style="border-radius:10px;padding:.9rem;">Send Booking Request</button>
         </form>
@@ -2122,8 +2318,8 @@
         <p class="consult-form-note">Or fill out the form below and I'll get back to you personally.</p>
       </div>
       <form class="contact-form" onsubmit="submitConsult(event)" style="text-align:left;max-width:600px;margin:0 auto;position:relative">
-        <div class="form-row"><div class="form-group"><label>Name</label><input type="text" placeholder="Your name" /></div><div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com" /></div></div>
-        <div class="form-group"><label>What's on your mind?</label><textarea rows="4" placeholder="Tell me about your property, your goals, or whatever you're trying to figure out."></textarea></div>
+        <div class="form-row"><div class="form-group"><label for="consult-name">Name</label><input type="text" id="consult-name" placeholder="Your name" /></div><div class="form-group"><label for="consult-email">Email</label><input type="email" id="consult-email" placeholder="your@email.com" /></div></div>
+        <div class="form-group"><label for="consult-message">What's on your mind?</label><textarea id="consult-message" rows="4" placeholder="Tell me about your property, your goals, or whatever you're trying to figure out."></textarea></div>
         <button type="submit" class="btn btn-primary full-width" style="border-radius:10px;padding:.9rem;">Send Message</button>
       </form>
       <div class="confirm-msg hidden" id="consult-confirm">✅ Got it! Jesse will be in touch soon.</div>
@@ -2221,8 +2417,8 @@
         <div class="contact-block"><h3>Airbnb Profile</h3><p><a href="https://www.airbnb.com/users/profile/1469231363763843136" target="_blank" style="color:var(--ocean)">View all listings on Airbnb ↗</a></p><p style="font-size:.8rem;color:var(--muted2)">900+ reviews · Superhost</p></div>
       </div>
       <form class="contact-form" onsubmit="submitAbout(event)" style="max-width:640px">
-        <div class="form-row"><div class="form-group"><label>Name</label><input type="text" placeholder="Your name" /></div><div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com" /></div></div>
-        <div class="form-group"><label>Message</label><textarea rows="4" placeholder="How can I help?"></textarea></div>
+        <div class="form-row"><div class="form-group"><label for="about-name">Name</label><input type="text" id="about-name" placeholder="Your name" /></div><div class="form-group"><label for="about-email">Email</label><input type="email" id="about-email" placeholder="your@email.com" /></div></div>
+        <div class="form-group"><label for="about-message">Message</label><textarea id="about-message" rows="4" placeholder="How can I help?"></textarea></div>
         <button type="submit" class="btn btn-primary" style="border-radius:10px;">Send Message</button>
       </form>
       <div class="confirm-msg hidden" id="about-confirm">✅ Message received! Jesse will be in touch soon.</div>
@@ -2313,7 +2509,7 @@
       <div class="bb-price" id="bb-price">-</div>
     </div>
     <div class="bb-actions">
-      <button class="bb-clear-btn" onclick="clearDates()" title="Clear dates">✕</button>
+      <button class="bb-clear-btn" onclick="clearDates()" title="Clear dates" aria-label="Clear dates">✕</button>
       <button class="btn btn-primary bb-btn" onclick="bbListingPage()"><span class="bb-btn-long">Agree to House Rules to Book →</span><span class="bb-btn-short">Book →</span></button>
     </div>
   </div>
