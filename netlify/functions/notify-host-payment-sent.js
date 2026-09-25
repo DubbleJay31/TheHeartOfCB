@@ -53,7 +53,7 @@ exports.handler = async function(event) {
     }
 
     const fmt = n => '$' + (parseFloat(n) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const fmtDate = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return s; } };
+    const fmtDate = s => { try { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); } catch { return s; } };
     const isRefund = method === 'Refund';
     const isEven = method === 'Even';
     const names = { venmo: 'Venmo', cashapp: 'Cash App', stripe: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };

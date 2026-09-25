@@ -55,7 +55,7 @@ async function _submitInquiry(inquiry) {
 
 async function _sendGuestConfirmation(inquiry) {
   if (!inquiry.email) return;
-  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+  const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
   const firstName = inquiry.first || inquiry.name || 'there';
   const html = `<!DOCTYPE html><html><head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only"></head><body style="font-family:Georgia,serif;background:#f8f6f0;margin:0;padding:20px;">
 <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
@@ -102,7 +102,7 @@ async function _notifyHost(inquiry, code) {
   const guestName = [inquiry.first, inquiry.last].filter(Boolean).join(' ');
   const propLabel = inquiry.propLabel || inquiry.prop;
   try {
-    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
+    const fmtD = s => { try { return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return s; } };
     const adminUrl = code
       ? 'https://theheartofcb.com/admin.html#code=' + encodeURIComponent(code)
       : 'https://theheartofcb.com/admin.html';
