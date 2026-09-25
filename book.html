@@ -2353,75 +2353,21 @@ async function _notifyGuest(method) {
   } catch(err) { console.error('Guest notification failed:', err); }
 }
 
+// SECURITY FIX (overnight audit 2026-09-25): this used to build the ENTIRE host-notification
+// email (including the confirm link and its capability token) right here in the guest's own
+// browser, then hand the finished HTML to send-email.js to relay. That meant the confirm link
+// Jesse received always carried the SAME token the guest's own page already held - a guest could
+// read that token from their own network tab and self-confirm without ever paying. The email
+// (and, critically, a genuinely host-only confirm token distinct from the guest's own) is now
+// built entirely server-side by notify-host-payment-sent.js - this just tells the server "notify
+// Jesse about this reservation," using the guest's own (still-legitimate) capability token only to
+// prove this is really that guest's own signed session, not to authorize anything about payment.
 async function _notifyJesse(method) {
   try {
-    const fmt = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const isRefund = method === 'Refund';
-    const isEven = method === 'Even';
-    const names = { venmo: 'Venmo', cashapp: 'Cash App', stripe: 'Credit Card', paypal: 'PayPal', Zelle: 'Zelle', Cash: 'Cash' };
-    const methodLabel = isRefund ? 'No payment - refund owed' : isEven ? 'No payment - credit covers stay in full' : (names[method] || method);
-    // Build confirm link - use agreement URL (has signame+ts) when available, otherwise current URL
-    const baseConfirmUrl = (_agreementUrl || window.location.href) + '&action=confirm&method=' + encodeURIComponent(method);
-    const r = await fetch('/.netlify/functions/send-email', {
+    const r = await fetch('/.netlify/functions/notify-host-payment-sent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: ['jessejonesrealestate@gmail.com'],
-        subject: isRefund
-          ? `🔄 Signed - Refund Owed - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`
-          : isEven
-          ? `✅ Signed - No Balance Due - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`
-          : `💰 Payment Sent - ${guest} | ${fmtDate(ciRaw)}–${fmtDate(coRaw)}`,
-        html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.8;max-width:560px;">
-        <div style="background:#0a1f3a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
-          <strong style="font-size:16px;">${isRefund ? '🔄 Updated Agreement Signed - Refund Owed' : isEven ? '✅ Updated Agreement Signed - No Balance Due' : '💰 Payment Sent - Verify &amp; Confirm'}</strong>
-        </div>
-        <div style="border:1px solid #e0d9cc;border-top:none;padding:18px 20px;background:#fff;">
-          <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <tr><td style="padding:5px 0;color:#666;width:120px;">Guest</td><td style="padding:5px 0;font-weight:600;color:#0a1f3a;">${_esc(guest)}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Email</td><td style="padding:5px 0;">${_esc(email) || '-'}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Phone</td><td style="padding:5px 0;">${_esc(phone) || '-'}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Property</td><td style="padding:5px 0;font-weight:600;">${prop}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Check-In</td><td style="padding:5px 0;">${fmtDate(ciRaw)}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Check-Out</td><td style="padding:5px 0;">${fmtDate(coRaw)}</td></tr>
-            <tr><td style="padding:5px 0;color:#666;">Nights</td><td style="padding:5px 0;">${nights}</td></tr>
-            ${isRefund
-              ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Refund Owed</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(refundDue)}</td></tr>`
-              : isEven
-              ? `<tr><td style="padding:5px 0;color:#166534;">Balance Due</td><td style="padding:5px 0;font-weight:700;color:#166534;">${fmt(0)}</td></tr>`
-              : `<tr><td style="padding:5px 0;color:#666;">${method === 'Cash' ? 'Verify in Venmo/Cash App/Zelle' : 'Total'}</td><td style="padding:5px 0;font-weight:700;">${_receivedNowForMethod(method) > 0 ? fmt(_receivedNowForMethod(method)) : 'Nothing sent yet - full cash at check-in'}</td></tr>
-            ${_dueAtCheckinForMethod(method) > 0 ? `<tr><td style="padding:5px 0;color:#7c1d1d;">Still Owed at Check-In (Cash)</td><td style="padding:5px 0;font-weight:700;color:#7c1d1d;">${fmt(_dueAtCheckinForMethod(method))}</td></tr>` : ''}`
-            }
-            <tr><td style="padding:5px 0;color:#666;">Payment via</td><td style="padding:5px 0;font-weight:700;color:#166534;">${methodLabel}</td></tr>
-            ${contactPref ? `<tr><td style="padding:5px 0;color:#666;">Prefers</td><td style="padding:5px 0;font-weight:700;">${contactPref === 'text' ? '💬 Text' : contactPref === 'email' ? '📧 Email' : '📧💬 Both'}</td></tr>` : ''}
-          </table>
-          ${!isRefund && !isEven && _receivedNowForMethod(method) > 0 && _dueAtCheckinForMethod(method) > 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#eef1f4;border-radius:6px;font-size:12px;color:#374151;">🔁 Reminder: refund the ${fmt(_receivedNowForMethod(method))} deposit back to the guest the moment you have the full ${fmt(_dueAtCheckinForMethod(method))} cash in hand.</div>` : ''}
-          <table role="presentation" style="width:100%;margin-top:14px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;border-collapse:collapse;">
-            <tr><td colspan="2" style="padding:10px 14px 4px;font-size:12px;font-weight:800;color:#92400e;letter-spacing:.04em;">STEPS TO FINISH</td></tr>
-            ${isRefund ? `<tr>
-              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
-              <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Send their ${fmt(refundDue)} refund.</strong></td>
-            </tr>` : (!isEven && method) ? `<tr>
-              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">1</span></td>
-              <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Verify receipt in ${methodLabel}.</strong></td>
-            </tr>` : ''}
-            <tr>
-              <td style="padding:4px 6px 4px 14px;vertical-align:top;width:26px;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${(isRefund || (!isEven && method)) ? '2' : '1'}</span></td>
-              <td style="padding:4px 14px 4px 0;font-size:13px;color:#92400e;"><strong>Block these dates on Airbnb yourself</strong> - don't wait for the auto-sync, it can take hours.</td>
-            </tr>
-            <tr>
-              <td style="padding:4px 6px 10px 14px;vertical-align:top;"><span style="display:inline-block;background:#92400e;color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;">${(isRefund || (!isEven && method)) ? '3' : '2'}</span></td>
-              <td style="padding:4px 14px 10px 0;font-size:13px;color:#92400e;"><strong>Send the guest's confirmation</strong> via their preferred method.</td>
-            </tr>
-          </table>
-          <div style="margin-top:14px;">
-            <a href="${baseConfirmUrl}" style="display:block;background:#16a34a;color:#fff;padding:14px 16px;text-decoration:none;font-size:14px;font-weight:700;text-align:center;border-radius:8px;">→ Open Admin to Send Confirmation</a>
-            <p style="margin:6px 0 0;font-size:11px;color:#999;text-align:center;">Opens the host confirmation page - send by email or text there</p>
-          </div>
-          <p style="margin:14px 0 0;font-size:13px;color:#666;">View booking: <a href="${window.location.href}" style="color:#b8882a;">Open booking page →</a></p>
-        </div>
-      </div>`
-      })
+      body: JSON.stringify({ code, guest, email, check_in: ciRaw, check_out: coRaw, method, tok: _capTok })
     });
     if (!r.ok) throw new Error(await r.text());
   } catch(err) { console.error('Jesse notification failed:', err); }
@@ -2451,6 +2397,11 @@ async function _notifyJesse(method) {
   let sigName    = decodeURIComponent(get('signame') || '');
   let sigTs      = get('ts') ? decodeURIComponent(get('ts')) : '';
   let sigTok     = get('tok') ? decodeURIComponent(get('tok')) : '';
+  // htok is the host-only confirm token (see notify-host-payment-sent.js / reservations-confirm.js)
+  // - genuinely distinct from sigTok above, which is the guest's own signing token and no longer
+  // authorizes the actual confirm write. Only present on links Jesse received in his own "Payment
+  // Sent" email; admin.html-driven confirms use a real admin session instead (see _confirmReservation).
+  let sigHtok    = get('htok') ? decodeURIComponent(get('htok')) : '';
   let sigIp      = get('sip') ? decodeURIComponent(get('sip')) : '';
   let methodName = decodeURIComponent(get('method') || '');
   // Reached via admin.html's "Send Full Confirmation" for a Stripe-auto-confirmed reservation -
@@ -2515,9 +2466,19 @@ async function _notifyJesse(method) {
   // status alone, so it said "Resend Confirmation" even when nothing had ever been sent.
   async function _confirmReservation(markSent) {
     try {
+      // SECURITY FIX (overnight audit 2026-09-25): when this page is running embedded in
+      // admin.html's own iframe (Jesse's "Send Full Confirmation"/quick-confirm flow -
+      // _openConfirmSendModal there), sessionStorage is shared with the parent tab, so a real
+      // admin session token is directly readable here - use it instead of any token scheme at
+      // all, closing this specific confirm path with Jesse's already-real admin auth rather than
+      // a capability token of any kind. A guest's own browser never has this key set (only
+      // admin.html ever writes it), so this can't be spoofed by a guest.
+      const _adminTok = sessionStorage.getItem('thocb_admin_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (_adminTok) headers['Authorization'] = 'Bearer ' + _adminTok;
       const r = await fetch('/.netlify/functions/reservations-confirm', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           code, guest, email, check_in: ciRaw, check_out: coRaw,
           // Record the full stay value here, not just today's balance - rate/tax_occ/tax_sales
@@ -2526,7 +2487,12 @@ async function _notifyJesse(method) {
           total: (fullTotal > 0 ? fullTotal : parseFloat(total)) || 0,
           rate, tax_occ: taxOcc, tax_sales: taxSales,
           signed_ip: sigIp,
-          tok: sigTok,
+          // htok (the host-only confirm token from Jesse's own "Payment Sent" email) is what
+          // actually authorizes this write now, not sigTok - see reservations-confirm.js's
+          // validHostToken comment for why that distinction is the real security fix here. Sent
+          // regardless of whether _adminTok is also present - harmless, reservations-confirm.js
+          // checks admin first anyway.
+          htok: sigHtok,
           contact_pref: contactPref || undefined,
           payment_method: methodName || undefined,
           mark_sent: !!markSent

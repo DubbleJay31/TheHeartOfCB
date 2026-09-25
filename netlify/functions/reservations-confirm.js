@@ -2,13 +2,24 @@ const crypto = require('crypto');
 const { requireAdmin } = require('./_auth');
 const { sbReservations } = require('./_reservations');
 
-function validCapabilityToken(body) {
-  if (!process.env.LINK_SECRET || !body.tok) return false;
+// SECURITY FIX (overnight audit 2026-09-25): this used to accept the GUEST's own signing token
+// (validCapabilityToken below, minted by sign-link.js and handed straight to the guest's browser)
+// as sufficient to flip a reservation to 'confirmed' with a self-chosen payment_method - any
+// signed guest legitimately holds a valid token for their own reservation and could self-confirm
+// without Jesse ever verifying a real payment. hostConfirmToken is a genuinely DIFFERENT secret
+// (distinct HMAC input, "hostconfirm:" prefix) minted only by notify-host-payment-sent.js and
+// embedded only in the email sent to Jesse's own inbox - never returned to the guest's own
+// browser/response at all. Only this token (or a real admin session) can write payment_method/
+// flip status now; the guest's own capability token remains valid for other guest-facing actions
+// (kept below, still used by the pre-confirmed idempotent-skip path's identity check) but no
+// longer authorizes the actual confirm write.
+function validHostToken(body) {
+  if (!process.env.LINK_SECRET || !body.htok) return false;
   const expected = crypto.createHmac('sha256', process.env.LINK_SECRET)
-    .update(`${body.guest}|${body.email}|${body.check_in}|${body.check_out}|${body.code}`)
+    .update(`hostconfirm:${body.guest}|${body.email}|${body.check_in}|${body.check_out}|${body.code}`)
     .digest('hex');
   const expBuf = Buffer.from(expected, 'hex');
-  const gotBuf = Buffer.from(String(body.tok), 'hex');
+  const gotBuf = Buffer.from(String(body.htok), 'hex');
   return expBuf.length === gotBuf.length && crypto.timingSafeEqual(expBuf, gotBuf);
 }
 
@@ -61,10 +72,12 @@ exports.handler = async function(event) {
     }
 
     // Two valid ways in for an actual write: a logged-in admin session (the manual "Confirm"
-    // button on a quote), or a per-booking capability token minted by sign-link.js at signing
-    // time (the one-click confirm link in the "Payment Sent" email, which isn't an admin session).
+    // button on a quote), or the host-only confirm token minted by notify-host-payment-sent.js and
+    // embedded solely in the "Payment Sent" email to Jesse's own inbox (the one-click confirm link
+    // there, which isn't an admin session but also isn't the guest's own token - see
+    // validHostToken's comment above for why that distinction is the actual security fix here).
     const isAdminCall = requireAdmin(event);
-    if (!isAdminCall && !validCapabilityToken(body)) {
+    if (!isAdminCall && !validHostToken(body)) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Not authorized' }) };
     }
 
@@ -75,20 +88,19 @@ exports.handler = async function(event) {
       await _markSentIfNeeded(existing[0]);
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: true, skipped: true }) };
     }
-    // A valid `tok` only proves identity/dates match - it's handed to the guest's own browser at
-    // signing time and never expires, so without this, a guest could read it out of their own
-    // network tab and call this endpoint directly to self-confirm without ever paying, or replay
-    // it weeks later to silently resurrect a reservation Jesse has since cancelled. `confirmed`
-    // may only ever be reached from `signed` - the one status that means "agreement signed,
-    // payment pending, nothing else legitimately confirms this."
+    // A valid `htok` only proves it came from the email sent to Jesse's own inbox, not that money
+    // actually moved (Jesse himself confirms that by eye against his own Venmo/Zelle/etc account
+    // before clicking) - and htok never expires, so without this, replaying an old link weeks
+    // later could silently resurrect a reservation Jesse has since cancelled. `confirmed` may only
+    // ever be reached from `signed` - the one status that means "agreement signed, payment
+    // pending, nothing else legitimately confirms this."
     if (existing[0].status !== 'signed') {
       return { statusCode: 409, body: JSON.stringify({ ok: false, message: 'This reservation is not awaiting confirmation.' }) };
     }
-    // Same ID-verification requirement create-stripe-checkout.js enforces, applied here too since
-    // this is also how a guest self-confirms after a manual payment method (Venmo/CashApp/etc's
-    // "I've sent payment" click). Only gates the GUEST path (the capability token) - Jesse's own
-    // admin session can always confirm regardless, same "override is mine alone" design as the
-    // Quote Builder checkbox itself.
+    // Same ID-verification requirement create-stripe-checkout.js enforces, applied here too for
+    // the host-token path (Jesse's own one-click email link) as well - Jesse's own real admin
+    // session can always confirm regardless, same "override is mine alone" design as the Quote
+    // Builder checkbox itself.
     if (!isAdminCall && !existing[0].id_verify_skip && existing[0].id_verification_status !== 'verified') {
       return { statusCode: 409, body: JSON.stringify({ ok: false, message: 'Identity verification must be completed before this reservation can be confirmed.' }) };
     }
