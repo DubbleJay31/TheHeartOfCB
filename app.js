@@ -1648,6 +1648,14 @@ function lgbAccordion(id) {
   const hd = item.querySelector('.lgb-acc-hd');
   const body = item.querySelector('.lgb-acc-body');
   const wasOpen = body && body.classList.contains('open');
+  // Capture the tapped header's on-screen position before the open/close toggle - closing
+  // whichever section was previously open (elsewhere in the accordion) changes the page's total
+  // height above/around this one, and browsers don't reliably scroll-anchor across a plain
+  // display:none/block swap the way they do for animated height changes. Found live on the
+  // Left/Right Suite's House Rules tab, whose content is now considerably longer than it used to
+  // be - closing it to open Cancellation drifted the page well past where the tap landed (Jesse:
+  // "jumped me way down to the calendar"). Restored below for every width, not just desktop.
+  const hdTopBefore = (window.innerWidth <= 768 && hd) ? hd.getBoundingClientRect().top : null;
   // Close all others in this same section
   section.querySelectorAll('.lgb-acc-item').forEach(it => {
     const h = it.querySelector('.lgb-acc-hd'); const b = it.querySelector('.lgb-acc-body');
@@ -1668,6 +1676,14 @@ function lgbAccordion(id) {
     const switcherH = switcherEl ? switcherEl.offsetHeight : 0;
     const top = lgbHeader.getBoundingClientRect().top + window.scrollY - navH - switcherH - 8;
     requestAnimationFrame(() => window.scrollTo({ top, behavior: 'smooth' }));
+  } else if (hdTopBefore != null) {
+    // Mobile/narrow: re-measure once layout has settled and snap back by exactly the drift -
+    // 'auto' overrides the site's global `scroll-behavior:smooth` so the correction itself
+    // doesn't animate and draw attention to the jump it's fixing.
+    requestAnimationFrame(() => {
+      const drift = hd.getBoundingClientRect().top - hdTopBefore;
+      if (Math.abs(drift) > 2) window.scrollBy({ top: drift, behavior: 'auto' });
+    });
   }
   // Track visited
   _visitedTabs.add(id);
