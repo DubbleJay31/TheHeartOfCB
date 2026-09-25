@@ -133,8 +133,25 @@ exports.handler = async function(event) {
     // This branch only ever runs on a signed->confirmed transition - the very first confirm this
     // reservation has ever had, so confirmation_sent_at can't already be set here.
     if (mark_sent) row.confirmation_sent_at = new Date().toISOString();
-    if (host_notes) row.host_notes = host_notes;
-    if (payment_method) row.payment_method = payment_method;
+    // SECURITY FIX (overnight audit 2026-09-25): both of these used to be writable by the
+    // capability-token (non-admin) path with zero restriction. The token only proves guest/email/
+    // dates/code match - handed to the guest's own browser at signing time (book.html's own
+    // _capTok), so any signed guest legitimately holds a valid token and could otherwise POST
+    // directly here with a hand-crafted body. Two concrete gaps closed:
+    // 1. payment_method:'stripe' (or 'paypal') was acceptable from ANY token holder, letting a
+    //    guest forge a fully-paid-by-card confirmation with zero money ever moving - the real
+    //    'stripe' confirm always happens via stripe-webhook.js's own signature-verified write,
+    //    which never goes through this endpoint at all, so the token path never legitimately
+    //    needs to set it. Manual self-reported methods (Venmo/Zelle/CashApp/Cash/PayPal) still
+    //    flow through here for Jesse's own one-click confirm-from-email convenience - closing
+    //    that broader gap needs a host-only confirm token distinct from the guest's signing
+    //    token, a bigger change deliberately not made tonight (see memory).
+    // 2. host_notes ("Private Note - only visible to you" in the dashboard) was writable the same
+    //    way, letting a guest inject arbitrary text into what Jesse reads as his own private
+    //    note. The real guest UI (book.html) never sends this field at all, so blocking it here
+    //    costs nothing legitimate.
+    if (host_notes && isAdminCall) row.host_notes = host_notes;
+    if (payment_method && (isAdminCall || (payment_method !== 'stripe' && payment_method !== 'paypal'))) row.payment_method = payment_method;
 
     // Scoped to status=eq.signed (not just code) so two near-simultaneous requests can't both
     // pass the status check above and both write - only the first to actually commit still
@@ -164,7 +181,8 @@ exports.handler = async function(event) {
       const sideFields = {};
       if (signed_ip) sideFields.signed_ip = signed_ip;
       if (contact_pref) sideFields.contact_pref = contact_pref;
-      if (payment_method) sideFields.payment_method = payment_method;
+      // Same restriction as the main write path above - see the comment there.
+      if (payment_method && (isAdminCall || (payment_method !== 'stripe' && payment_method !== 'paypal'))) sideFields.payment_method = payment_method;
       if (Object.keys(sideFields).length) {
         await sbReservations(`?code=eq.${encodeURIComponent(code)}`, {
           method: 'PATCH',

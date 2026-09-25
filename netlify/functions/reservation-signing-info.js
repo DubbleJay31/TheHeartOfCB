@@ -15,9 +15,9 @@ exports.handler = async function(event) {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
-  const { code } = event.queryStringParameters || {};
-  if (!code) {
-    return { statusCode: 400, body: JSON.stringify({ message: 'Missing code' }) };
+  const { code, guest, email, check_in, check_out } = event.queryStringParameters || {};
+  if (!code || !guest || !email || !check_in || !check_out) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Missing required fields' }) };
   }
   try {
     const r = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=guest,email,check_in,check_out,signed_name,signed_at,payment_method,status`);
@@ -26,6 +26,15 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) };
     }
     const row = rows[0];
+    // SECURITY FIX (overnight audit 2026-09-25): used to authorize on a bare `code` alone. A code
+    // is deliberately not secret in this codebase (readable-over-the-phone by design), so anyone
+    // who saw one could learn the guest's real name and re-mint the same capability token
+    // reservations-confirm.js/reservations-report-payment.js accept for writes. The caller (book.
+    // html) always has guest/email/dates already in scope from its own URL params, so requiring
+    // them here and cross-checking against the DB row costs nothing legitimate.
+    if (row.guest !== guest || row.email !== email || row.check_in !== check_in || row.check_out !== check_out) {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) };
+    }
     let tok = null;
     if (row.signed_at && process.env.LINK_SECRET) {
       tok = crypto.createHmac('sha256', process.env.LINK_SECRET)

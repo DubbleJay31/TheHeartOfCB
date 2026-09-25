@@ -1230,7 +1230,7 @@ async function _showAlreadyConfirmedPage() {
   let receiptUrl = '';
   let signedName = '', signedAt = '', paymentMethod = '';
   try {
-    const r = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
+    const r = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code) + '&guest=' + encodeURIComponent(guest) + '&email=' + encodeURIComponent(email) + '&check_in=' + encodeURIComponent(ciRaw) + '&check_out=' + encodeURIComponent(coRaw));
     if (r.ok) {
       const info = await r.json();
       if (info.signed_name && info.tok) {
@@ -1685,7 +1685,7 @@ async function startIdentityVerification() {
     const r = await fetch('/.netlify/functions/create-identity-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, return_url: u.toString() })
+      body: JSON.stringify({ code, return_url: u.toString(), guest, email, check_in: ciRaw, check_out: coRaw })
     });
     const j = await r.json().catch(() => ({}));
     if (j.already_verified) { await _revealAgreementSection(); return; }
@@ -2466,7 +2466,7 @@ async function _notifyJesse(method) {
   const _needsBackfill = !sigName;
   if (code) {
     try {
-      const infoR = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code));
+      const infoR = await fetch('/.netlify/functions/reservation-signing-info?code=' + encodeURIComponent(code) + '&guest=' + encodeURIComponent(guest) + '&email=' + encodeURIComponent(email) + '&check_in=' + encodeURIComponent(ciRaw) + '&check_out=' + encodeURIComponent(coRaw));
       if (infoR.ok) {
         const info = await infoR.json();
         _resvStatus = info.status || null;

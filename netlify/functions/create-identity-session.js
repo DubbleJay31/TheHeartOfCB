@@ -15,18 +15,30 @@ exports.handler = async function(event) {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
-  const { code, return_url } = body;
-  if (!code || !return_url) {
-    return { statusCode: 400, body: JSON.stringify({ message: 'Missing code or return_url' }) };
+  const { code, return_url, guest, email, check_in, check_out } = body;
+  if (!code || !return_url || !guest || !email || !check_in || !check_out) {
+    return { statusCode: 400, body: JSON.stringify({ message: 'Missing required fields' }) };
   }
 
   try {
-    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,id_verify_skip,id_verification_status,id_verify_session_id`);
+    const resp = await sbReservations(`?code=eq.${encodeURIComponent(code)}&select=status,guest,email,check_in,check_out,id_verify_skip,id_verification_status,id_verify_session_id`);
     const rows = resp.ok ? await resp.json() : [];
     if (!rows.length) {
       return { statusCode: 404, body: JSON.stringify({ message: 'No reservation found for that code' }) };
     }
     const r = rows[0];
+
+    // SECURITY FIX (overnight audit 2026-09-25): this endpoint used to authorize on a bare `code`
+    // alone, unlike its sibling create-stripe-checkout.js. A reservation `code` is deliberately
+    // not treated as secret anywhere in this codebase (see _reservations.js's genCode() comment) -
+    // it appears in plain URLs throughout the guest flow. Without this check, anyone who saw a
+    // code could complete Stripe Identity verification with THEIR OWN identity document and have
+    // it recorded as that reservation being ID-verified - defeating Jesse's "identity check
+    // before signing" policy for the real guest, who could then sign without ever proving who
+    // they are.
+    if (r.guest !== guest || r.email !== email || r.check_in !== check_in || r.check_out !== check_out) {
+      return { statusCode: 409, body: JSON.stringify({ message: 'This link no longer matches the current reservation - ask Jesse for a fresh link.' }) };
+    }
 
     if (r.id_verify_skip) {
       return { statusCode: 409, body: JSON.stringify({ message: 'ID verification was waived by the host for this reservation - nothing to do here.' }) };

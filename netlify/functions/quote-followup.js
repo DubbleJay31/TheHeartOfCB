@@ -141,7 +141,7 @@ async function _sendHostHeadsUp(q, RESEND_KEY) {
         <tr><td style="padding:5px 0;color:#666;width:110px;">Property</td><td style="color:#0a1f3a;">${propLabel(q.prop)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Dates</td><td style="color:#0a1f3a;">${fmtD(q.check_in)} – ${fmtD(q.check_out)}</td></tr>
         <tr><td style="padding:5px 0;color:#666;">Total</td><td style="color:#0a1f3a;font-weight:700;">${fmt$(q.total)}</td></tr>
-        <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${q.email}" style="color:#b8882a;">${q.email}</a></td></tr>
+        <tr><td style="padding:5px 0;color:#666;">Email</td><td><a href="mailto:${encodeURIComponent(q.email)}" style="color:#b8882a;">${escapeHtml(q.email)}</a></td></tr>
       </table>
       <div style="background:#eaf3ff;border-radius:6px;padding:12px 14px;font-size:13px;color:#1d4e89;margin-bottom:18px;">
         📥 They've already been sent a friendly reminder - no need to double up unless you want to add a personal touch.
