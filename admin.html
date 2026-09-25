@@ -89,12 +89,20 @@ a { color: inherit; text-decoration: none; }
 #app.show { display: block; }
 
 /* ── HEADER ── */
+/* .adm-header and .adm-tabs-nav both used to be independently `position:sticky`, with the tabs
+   bar hardcoded to `top: 90px` - an assumed, fixed header height. Jesse: "on my app the menu
+   buttons at the top are not sticky always." Root cause: on a narrow phone (or larger system font
+   size), "The Heart Of CB" wraps to two lines, making the header taller than 90px - the tabs bar
+   then sticks at the WRONG offset, overlapping/glitching against the now-taller header instead of
+   sitting cleanly beneath it. Wrapping both in one sticky container (.adm-sticky-top below) means
+   the tabs bar just follows the header's actual rendered height, whatever that is, instead of a
+   guessed pixel value. */
+.adm-sticky-top { position: sticky; top: 0; z-index: 100; }
 .adm-header {
   background: var(--navy);
   padding: .9rem 2rem;
   display: flex; align-items: center; justify-content: space-between;
   border-bottom: 3px solid var(--gold);
-  position: sticky; top: 0; z-index: 100;
 }
 .adm-logo { display: flex; align-items: center; gap: .75rem; }
 .adm-logo img { height: 64px; width: 64px; object-fit: contain; }
@@ -584,7 +592,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 /* ── ADMIN PAGE TABS ── */
 .adm-tabs-nav {
   display: flex; align-items: center; gap: .4rem; border-bottom: 2px solid var(--border);
-  background: var(--white); position: sticky; top: 90px; z-index: 90;
+  background: var(--white);
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
   padding: 0 .5rem;
 }
@@ -744,6 +752,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
 <!-- ── MAIN APP ── -->
 <div id="app">
 
+  <div class="adm-sticky-top">
   <header class="adm-header">
     <div class="adm-logo">
       <a href="index.html" class="pin-circle" title="Back to website" style="text-decoration:none;">
@@ -771,6 +780,7 @@ details[open].prc-base-details .prc-base-summary::before { transform: rotate(90d
     </div>
     <span class="adm-autosave-status" id="adm-autosave-status"></span>
     <a href="index.html" class="adm-back-link">← Website</a>
+  </div>
   </div>
 
   <!-- ── BOOKING PANEL ── -->
@@ -1534,11 +1544,12 @@ function _fmtDate(s, opts) {
 // email-building functions elsewhere in this file construct their own headers with different
 // markup, so this is deliberately scoped to just these two rather than a codebase-wide unification.
 function _emailHeaderHtml(title) {
+  // Same fix as the quote-email header (see the comment there) - a single pre-rendered circular
+  // image instead of CSS border-radius on nested table cells, which email clients (the Gmail
+  // Android app especially) render unreliably regardless of border-radius value.
   return `<div style="background:#0a1f3a;padding:24px;text-align:center;">
-    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="64" height="64" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:50%;">
-      <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td width="56" height="56" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:50%;">
-        <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" width="54" height="54" alt="" style="display:block;border-radius:50%;" />
-      </td></tr></table>
+    <table cellpadding="0" cellspacing="0" border="0" align="center"><tr><td align="center" valign="middle">
+      <img src="https://theheartofcb.com/icon-512.png" width="64" height="64" alt="" style="display:block;border-radius:50%;" />
     </td></tr></table>
     <div style="height:10px;"></div>
     <h1 style="color:#c9a84c;font-size:1.2rem;margin:0;font-family:Georgia,serif;">${title}</h1>
@@ -2548,19 +2559,21 @@ function sendEmail() {
          it always matches whatever the cell actually renders at - a webmail client that doesn't
          perfectly honor the px width/height (Gmail's own preview rendering included) would
          otherwise round a slightly-off box to the WRONG fixed radius, reading as an uneven ring.
-         Jesse, on this exact badge: "this gold circle around the logo doesn't look quite round
-         or something is off it's not consistent weight of the gold circle." -->
+         Jesse, on this exact badge, TWICE now - the second time after the border-radius:50% fix
+         above had already shipped: "this circle of gold is still not circular." border-radius on
+         nested table cells is just fundamentally unreliable across email clients (the Gmail
+         Android app in particular is known to mangle it) - no percentage/pixel tweak fixes that,
+         since the box itself can render slightly non-square regardless of what CSS asks for.
+         Switched to the one technique that can't have this problem: a single pre-rendered image
+         with the gold ring/white fill/pin already baked into real pixels (the same asset built for
+         the PWA icon - see project_live_test_batch_2026_09_25 memory) instead of drawing the
+         circle with CSS at send-time. A real circle in the source image is a real circle in every
+         client, no rendering engine involved. -->
     <div style="background:#0a1f3a;padding:32px 40px;text-align:center;">
       <table align="center" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;border-collapse:collapse;">
         <tr>
-          <td width="108" height="108" align="center" valign="middle" style="background:#b8882a;border-radius:50%;width:108px;height:108px;line-height:108px;">
-            <table align="center" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-              <tr>
-                <td width="96" height="96" align="center" valign="middle" style="background:#ffffff;border-radius:50%;width:96px;height:96px;line-height:96px;">
-                  <img src="https://theheartofcb.com/THOCB%20Pin%20NO%20BACKGROUND.png" alt="The Heart Of CB" width="68" height="auto" style="display:inline-block;width:68px;height:auto;vertical-align:middle;" />
-                </td>
-              </tr>
-            </table>
+          <td align="center" valign="middle">
+            <img src="https://theheartofcb.com/icon-512.png" alt="The Heart Of CB" width="108" height="108" style="display:block;width:108px;height:108px;border-radius:50%;" />
           </td>
         </tr>
       </table>

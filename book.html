@@ -2007,13 +2007,12 @@ function _buildConfirmationEmailHtml(sigData) {
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f1e3d">
     <tr><td align="center" bgcolor="#0f1e3d" style="padding:32px 32px 24px;background-color:#0f1e3d;font-family:Arial,Helvetica,sans-serif;">
+      <!-- Same fix as admin.html's email headers (see comments there) - a single pre-rendered
+           circular image instead of CSS border-radius on nested table cells, which email clients
+           (the Gmail Android app especially) render unreliably regardless of border-radius value. -->
       <table cellpadding="0" cellspacing="0" border="0" align="center">
-        <tr><td width="80" height="80" bgcolor="#b8882a" align="center" valign="middle" style="background-color:#b8882a;border-radius:50%;">
-          <table cellpadding="0" cellspacing="0" border="0" align="center">
-            <tr><td width="70" height="70" bgcolor="#ffffff" align="center" valign="middle" style="background-color:#ffffff;border-radius:50%;">
-              <img src="https://theheartofcb.com/THOCB%20Pin%20Square.png" height="64" width="64" alt="" style="display:block;border-radius:50%;object-fit:contain;"/>
-            </td></tr>
-          </table>
+        <tr><td align="center" valign="middle">
+          <img src="https://theheartofcb.com/icon-512.png" height="80" width="80" alt="" style="display:block;border-radius:50%;"/>
         </td></tr>
       </table>
       <br/><span style="color:#c9922a;font-size:22px;font-weight:700;letter-spacing:.06em;font-family:Georgia,'Times New Roman',serif;">The Heart Of CB</span><br/>
