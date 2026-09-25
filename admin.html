@@ -3154,6 +3154,14 @@ function _detectReservationConflicts() {
   return { doubleBookings, pendingOverlaps };
 }
 
+// SECURITY FIX (overnight audit 2026-09-25): guest names are fully attacker-controlled and
+// unauthenticated (reservations-inquiry.js takes first/last straight off a public POST body with
+// no sanitization) - this function used to interpolate a.guest/b.guest/p.guest/c.guest straight
+// into innerHTML with no _esc(), unlike every other guest-name render site in this file. Since
+// this runs unconditionally on every admin login/tab switch (loadReservations() -> here), a
+// crafted name in an overlapping-date inquiry got live script execution in Jesse's own
+// authenticated admin session - a real stored-XSS-to-account-takeover path, since the admin
+// bearer token sits in sessionStorage, readable by any script running on this origin.
 function _renderConflictBanner() {
   const banner = document.getElementById('res-conflict-banner');
   if (!banner) return;
@@ -3164,14 +3172,14 @@ function _renderConflictBanner() {
   if (doubleBookings.length) {
     html += '🚨 <strong>' + doubleBookings.length + ' double-booked date range' + (doubleBookings.length > 1 ? 's' : '') + '</strong> - two confirmed reservations overlap:<br>' +
       doubleBookings.map(([a, b]) =>
-        `&nbsp;&nbsp;• <strong>${a.guest}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${b.guest}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) - ${PROPS[a.prop]?.short || a.prop}`
+        `&nbsp;&nbsp;• <strong>${_esc(a.guest)}</strong> (${fmtD(a.check_in)}–${fmtD(a.check_out)}) overlaps <strong>${_esc(b.guest)}</strong> (${fmtD(b.check_in)}–${fmtD(b.check_out)}) - ${PROPS[a.prop]?.short || a.prop}`
       ).join('<br>');
   }
   if (pendingOverlaps.length) {
     if (html) html += '<br><br>';
     html += '⚠️ <strong>' + pendingOverlaps.length + ' pending request' + (pendingOverlaps.length > 1 ? 's' : '') + ' overlapping a confirmed reservation</strong> - decline it, or you forgot to block these dates on Airbnb:<br>' +
       pendingOverlaps.map(([p, c]) =>
-        `&nbsp;&nbsp;• <strong>${p.guest}</strong>'s ${_STATUS_LABEL[p.status] || p.status} (${fmtD(p.check_in)}–${fmtD(p.check_out)}) overlaps <strong>${c.guest}</strong>'s confirmed stay - ${PROPS[p.prop]?.short || p.prop}`
+        `&nbsp;&nbsp;• <strong>${_esc(p.guest)}</strong>'s ${_STATUS_LABEL[p.status] || p.status} (${fmtD(p.check_in)}–${fmtD(p.check_out)}) overlaps <strong>${_esc(c.guest)}</strong>'s confirmed stay - ${PROPS[p.prop]?.short || p.prop}`
       ).join('<br>');
   }
   banner.innerHTML = html;
