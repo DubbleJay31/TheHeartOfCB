@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /book.html
+Disallow: /.netlify/functions/
+
+Sitemap: https://theheartofcb.com/sitemap.xml
