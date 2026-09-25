@@ -53,12 +53,19 @@ exports.handler = async function(event) {
       return { statusCode: 409, body: JSON.stringify({ message: 'This reservation is no longer open for identity verification.' }) };
     }
 
-    // A guest re-loading the page mid-flow (or retrying after an abandoned attempt) shouldn't
-    // spin up a fresh $1.50 session every time - reuse whatever's already open if Stripe still
-    // considers it usable, only minting a new one when there isn't one or it's terminally done.
+    // A guest re-loading the page mid-flow (still actively being reviewed by Stripe) shouldn't
+    // spin up a duplicate $1.50 session - reuse the existing one while it's 'processing'. But a
+    // FAILED attempt (blurry photo, mismatch, abandoned) also reports back as 'requires_input',
+    // same as a session that's simply never been opened yet - and Stripe's hosted verification
+    // URL doesn't reliably stay usable for a second attempt once the guest has already been
+    // through and bounced back via return_url. Reusing it in that case is exactly what left a
+    // guest stuck with no way to retry (Jesse: "purposely failed the ID verification and went
+    // back to the contract but then I was unable to continue"). Only reuse while genuinely
+    // in-flight; anything else (including a failed requires_input) mints a fresh session below,
+    // which is what actually lets a guest try again.
     if (r.id_verify_session_id) {
       const existing = await stripeFetch(`/identity/verification_sessions/${r.id_verify_session_id}`, null, 'GET');
-      if (existing.ok && (existing.json.status === 'requires_input' || existing.json.status === 'processing') && existing.json.url) {
+      if (existing.ok && existing.json.status === 'processing' && existing.json.url) {
         return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: existing.json.url }) };
       }
     }
