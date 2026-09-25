@@ -1570,6 +1570,23 @@ function _defaultExpDate() {
 }
 const _DEFAULT_GUEST_NOTE = 'Let me know if you have any questions. Thank you!';
 
+// Jesse: "whenever I click a link from an email I always want to go to the guest profile screen
+// on admin" - notify-host-payment-sent.js's "Open Admin to Send Confirmation" button (and any
+// future host-notification email button) links here as admin.html?code=HCB-XXXXXX&method=Venmo
+// instead of straight to book.html's standalone confirm page, which had no reservation context to
+// actually review before sending. _pendingConfirmMethod carries the real payment method through to
+// _openQuickConfirm() if Jesse then clicks Confirm Reservation from the dashboard that opens below,
+// so it doesn't fall back to a generic "Manual" label for a reservation whose real method (Venmo,
+// in the case that surfaced this) is already known from the email.
+let _pendingConfirmMethod = null;
+function _openFromEmailLink() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+  _pendingConfirmMethod = params.get('method') || null;
+  openGuestDashboard(code);
+}
+
 function _enterAdminApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('show');
@@ -1577,7 +1594,7 @@ function _enterAdminApp() {
   document.getElementById('f-note').value = _DEFAULT_GUEST_NOTE;
   calcTotal();
   renderCalc();
-  if (!_checkSyncHash()) loadReservations();
+  if (!_checkSyncHash()) loadReservations().then(_openFromEmailLink);
   _cloudRead().then(_mergeCloudData);
   _initPricingSection();
   _initNotifications();
@@ -3890,7 +3907,11 @@ function _openQuickConfirm(code) {
   // via this popup would leave payment_method entirely unset on the row - the same field
   // renderConfirmedPanel's isChangePending check relies on to tell "already confirmed once" from
   // "brand-new lead" after a later Change Reservation edit resets status back to quoted.
-  if (!/[?&]method=/.test(confirmUrl)) confirmUrl += (confirmUrl.includes('?') ? '&' : '?') + 'method=Manual';
+  // _pendingConfirmMethod (set by _openFromEmailLink) takes priority when present - Jesse already
+  // told us the real method via the "Payment Sent" email's own &method= param, which is a better
+  // answer than the generic "Manual" fallback for a reservation reached that way.
+  if (!/[?&]method=/.test(confirmUrl)) confirmUrl += (confirmUrl.includes('?') ? '&' : '?') + 'method=' + encodeURIComponent(_pendingConfirmMethod || 'Manual');
+  _pendingConfirmMethod = null;
   _openConfirmSendModal(confirmUrl);
 }
 

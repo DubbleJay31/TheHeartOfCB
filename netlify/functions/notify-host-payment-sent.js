@@ -14,24 +14,6 @@ function validGuestToken(body) {
   return expBuf.length === gotBuf.length && crypto.timingSafeEqual(expBuf, gotBuf);
 }
 
-// SECURITY (overnight audit 2026-09-25): reservations-confirm.js used to accept the SAME token
-// above (handed to the guest's own browser at signing time) as sufficient to flip a reservation
-// to 'confirmed' with a self-chosen payment_method - a guest holding their own legitimate token
-// could self-confirm without Jesse ever verifying a real payment. This is what actually closes
-// that gap for the manual-payment-method path (Venmo/Zelle/CashApp/Cash/PayPal): a genuinely
-// DIFFERENT, host-only token, minted here (server-side, never returned to the guest's own
-// response) and embedded ONLY in the email sent to Jesse's own inbox. A guest who has this
-// function's own (guest) token can trigger Jesse being notified - exactly the intended behavior -
-// but cannot derive or forge the host token that email contains, since they never receive it and
-// don't have LINK_SECRET. reservations-confirm.js now requires THIS token (or a real admin
-// session) to actually write payment_method/flip status - the guest's own token alone is no
-// longer sufficient.
-function hostConfirmToken(guest, email, check_in, check_out, code) {
-  return crypto.createHmac('sha256', process.env.LINK_SECRET)
-    .update(`hostconfirm:${guest}|${email}|${check_in}|${check_out}|${code}`)
-    .digest('hex');
-}
-
 exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -82,8 +64,17 @@ exports.handler = async function(event) {
     const receivedNow = isRefund || isEven ? 0 : Math.max(0, preTax - credit);
     const refundDue = isRefund ? Math.max(0, credit - preTax) : 0;
 
-    const htok = hostConfirmToken(r.guest, r.email, r.check_in, r.check_out, code);
-    const baseConfirmUrl = `https://theheartofcb.com/book.html?code=${encodeURIComponent(code)}&guest=${encodeURIComponent(r.guest)}&email=${encodeURIComponent(r.email)}&ci=${encodeURIComponent(r.check_in)}&co=${encodeURIComponent(r.check_out)}&prop=${encodeURIComponent(r.prop)}&action=confirm&method=${encodeURIComponent(method)}&htok=${encodeURIComponent(htok)}`;
+    // Jesse: "whenever I click a link from an email I always want to go to the guest profile
+    // screen on admin" - this used to link straight to book.html's standalone confirm page, which
+    // (a) had no reservation context for him to review before sending, and (b) when built from
+    // scratch here rather than from the reservation's full saved quote URL, left book.html's
+    // pricing display reading $0.00/0 nights (nights/rate/tax_occ/tax_sales/total are page-level
+    // consts book.html parses once from its own URL params and never backfills from the DB).
+    // admin.html?code=...&method=... sidesteps both: _openFromEmailLink() there opens the real
+    // Guest Dashboard (full context, same PIN-gated admin session as every other admin action),
+    // and Jesse confirming from there goes through _openQuickConfirm()'s existing, already-correct
+    // book.html iframe flow, which builds its link from the reservation's own complete `url` column.
+    const baseConfirmUrl = `https://theheartofcb.com/admin.html?code=${encodeURIComponent(code)}&method=${encodeURIComponent(method)}`;
 
     const emailResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -138,7 +129,7 @@ exports.handler = async function(event) {
           </table>
           <div style="margin-top:14px;">
             <a href="${baseConfirmUrl}" style="display:block;background:#16a34a;color:#fff;padding:14px 16px;text-decoration:none;font-size:14px;font-weight:700;text-align:center;border-radius:8px;">→ Open Admin to Send Confirmation</a>
-            <p style="margin:6px 0 0;font-size:11px;color:#999;text-align:center;">Opens the host confirmation page - send by email or text there</p>
+            <p style="margin:6px 0 0;font-size:11px;color:#999;text-align:center;">Opens this reservation's Guest Dashboard - review, then confirm and send from there</p>
           </div>
         </div>
       </div>`
