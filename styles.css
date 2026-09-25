@@ -16,7 +16,10 @@
   --white:      #ffffff;
   --text:       #1a1f2e;
   --muted:      #6b7280;
-  --muted2:     #9ca3af;
+  /* Was #9ca3af - too light to pass WCAG AA (4.5:1) at the small text sizes it's actually used
+     at (reviewer names, calendar day numbers, form hints) - computed ~2.5:1 on white, a real
+     fail, not a close call. This value clears 4.5:1 on both white and --sand with real margin. */
+  --muted2:     #5b6472;
   --border:     #e8e3d8;
   --radius-sm:  6px;
   --radius:     14px;
