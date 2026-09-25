@@ -5,3 +5,13 @@ tour/
 
 # Local Netlify folder
 .netlify
+
+# Sensitive business documents - never belong in git or the Netlify publish directory
+# (netlify.toml publishes the whole repo root, so anything committed here is publicly served).
+# Found live/public on the site during the 2026-09-25 security audit (Articles of Organization
+# was already committed+pushed since the initial commit; these EIN PDFs were one `git add -A`
+# away from the same fate). Keep these files locally, just never track them.
+*Articles of Organization*
+EIN*.pdf
+"EIN THOCB EIN.pdf"
+"EIN THOCB CONFIRMATION PAGE.pdf"
